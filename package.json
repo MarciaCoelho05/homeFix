@@ -4,7 +4,7 @@
   "description": "",
   "license": "ISC",
   "author": "Márcia Coelho",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js"
