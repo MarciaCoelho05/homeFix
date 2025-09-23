@@ -1,13 +1,14 @@
 {
   "name": "homefix",
   "version": "1.0.0",
-  "description": "",
+  "description": "Projeto HomeFix",
   "license": "ISC",
   "author": "Márcia Coelho",
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
