@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,31 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-  messages  Message[]
-  orders    Maintenance[]
+enum UserRole{
+  CLIENT 
+  TECH 
+  ADMIN 
 }
 
-model Maintenance {
+enumRequestStatus{
+  PENDENTE 
+  EM_CURSO
+  CONCLUIDO
+}
+
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  firstName String?
+  lastName  String?
+  birthDate DateTime?
+  role      UserRole @default(CLIENT)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  maintenanceRequests MaintenanceRequest[] @relation("OwnerRequests")
+  assignedRequests    MaintenanceRequest[] @relation("TechRequests") // <-- lado técnico
+  messages            Message[]
+}
+
+model MaintenanceRequest {
   id          Int      @id @default(autoincrement())
   title       String
-  description String
-  status      String   @default("pending")
+  description String?
+  category    String?
+  status      String   @default("PENDENTE")
+  price       Float?
+  ownerId     Int
   createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
+  updatedAt   DateTime @updatedAt
+
+  owner    User      @relation("OwnerRequests", fields: [ownerId], references: [id])
+  techId   Int?
+  tech     User?     @relation("TechRequests", fields: [techId], references: [id]) // <- relação nomeada
+  messages Message[]
+  scheduledEmails ScheduledEmail[]
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
+  id            Int      @id @default(autoincrement())
+  content       String
+  senderId      Int
+  maintenanceId Int
+  createdAt     DateTime @default(now())
+
+  sender      User               @relation(fields: [senderId], references: [id])
+  maintenance MaintenanceRequest @relation(fields: [maintenanceId], references: [id])
+  media Media[]
+}
+
+model ScheduledEmail {
+  id            Int      @id @default(autoincrement())
+  maintenanceId Int
+  toEmail       String
+  subject       String
+  body          String
+  sendAt        DateTime
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  maintenance MaintenanceRequest @relation(fields: [maintenanceId], references: [id])
 }
