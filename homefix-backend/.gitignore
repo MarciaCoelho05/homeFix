@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+prisma/migrations/
+prisma/dev.db
+dist/
+build/
+c
