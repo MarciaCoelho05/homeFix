@@ -48,3 +48,5 @@ export default function Upload() {
       </button>
       {status && <p className="mt-4 text-sm">{status}</p>}
     </div>
+    );
+}
