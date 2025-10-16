@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import API from "../services/api";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -20,33 +20,41 @@ export default function Login() {
         }}
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
-        {error && <p className="text-red-500 mb-2 text-sm">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Entrar
-        </button>
-        <p className="text-center mt-4 text-sm">
-          Não tem conta? <a href="/register" className="text-blue-600 hover:underline">Registar</a>
-        </p>
-      </form>
+    <div className="app">
+      <div className="center-container">
+        <form onSubmit={handleSubmit} className="card">
+          <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
+          {error && <p className="text-red-500 mb-2 text-sm">{error}</p>}
+
+          <label className="sr-only">Email</label>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="form-input mb-3"
+            required
+          />
+
+          <label className="sr-only">Senha</label>
+          <input
+            type="password"
+            placeholder="Senha"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="form-input mb-3"
+            required
+          />
+
+          <button type="submit" className="btn-primary">
+            Entrar
+          </button>
+
+          <p className="text-center mt-4 text-sm muted">
+            Não tem conta? <a href="/register" className="text-blue-600 hover:underline">Registar</a>
+          </p>
+        </form>
+      </div>
     </div>
   )
 }

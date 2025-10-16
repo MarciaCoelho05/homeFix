@@ -1,5 +1,5 @@
 import { useState } from "react";
-import API from "../api";
+import API from "../services/api";
 
 export default function Upload() {
     const [image, setImage] = useState(null);
