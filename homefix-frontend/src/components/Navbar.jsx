@@ -10,13 +10,13 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow p-4 flex justify-between items-center">
-      <div className="text-xl font-bold text-blue-600">
+    <nav className="navbar navbar-expand-lg bg-white shadow p-3 flex justify-content-between align-items-center">
+      <div className="fs-4 font-bold text-blue-600">
         <Link to="/dashboard">HomeFix</Link>
       </div>
       <div className="space-x-4">
-        <Link to="/dashboard" className="text-gray-700 hover:text-blue-600">Dashboard</Link>
-        <button onClick={handleLogout} className="text-red-500 hover:underline">Logout</button>
+        <Link to="/dashboard" className="text-secondary hover:text-blue-600">Dashboard</Link>
+        <button onClick={handleLogout} className="text-red-500 ">Logout</button>
       </div>
     </nav>
   )

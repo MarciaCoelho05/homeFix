@@ -7,3 +7,4 @@ prisma/dev.db
 dist/
 build/
 c
+.vercel

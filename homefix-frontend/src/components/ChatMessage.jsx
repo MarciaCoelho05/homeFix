@@ -7,8 +7,8 @@ export default function ChatMessage({ message, isOwn = false }) {
   const isProbablyImageUrl = content.startsWith('http');
 
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
-      <div className={`max-w-xs px-4 py-2 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+    <div className={`flex ${isOwn ? 'justify-content-end' : 'justify-start'} mb-2`}>
+      <div className={`max-w-xs px-3 py-2 rounded-lg ${isOwn ? 'bg-primary text-white' : 'bg-secondary'}`}>
         {isProbablyImageUrl ? (
           <img
             src={content}
@@ -21,7 +21,7 @@ export default function ChatMessage({ message, isOwn = false }) {
           <p>{content}</p>
         )}
         {hasValidTime && (
-          <p className="text-xs mt-1 opacity-70 text-right">
+          <p className="text-xs mt-1 opacity-70 text-end">
             {createdAt.toLocaleTimeString()}
           </p>
         )}

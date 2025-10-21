@@ -12,7 +12,9 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "worker": "node src/worker/emailWorker.js",
     "db:test": "node src/scripts/test-db.js",
-    "db:init": "node src/scripts/init-db.js"
+    "db:init": "node src/scripts/init-db.js",
+    "build": "echo \"No build necessary for backend\""
+
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
