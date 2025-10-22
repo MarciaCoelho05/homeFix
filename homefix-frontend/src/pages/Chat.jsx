@@ -1,57 +1,89 @@
-import { useState, useEffect } from 'react'
-import API from '../services/api'
-import ChatMessage from '../components/ChatMessage'
-import Navbar from '../components/Navbar'
 
-export default function Chat() {
-  const [messages, setMessages] = useState([])
-  const [content, setContent] = useState("")
-  const [status, setStatus] = useState("")
-  const [requestId] = useState("ID_DO_PEDIDO") // substituir dinamicamente conforme necessário
+import React, { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import { useParams } from 'react-router-dom';
+import api from '../services/api';
 
-  const fetchMessages = async () => {
-    try {
-      const res = await API.get(`/messages/${requestId}`)
-      setMessages(res.data)
-    } catch (err) {
-      console.error("Erro ao buscar mensagens:", err)
-    }
-  }
+const Chat = () => {
+  const [messages, setMessages] = useState([]);
+  const [content, setContent] = useState('');
+  const [requestId, setRequestId] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Simulação: pegar o primeiro pedido como ativo
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const res = await api.get('/requests/mine');
+        if (res.data.length > 0) {
+          setRequestId(res.data[0].id);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchRequests();
+  }, []);
 
   useEffect(() => {
-    fetchMessages()
-    const interval = setInterval(fetchMessages, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!requestId) return;
+    const fetchMessages = async () => {
+      try {
+        const res = await api.get(`/messages/${requestId}`);
+        setMessages(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Erro ao carregar mensagens:', err);
+        setLoading(false);
+      }
+    };
+    fetchMessages();
+  }, [requestId]);
 
-  const handleSend = async () => {
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!content || !requestId) return;
     try {
-      await API.post("/messages", { content, maintenanceRequestId: requestId })
-      setContent("")
-      fetchMessages()
+      await api.post('/messages', { requestId, content });
+      setMessages([...messages, { content, sender: { email: 'Você' } }]);
+      setContent('');
     } catch (err) {
-      setStatus("Erro ao enviar mensagem")
+      console.error('Erro ao enviar mensagem:', err);
     }
-  }
-
-  const user = JSON.parse(localStorage.getItem("user"))
+  };
 
   return (
-    <>
-      <Navbar />
-      <div className="p-6 max-w-2xl mx-auto">
-        <h2 className="fs-4 font-bold mb-3">Chat do Pedido</h2>
-        <div className="bg-light p-3 rounded h-96 overflow-y-scroll mb-3">
-          {messages.map(msg => (
-            <ChatMessage key={msg.id} message={msg} isOwn={msg.senderId === user.id} />
-          ))}
-        </div>
-        <div className="d-flex gap-2">
-          <input value={content} onChange={e => setContent(e.target.value)} placeholder="Digite sua mensagem" className="flex-1 p-2 border rounded" />
-          <button onClick={handleSend} className="bg-blue-600 text-white px-3 rounded">Enviar</button>
-        </div>
-        {status && <p className="fs-6 mt-2 text-red-500">{status}</p>}
+    <Layout>
+      <div>
+        <h2>Mensagens</h2>
+        {loading ? (
+          <p>A carregar...</p>
+        ) : (
+          <>
+            <div className="border p-3 mb-3" style={{ minHeight: '150px' }}>
+              {messages.map((msg, i) => (
+                <div key={i} className="mb-1">
+                  <strong>{msg.sender?.email || 'Desconhecido'}:</strong> {msg.content}
+                </div>
+              ))}
+            </div>
+            <form onSubmit={handleSend}>
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Digite sua mensagem..."
+                />
+                <button className="btn btn-primary" type="submit">Enviar</button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
-    </>
-  )
-}
+    </Layout>
+  );
+};
+
+export default Chat;

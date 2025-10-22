@@ -1,39 +1,47 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
-export default function Dashboard() {
-  const [user, setUser] = useState(null)
-  const navigate = useNavigate()
+import React, { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import api from '../services/api';
+
+const Dashboard = () => {
+  const [requests, setRequests] = useState([]);
+  const role = localStorage.getItem('role');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-  }, [])
+    const fetchRequests = async () => {
+      try {
+        const endpoint = role === 'technician' || role === 'admin' ? '/requests' : '/requests/mine';
+        const res = await api.get(endpoint);
+        setRequests(res.data);
+      } catch (err) {
+        console.error('Erro ao carregar pedidos:', err);
+      }
+    };
 
-  if (!user) return null
+    fetchRequests();
+  }, [role]);
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-2xl font-semibold mb-3">Bem-vindo, {user.firstName}!</h1>
-      <div className="bg-white p-6 rounded shadow mb-6">
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Tipo:</strong> {user.isAdmin ? "Técnico" : "Cliente"}</p>
-        <p><strong>Conta criada em:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
+    <Layout>
+      <div>
+        <h2>Meus Pedidos</h2>
+        {requests.length === 0 ? (
+          <p>Nenhum pedido encontrado.</p>
+        ) : (
+          <ul className="list-group">
+            {requests.map((req) => (
+              <li key={req.id} className="list-group-item">
+                <h5>{req.title}</h5>
+                <p><strong>Status:</strong> {req.status}</p>
+                <p><strong>Categoria:</strong> {req.category}</p>
+                <p><strong>Data:</strong> {new Date(req.scheduledAt).toLocaleDateString()}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+    </Layout>
+  );
+};
 
-      <div className="flex flex-col gap-4">
-        <button onClick={() => navigate("/new-request")} className="bg-blue-600 text-white px-4 py-2 rounded">
-          Criar novo pedido
-        </button>
-        <button onClick={() => navigate("/profile")} className="bg-gray-800 text-white px-4 py-2 rounded">
-          Ver perfil
-        </button>
-        <button onClick={() => navigate("/chat")} className="bg-green-700 text-white px-4 py-2 rounded">
-          Mensagens
-        </button>
-      </div>
-    </div>
-  )
-}
+export default Dashboard;

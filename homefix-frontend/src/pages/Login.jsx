@@ -1,60 +1,65 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import API from "../services/api";
 
-export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
+import React, { useState } from 'react';
+import Layout from '../components/Layout';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await API.post('/api/users/login', { email, password });
-            localStorage.setItem("token", res.data.token);
-            localStorage.setItem("user", JSON.stringify(res.data.user));
-            navigate("/dashboard");
-        } catch (err) {
-            setError("Credenciais inválidas")
-        }}
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
+      const role = user.isAdmin ? 'admin' : user.isTechnician ? 'technician' : 'user';
+      localStorage.setItem('role', role);
+
+      if (role === 'admin') navigate('/admin');
+      else if (role === 'technician') navigate('/dashboard');
+      else navigate('/profile'); // cliente vai para perfil
+    } catch (err) {
+      console.error(err);
+      alert('Credenciais inválidas.');
+    }
+  };
 
   return (
-    <div className="app">
-      <div className="center-container">
-        <form onSubmit={handleSubmit} className="card">
-          <h2 className="fs-4 font-bold mb-3 text-center">Login</h2>
-          {error && <p className="text-red-500 mb-2 fs-6">{error}</p>}
-
-          <label className="sr-only">Email</label>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="form-input mb-3"
-            required
-          />
-
-          <label className="sr-only">Senha</label>
-          <input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="form-input mb-3"
-            required
-          />
-
-          <button type="submit" className="btn-primary">
-            Entrar
-          </button>
-
-          <p className="text-center mt-3 fs-6 muted">
-            Não tem conta? <a href="/register" className="text-blue-600 ">Registar</a>
-          </p>
+    <Layout>
+      <div className="login-page">
+        <h2>Entrar</h2>
+        <form onSubmit={handleLogin}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">Email</label>
+            <input
+              type="email"
+              className="form-control"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">Palavra-passe</label>
+            <input
+              type="password"
+              className="form-control"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary">Entrar</button>
         </form>
       </div>
-    </div>
-  )
-}
+    </Layout>
+  );
+};
+
+export default Login;

@@ -1,41 +1,48 @@
-import { useState, useEffect } from 'react'
-import API from '../services/api'
-import Navbar from '../components/Navbar'
 
-export default function Profile() {
-  const [user, setUser] = useState({})
-  const [status, setStatus] = useState("")
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
+import api from '../services/api';
+
+const Profile = () => {
+  const [user, setUser] = useState(null);
+  const role = localStorage.getItem('role');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const localUser = localStorage.getItem("user")
-    if (localUser) setUser(JSON.parse(localUser))
-  }, [])
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/profile');
+        setUser(res.data);
+      } catch (err) {
+        console.error('Erro ao carregar perfil:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
-  const handleChange = (e) => {
-    setUser({ ...user, [e.target.name]: e.target.value })
-  }
+  const goToNewRequest = () => {
+    navigate('/new-request');
+  };
 
-  const handleUpdate = async () => {
-    try {
-      const res = await API.put(`/users/${user.id}`, user)
-      localStorage.setItem("user", JSON.stringify(res.data))
-      setStatus("Perfil atualizado!")
-    } catch (err) {
-      setStatus("Erro ao atualizar perfil.")
-    }
-  }
+  if (!user) return <Layout><p>A carregar perfil...</p></Layout>;
 
   return (
-    <>
-      <Navbar />
-      <div className="max-w-lg mx-auto p-6 bg-white shadow rounded">
-        <h2 className="fs-4 font-bold mb-3">Perfil</h2>
-        <input name="firstName" value={user.firstName || ""} onChange={handleChange} placeholder="Nome" className="w-full p-2 mb-2 border rounded" />
-        <input name="lastName" value={user.lastName || ""} onChange={handleChange} placeholder="Apelido" className="w-full p-2 mb-2 border rounded" />
-        <input name="email" value={user.email || ""} onChange={handleChange} placeholder="Email" className="w-full p-2 mb-2 border rounded" />
-        <button onClick={handleUpdate} className="bg-blue-600 text-white px-3 py-2 rounded">Salvar</button>
-        {status && <p className="fs-6 mt-2 text-green-500">{status}</p>}
+    <Layout>
+      <div>
+        <h2>Perfil</h2>
+        <p><strong>Nome:</strong> {user.firstName} {user.lastName}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Tipo:</strong> {role}</p>
+
+        {role === 'user' && (
+          <button className="btn btn-primary mt-3" onClick={goToNewRequest}>
+            Fazer Novo Pedido
+          </button>
+        )}
       </div>
-    </>
-  )
-}
+    </Layout>
+  );
+};
+
+export default Profile;

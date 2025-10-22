@@ -1,42 +1,69 @@
-import { useState } from 'react'
-import API from '../services/api'
-import Navbar from '../components/Navbar'
 
-export default function NewRequest() {
+import React, { useState } from 'react';
+import Layout from '../components/Layout';
+import api from '../services/api';
+
+const NewRequest = () => {
   const [form, setForm] = useState({
-    title: '', description: '', category: '', price: ''
-  })
-  const [status, setStatus] = useState("")
+    title: '',
+    description: '',
+    category: '',
+    date: ''
+  });
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      await API.post('/maintenance-requests', form)
-      setStatus("Pedido criado com sucesso!")
-      setForm({ title: '', description: '', category: '', price: '' })
-    } catch (err) {
-      setStatus("Erro ao criar pedido.")
+      await api.post('/requests', {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        scheduledAt: form.date
+      });
+      alert("Pedido submetido com sucesso!");
+      setForm({ title: '', description: '', category: '', date: '' });
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao submeter o pedido.");
     }
-  }
+  };
 
   return (
-    <>
-      <Navbar />
-      <div className="p-6 max-w-lg mx-auto bg-white shadow rounded">
-        <h2 className="fs-4 font-bold mb-3">Novo Pedido de Manutenção</h2>
-        {status && <p className="mb-2 fs-6 text-blue-500">{status}</p>}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input name="title" placeholder="Título" value={form.title} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <textarea name="description" placeholder="Descrição" value={form.description} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input name="category" placeholder="Categoria (ex: canalização)" value={form.category} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input name="price" type="number" placeholder="Preço estimado (€)" value={form.price} onChange={handleChange} className="w-full p-2 border rounded" />
-          <button type="submit" className="bg-green-600 text-white py-2 px-3 rounded">Criar Pedido</button>
+    <Layout>
+      <div>
+        <h2>Novo Pedido de Manutenção</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="title" className="form-label">Título</label>
+            <input type="text" className="form-control" id="title" value={form.title} onChange={handleChange} required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="description" className="form-label">Descrição</label>
+            <textarea className="form-control" id="description" value={form.description} onChange={handleChange} required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="category" className="form-label">Categoria</label>
+            <select className="form-select" id="category" value={form.category} onChange={handleChange} required>
+              <option value="">Selecione...</option>
+              <option>Canalização</option>
+              <option>Eletricidade</option>
+              <option>Pintura</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="date" className="form-label">Data para Agendamento</label>
+            <input type="date" className="form-control" id="date" value={form.date} onChange={handleChange} />
+          </div>
+          <button type="submit" className="btn btn-success">Submeter Pedido</button>
         </form>
       </div>
-    </>
-  )
-}
+    </Layout>
+  );
+};
+
+export default NewRequest;
