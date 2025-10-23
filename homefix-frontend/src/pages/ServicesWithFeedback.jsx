@@ -3,6 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
 
+const serviceCategories = [
+  {
+    name: 'Canalizacao',
+    image: '/img/canalizacao.jpg',
+    blurb: 'Reparacoes de fugas, instalacao de torneiras e manutencao preventiva.',
+  },
+  {
+    name: 'Eletricidade',
+    image: '/img/eletricidade.jpg',
+    blurb: 'Instalacao de iluminacao, reparacao de quadros e certificacoes.',
+  },
+  {
+    name: 'Pintura',
+    image: '/img/pintura.webp',
+    blurb: 'Renovacao de interiores, fachadas e tratamento de paredes.',
+  },
+  {
+    name: 'Remodelacoes',
+    image: '/img/remodelacoes.jpg',
+    blurb: 'Remodelacoes completas, renovações parciais e melhorias personalizadas.',
+  },
+  {
+    name: 'Jardinagem',
+    image: '/img/jardinagem.webp',
+    blurb: 'Manutencao de jardins, sistemas de rega e desenho de espacos verdes.',
+  },
+  {
+    name: 'Carpintaria',
+    image: '/img/carpintaria.jpeg',
+    blurb: 'Mobiliario por medida, portas interiores e pavimentos.',
+  },
+];
+
 const ServicesWithFeedback = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +69,27 @@ const ServicesWithFeedback = () => {
   return (
     <Layout>
       <section className="mb-5">
-        <div className="rounded-3 p-4 p-md-5 home-hero text-white">
-          <h1 className="display-6 fw-bold mb-2">Servicos concluidos com feedback real</h1>
-          <p className="lead mb-0">
-            Inspire-se em pedidos finalizados recentemente e faca o seu pedido com a mesma equipa.
-          </p>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h2 className="h4 m-0">Categorias em destaque</h2>
+          <span className="text-muted small">Escolha a categoria ideal e peça orçamento de forma imediata.</span>
+        </div>
+        <div className="service-cats">
+          {serviceCategories.map((service) => (
+            <div className="service-cat-card" key={service.name}>
+              <h3 className="service-cat-title">{service.name}</h3>
+              <div className="service-cat-image">
+                <img className="service-cat-img" src={service.image} alt={service.name} />
+              </div>
+              <p className="service-cat-text">{service.blurb}</p>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary mt-auto"
+                onClick={() => pedirOrcamento(service.name)}
+              >
+                Pedir orcamento
+              </button>
+            </div>
+          ))}
         </div>
       </section>
 
