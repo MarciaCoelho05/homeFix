@@ -60,9 +60,9 @@ const Login = () => {
 
   return (
     <Layout>
-      <div className="row justify-content-center">
+      <div className="auth-wrapper">
         <div className="col-12 col-md-8 col-lg-5">
-          <div className="card shadow-sm border-0">
+          <div className="card shadow-sm border-0 auth-card">
             <div className="card-body p-4 p-md-5">
               <h1 className="h4 fw-semibold mb-3 text-center">Entrar</h1>
               {error && <div className="alert alert-danger py-2">{error}</div>}

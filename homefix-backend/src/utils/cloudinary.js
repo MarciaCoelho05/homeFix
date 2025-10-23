@@ -9,7 +9,10 @@ cloudinary.config({
 
 async function uploadToCloudinary(filePath) {
   try {
-    const res = await cloudinary.uploader.upload(filePath, { folder: 'homefix' });
+    const res = await cloudinary.uploader.upload(filePath, {
+      folder: 'homefix',
+      resource_type: 'auto'
+    });
     return res;
   } finally {
     // clean temp file if exists

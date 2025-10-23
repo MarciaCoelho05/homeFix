@@ -94,8 +94,8 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen d-flex align-items-center justify-content-center bg-light">
-      <form onSubmit={handleSubmit} className="bg-white p-4 p-md-5 rounded shadow-sm w-100" style={{ maxWidth: 480 }}>
+    <div className="auth-wrapper">
+      <form onSubmit={handleSubmit} className="bg-white p-4 p-md-5 rounded shadow-sm w-100 auth-card" style={{ maxWidth: 520 }}>
         <h2 className="fs-4 fw-bold mb-3 text-center">Criar conta</h2>
         {error && <div className="alert alert-danger py-2 mb-3">{error}</div>}
 

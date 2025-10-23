@@ -36,12 +36,6 @@ const serviceCategories = [
   },
 ];
 
-const fallbackFeedbacks = [
-  { quote: 'Resposta super rapida e trabalho impecavel!', author: 'Ana, Lisboa' },
-  { quote: 'Equipa pontual e muito profissional.', author: 'Joao, Cascais' },
-  { quote: 'Voltarei a pedir atraves da plataforma, recomendo.', author: 'Marta, Porto' },
-];
-
 const Home = () => {
   const [requests, setRequests] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
@@ -77,21 +71,23 @@ const Home = () => {
 
   const requestsWithFeedback = useMemo(() => {
     if (!requests.length) return [];
-    return requests.map((req, index) => {
-      const feedback = req.feedback?.comment || req.feedbackComment || req.testimonial;
-      const rating = req.feedback?.rating || req.feedbackRating || 5;
-      const fallback = fallbackFeedbacks[index % fallbackFeedbacks.length];
+    return requests.map((req) => {
+      const feedbackRecord = req.feedback;
+      const isConcluded = (req.status || '').toLowerCase() === 'concluido';
+      const hasFeedback = Boolean(feedbackRecord?.comment && isConcluded);
       return {
         ...req,
-        feedbackQuote: feedback || fallback.quote,
-        feedbackAuthor: req.feedback?.user?.firstName || req.feedbackAuthor || fallback.author,
-        feedbackRating: rating,
+        feedbackQuote: hasFeedback ? feedbackRecord.comment : null,
+        feedbackAuthor: hasFeedback ? feedbackRecord.user?.firstName || 'Cliente' : null,
+        feedbackRating: hasFeedback ? feedbackRecord.rating : null,
+        hasFeedback,
       };
     });
   }, [requests]);
 
   return (
     <Layout>
+      <div className="home-page">
       <section className="home-hero rounded-3 p-4 p-md-5 mb-5 text-white">
         <div className="row align-items-center g-4">
           <div className="col-12 col-lg-7">
@@ -137,14 +133,14 @@ const Home = () => {
         <div className="service-cats">
           {serviceCategories.map((service) => (
             <div className="service-cat-card" key={service.name}>
-              <img className="service-cat-img" src={service.image} alt={service.name} />
-              <div className="service-cat-content">
-                <span className="service-cat-label">{service.name}</span>
-                <p className="service-cat-text">{service.blurb}</p>
-                <button type="button" className="btn btn-sm btn-primary mt-2" onClick={() => pedirOrcamento(service.name)}>
-                  Pedir orcamento
-                </button>
+              <h3 className="service-cat-title">{service.name}</h3>
+              <div className="service-cat-image">
+                <img className="service-cat-img" src={service.image} alt={service.name} />
               </div>
+              <p className="service-cat-text">{service.blurb}</p>
+              <button type="button" className="btn btn-sm btn-primary mt-auto" onClick={() => pedirOrcamento(service.name)}>
+                Pedir orcamento
+              </button>
             </div>
           ))}
         </div>
@@ -170,14 +166,16 @@ const Home = () => {
                     </span>
                   </div>
                   <p className="text-muted small mb-3">{req.description}</p>
-                  <div className="bg-light rounded-2 p-2 mb-3">
-                    <p className="small mb-1 text-dark">
-                      <strong>{req.feedbackAuthor}:</strong> "{req.feedbackQuote}"
-                    </p>
-                    <div className="text-muted small">
-                      Avaliacao: {Number(req.feedbackRating).toFixed(1)}/5
+                  {req.hasFeedback && (
+                    <div className="feedback-snippet mb-3">
+                      <p className="feedback-text mb-1">
+                        <strong>{req.feedbackAuthor || 'Cliente'}:</strong> "{req.feedbackQuote}"
+                      </p>
+                      <span className="feedback-rating text-muted small">
+                        Avaliacao: {Number(req.feedbackRating || 5).toFixed(1)}/5
+                      </span>
                     </div>
-                  </div>
+                  )}
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <span className="small text-muted">
                       <strong>Categoria:</strong> {req.category || '-'}
@@ -189,7 +187,7 @@ const Home = () => {
                     )}
                   </div>
                   <button type="button" className="btn btn-primary w-100" onClick={() => pedirOrcamento(req.category)}>
-                    Pedir orcamento
+                    Obter orcamento
                   </button>
                 </div>
               </div>
@@ -213,6 +211,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      </div>
     </Layout>
   );
 };

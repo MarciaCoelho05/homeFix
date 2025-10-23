@@ -1,34 +1,89 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Layout from '../components/Layout';
-import HeroBanner from '../components/HeroBanner';
 import api from '../services/api';
 
+const categories = [
+  'Canalizacao',
+  'Eletricidade',
+  'Pintura',
+  'Remodelacoes',
+  'Jardinagem',
+  'Outro',
+];
+
 const NewRequest = () => {
-  const [form, setForm] = useState({ title: '', description: '', category: '', price: '', date: '' });
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    price: '',
+    date: '',
+  });
   const [fieldErrors, setFieldErrors] = useState({});
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [media, setMedia] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const MAX_FILES = 5;
 
   const validate = (data) => {
     const errs = {};
-    if (!data.title?.trim()) errs.title = 'Indique o título';
-    if (!data.description?.trim()) errs.description = 'Indique a descrição';
+    if (!data.title?.trim()) errs.title = 'Indique o titulo';
+    if (!data.description?.trim()) errs.description = 'Indique a descricao';
     if (!data.category?.trim()) errs.category = 'Selecione a categoria';
-    if (data.price && isNaN(Number(data.price))) errs.price = 'Preço deve ser numérico';
+    if (data.price && Number.isNaN(Number(data.price))) errs.price = 'Preco deve ser numerico';
     return errs;
   };
 
   const isValid = useMemo(() => Object.keys(validate(form)).length === 0, [form]);
 
-  const handleChange = (e) => {
-    const next = { ...form, [e.target.id]: e.target.value };
+  const handleChange = (event) => {
+    const next = { ...form, [event.target.name]: event.target.value };
     setForm(next);
     setFieldErrors(validate(next));
     setStatus('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleMediaChange = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
+
+    if (files.length + media.length > MAX_FILES) {
+      setStatus(`Pode anexar até ${MAX_FILES} ficheiros.`);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const uploaded = [];
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        uploaded.push({
+          url: response.data.url,
+          type: file.type.startsWith('video') ? 'video' : 'image',
+        });
+      }
+      setMedia((prev) => [...prev, ...uploaded]);
+      setStatus('');
+    } catch (err) {
+      setStatus('Erro ao enviar ficheiros. Tente novamente.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveMedia = (url) => {
+    setMedia((prev) => prev.filter((item) => item.url !== url));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     const errs = validate(form);
     setFieldErrors(errs);
     if (Object.keys(errs).length) return;
@@ -40,10 +95,12 @@ const NewRequest = () => {
         description: form.description,
         category: form.category,
         price: form.price ? Number(form.price) : undefined,
-        scheduledAt: form.date || undefined
+        scheduledAt: form.date || undefined,
+        mediaUrls: media.map((item) => item.url),
       });
       setStatus('Pedido submetido com sucesso!');
       setForm({ title: '', description: '', category: '', price: '', date: '' });
+      setMedia([]);
     } catch (error) {
       const msg = error?.response?.data?.message || 'Erro ao submeter o pedido.';
       setStatus(msg);
@@ -54,50 +111,135 @@ const NewRequest = () => {
 
   return (
     <Layout>
-            <HeroBanner title="Novo pedido de manutenção" subtitle="Descreva o serviço e agende uma data" imageUrl="https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1080&auto=format&fit=crop" /><div>
-        <h2>Novo Pedido de Manutenção</h2>
-        {status && <div className={`alert ${status.includes('sucesso') ? 'alert-success' : 'alert-danger'} py-2`}>{status}</div>}
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-3">
-            <label htmlFor="title" className="form-label">Título</label>
-            <input type="text" className={`form-control ${fieldErrors.title ? 'is-invalid' : ''}`} id="title" value={form.title} onChange={handleChange} />
-            {fieldErrors.title && <div className="invalid-feedback">{fieldErrors.title}</div>}
+      <section className="request-hero rounded-3 p-4 p-md-5 mb-4 text-white">
+        <div className="row align-items-center g-4">
+          <div className="col-12 col-lg-7">
+            <h1 className="display-6 fw-semibold mb-2 text-white">Novo pedido de manutencao</h1>
+            <p className="lead mb-0">
+              Descreva o serviço que precisa, escolha a categoria e indique uma data preferêncial. A equipa certa entra em contacto.
+            </p>
           </div>
-          <div className="mb-3">
-            <label htmlFor="description" className="form-label">Descrição</label>
-            <textarea className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`} id="description" value={form.description} onChange={handleChange} />
-            {fieldErrors.description && <div className="invalid-feedback">{fieldErrors.description}</div>}
+          <div className="col-12 col-lg-5 text-lg-end">
+            <img className="request-hero-img" src="/img/remodelacoes.jpg" alt="Profissional a trabalhar" />
           </div>
-          <div className="mb-3">
-            <label htmlFor="category" className="form-label">Categoria</label>
-            <select className={`form-select ${fieldErrors.category ? 'is-invalid' : ''}`} id="category" value={form.category} onChange={handleChange}>
-              <option value="">Selecione...</option>
-              <option>Canalização</option>
-              <option>Eletricidade</option>
-              <option>Pintura</option>
-              <option>Outro</option>
-            </select>
-            {fieldErrors.category && <div className="invalid-feedback">{fieldErrors.category}</div>}
-          </div>
-          <div className="row g-2">
-            <div className="col-6">
-              <label htmlFor="price" className="form-label">Preço (opcional)</label>
-              <input type="text" className={`form-control ${fieldErrors.price ? 'is-invalid' : ''}`} id="price" value={form.price} onChange={handleChange} />
-              {fieldErrors.price && <div className="invalid-feedback">{fieldErrors.price}</div>}
+        </div>
+      </section>
+
+      <div className="card border-0 shadow-sm">
+        <div className="card-body p-4 p-md-5">
+          <h2 className="h4 fw-semibold mb-3">Detalhes do pedido</h2>
+          {status && (
+            <div className={`alert ${status.includes('sucesso') ? 'alert-success' : 'alert-danger'} py-2`}>
+              {status}
             </div>
-            <div className="col-6">
-              <label htmlFor="date" className="form-label">Data para Agendamento</label>
-              <input type="date" className="form-control" id="date" value={form.date} onChange={handleChange} />
+          )}
+          <form onSubmit={handleSubmit} noValidate className="request-form">
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="title">Titulo</label>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  className={`form-control ${fieldErrors.title ? 'is-invalid' : ''}`}
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Ex.: Revisao da instalacao eletrica"
+                />
+                {fieldErrors.title && <div className="invalid-feedback">{fieldErrors.title}</div>}
+              </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="category">Categoria</label>
+                <select
+                  id="category"
+                  name="category"
+                  className={`form-select ${fieldErrors.category ? 'is-invalid' : ''}`}
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecione...</option>
+                  {categories.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+                {fieldErrors.category && <div className="invalid-feedback">{fieldErrors.category}</div>}
+              </div>
+              <div className="col-12">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="description">Descricao</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Indique detalhes relevantes (medidas, sintomas, urgencia...)."
+                />
+                {fieldErrors.description && <div className="invalid-feedback">{fieldErrors.description}</div>}
+              </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="price">Preco estimado (opcional)</label>
+                <input
+                  id="price"
+                  name="price"
+                  type="text"
+                  className={`form-control ${fieldErrors.price ? 'is-invalid' : ''}`}
+                  value={form.price}
+                  onChange={handleChange}
+                  placeholder="Ex.: 150"
+                />
+                {fieldErrors.price && <div className="invalid-feedback">{fieldErrors.price}</div>}
+              </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="date">Data preferencial</label>
+                <input
+                  id="date"
+                  name="date"
+                  type="date"
+                  className="form-control"
+                  value={form.date}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="col-12">
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="media">Anexos (imagens ou videos)</label>
+                <input
+                  id="media"
+                  name="media"
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="form-control"
+                  onChange={handleMediaChange}
+                />
+                <small className="text-muted d-block mt-1">Pode anexar até {MAX_FILES} ficheiros.</small>
+                {uploading && <div className="small text-muted mt-2">A carregar ficheiros...</div>}
+                {media.length > 0 && (
+                  <div className="media-preview-grid mt-3">
+                    {media.map((item) => (
+                      <div className="media-preview-item" key={item.url}>
+                        {item.type === 'video' ? (
+                          <video src={item.url} controls />
+                        ) : (
+                          <img src={item.url} alt="Anexo" />
+                        )}
+                        <button type="button" className="btn btn-link btn-sm text-danger px-0" onClick={() => handleRemoveMedia(item.url)}>
+                          remover
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <button type="submit" className="btn btn-primary mt-3" disabled={!isValid || submitting}>
-            {submitting ? 'A enviar...' : 'Submeter Pedido'}
-          </button>
-        </form>
+            <button type="submit" className="btn btn-primary mt-4" disabled={!isValid || submitting || uploading}>
+              {submitting ? 'A enviar...' : 'Submeter pedido'}
+            </button>
+          </form>
+        </div>
       </div>
     </Layout>
   );
 };
 
 export default NewRequest;
-

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
 
@@ -19,6 +20,9 @@ const Profile = () => {
     birthDate: '',
   });
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [requests, setRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState('');
 
   const dateBounds = useMemo(() => {
     const today = new Date();
@@ -50,6 +54,20 @@ const Profile = () => {
       }
     };
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const res = await api.get('/requests/mine');
+        setRequests(res.data || []);
+      } catch (err) {
+        setRequestsError('Nao foi possivel carregar os pedidos.');
+      } finally {
+        setRequestsLoading(false);
+      }
+    };
+    fetchRequests();
   }, []);
 
   const validate = (payload) => {
@@ -131,9 +149,9 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="row justify-content-center">
-        <div className="col-12 col-lg-8">
-          <div className="card border-0 shadow-sm">
+      <div className="row g-4">
+        <div className="col-12 col-lg-5">
+          <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4 p-md-5">
               <div className="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4 mb-4">
                 <img
@@ -145,7 +163,7 @@ const Profile = () => {
                 <div className="text-center text-md-start">
                   <h1 className="h4 fw-semibold mb-1">O seu perfil</h1>
                   <p className="text-muted small mb-3">
-                    Atualize os seus dados pessoais e fotografia.
+                    Atualize os seus dados pessoais e acompanhe os seus pedidos.
                   </p>
                   <label className="btn btn-outline-secondary btn-sm mb-0">
                     Alterar fotografia
@@ -162,7 +180,7 @@ const Profile = () => {
               {status && <div className="alert alert-info py-2">{status}</div>}
 
               <form className="row g-3" onSubmit={handleSave} noValidate>
-                <div className="col-12 col-md-6">
+                <div className="col-12">
                   <label className="form-label small text-uppercase">Nome</label>
                   <input
                     name="firstName"
@@ -174,7 +192,7 @@ const Profile = () => {
                     <div className="invalid-feedback">{fieldErrors.firstName}</div>
                   )}
                 </div>
-                <div className="col-12 col-md-6">
+                <div className="col-12">
                   <label className="form-label small text-uppercase">Apelido</label>
                   <input
                     name="lastName"
@@ -186,7 +204,7 @@ const Profile = () => {
                     <div className="invalid-feedback">{fieldErrors.lastName}</div>
                   )}
                 </div>
-                <div className="col-12 col-md-6">
+                <div className="col-12">
                   <label className="form-label small text-uppercase">Data de nascimento</label>
                   <input
                     type="date"
@@ -207,6 +225,80 @@ const Profile = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-lg-7">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-4 p-md-5">
+              <h2 className="h5 fw-semibold mb-3">Pedidos de serviço</h2>
+              {requestsLoading ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">A carregar pedidos...</span>
+                  </div>
+                </div>
+              ) : requestsError ? (
+                <div className="alert alert-danger py-2">{requestsError}</div>
+              ) : requests.length === 0 ? (
+                <p className="text-muted small mb-0">Ainda nao submeteu pedidos de servico.</p>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {requests.map((req) => (
+                    <div key={req.id} className="border rounded-3 p-3">
+                      <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
+                        <div>
+                          <h3 className="h6 fw-semibold mb-1">{req.title}</h3>
+                          <div className="small text-muted">
+                            <span className="me-3"><strong>Categoria:</strong> {req.category || '-'}</span>
+                            <span><strong>Status:</strong> {req.status || 'pendente'}</span>
+                          </div>
+                          {req.scheduledAt && (
+                            <div className="small text-muted">
+                              <strong>Data preferencial:</strong>{' '}
+                              {new Date(req.scheduledAt).toLocaleString()}
+                            </div>
+                          )}
+                          {req.price != null && (
+                            <div className="small text-muted">
+                              <strong>Preco indicado:</strong> EUR {Number(req.price).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="d-flex gap-2 align-items-start">
+                          <Link className="btn btn-sm btn-outline-primary" to={`/chat?requestId=${req.id}`}>
+                            Abrir chat
+                          </Link>
+                        </div>
+                      </div>
+                      {req.mediaUrls?.length > 0 && (
+                        <div className="mt-3">
+                          <span className="small text-muted d-block mb-1">Anexos:</span>
+                          <div className="d-flex flex-wrap gap-2">
+                            {req.mediaUrls.map((url, idx) => (
+                              <a
+                                key={`${req.id}-media-${idx}`}
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="badge text-bg-light text-decoration-none"
+                              >
+                                Ficheiro {idx + 1}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {req.description && (
+                        <p className="small text-muted mt-2 mb-0">
+                          <strong>Descricao:</strong> {req.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
