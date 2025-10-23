@@ -5,8 +5,14 @@ const router = express.Router();
 
 router.get('/requests', async (req, res) => {
   const { status } = req.query || {};
-  const where = {};
-  if (status) where.status = String(status);
+  const where = {
+    feedback: { isNot: null }
+  };
+  if (status) {
+    where.status = String(status);
+  } else {
+    where.status = 'concluido';
+  }
   try {
     const items = await prisma.maintenanceRequest.findMany({
       where,
