@@ -1,15 +1,1 @@
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "homefix-backend/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "homefix-backend/index.js"
-    }
-  ]
-}
+﻿{"version":2,"builds":[{"src":"homefix-backend/src/server.js","use":"@vercel/node"}],"routes":[{"src":"/(.*)","dest":"homefix-backend/src/server.js"}]}

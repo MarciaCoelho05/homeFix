@@ -1,0 +1,121 @@
+﻿{
+  "info": {
+    "name": "HomeFix API Full",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw": "{{baseUrl}}/api/auth/register","host":["{{baseUrl}}"],"path":["api","auth","register"]},
+        "body": {"mode":"raw","raw":"{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\",\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"birthDate\": \"1990-01-01\"\n}"}
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw": "{{baseUrl}}/api/auth/login","host":["{{baseUrl}}"],"path":["api","auth","login"]},
+        "body": {"mode":"raw","raw":"{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}"}
+      },
+      "event": [
+        {"listen":"test","script":{"type":"text/javascript","exec":[
+          "const json = pm.response.json();",
+          "if (json.token) pm.collectionVariables.set('token', json.token);"
+        ]}}
+      ]
+    },
+
+    {"name":"Requests - Create (POST)",
+      "request":{
+        "method":"POST",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],
+        "url":{"raw":"{{baseUrl}}/api/requests","host":["{{baseUrl}}"],"path":["api","requests"]},
+        "body":{"mode":"raw","raw":"{\n  \"title\": \"Pintura Sala\",\n  \"description\": \"Pintar paredes\",\n  \"category\": \"Pintura\",\n  \"price\": 120,\n  \"scheduledAt\": \"2025-01-01T10:00:00\"\n}"}
+      },
+      "event":[{"listen":"test","script":{"type":"text/javascript","exec":[
+        "const json = pm.response.json();",
+        "if (json.id) pm.collectionVariables.set('requestId', json.id);"
+      ]}}]
+    },
+    {"name":"Requests - Mine (GET)",
+      "request":{
+        "method":"GET",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/requests/mine","host":["{{baseUrl}}"],"path":["api","requests","mine"]}
+      }
+    },
+    {"name":"Requests - Get By ID (GET)",
+      "request":{
+        "method":"GET",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/requests/{{requestId}}","host":["{{baseUrl}}"],"path":["api","requests","{{requestId}}"]}
+      }
+    },
+    {"name":"Requests - Update (PUT)",
+      "request":{
+        "method":"PUT",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],
+        "url":{"raw":"{{baseUrl}}/api/requests/{{requestId}}","host":["{{baseUrl}}"],"path":["api","requests","{{requestId}}"]},
+        "body":{"mode":"raw","raw":"{\n  \"status\": \"concluido\",\n  \"scheduledAt\": \"2025-01-02T14:00:00\"\n}"}
+      }
+    },
+    {"name":"Requests - Delete (DELETE)",
+      "request":{
+        "method":"DELETE",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/requests/{{requestId}}","host":["{{baseUrl}}"],"path":["api","requests","{{requestId}}"]}
+      }
+    },
+    {"name":"Requests - List All (GET, admin/tech)",
+      "request":{
+        "method":"GET",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/requests?status=concluido","host":["{{baseUrl}}"],"path":["api","requests"],"query":[{"key":"status","value":"concluido"}]}
+      }
+    },
+
+    {"name":"Messages - List by Request (GET)",
+      "request":{
+        "method":"GET",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/messages/{{requestId}}","host":["{{baseUrl}}"],"path":["api","messages","{{requestId}}"]}
+      }
+    },
+    {"name":"Messages - Send (POST)",
+      "request":{
+        "method":"POST",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],
+        "url":{"raw":"{{baseUrl}}/api/messages","host":["{{baseUrl}}"],"path":["api","messages"]},
+        "body":{"mode":"raw","raw":"{\n  \"requestId\": \"{{requestId}}\",\n  \"content\": \"Olá!\"\n}"}
+      }
+    },
+
+    {"name":"Upload - Image (POST)",
+      "request":{
+        "method":"POST",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"}],
+        "url":{"raw":"{{baseUrl}}/api/upload","host":["{{baseUrl}}"],"path":["api","upload"]},
+        "body":{"mode":"formdata","formdata":[{"key":"file","type":"file","src":"/absolute/path/to/image.jpg"}]}
+      }
+    },
+
+    {"name":"Email - Test (POST)",
+      "request":{
+        "method":"POST",
+        "header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],
+        "url":{"raw":"{{baseUrl}}/api/email/test","host":["{{baseUrl}}"],"path":["api","email","test"]},
+        "body":{"mode":"raw","raw":"{\n  \"to\": \"inbox@mailtrap.io\",\n  \"subject\": \"Teste HomeFix\",\n  \"text\": \"Olá do HomeFix\"\n}"}
+      }
+    }
+  ],
+  "variable": [
+    {"key":"baseUrl","value":"http://localhost:3000"},
+    {"key":"token","value":""},
+    {"key":"requestId","value":""}
+  ]
+}
+

@@ -1,6 +1,7 @@
-
+﻿
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import HeroBanner from '../components/HeroBanner';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -23,7 +24,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div>
+            <HeroBanner title="Os meus pedidos" subtitle="Acompanhe o estado e detalhes de todos os pedidos" imageUrl="https://images.unsplash.com/photo-1581091012184-7c54c02b4c47?q=80&w=1080&auto=format&fit=crop" /><div>
         <h2>Meus Pedidos</h2>
         {requests.length === 0 ? (
           <p>Nenhum pedido encontrado.</p>
@@ -45,3 +46,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

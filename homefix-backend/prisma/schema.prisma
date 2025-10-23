@@ -1,5 +1,4 @@
-
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -9,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
+  avatarUrl   String?\n  id           String    @id @default(uuid())
   email        String    @unique
   password     String
   firstName    String
@@ -66,5 +65,7 @@ model Feedback {
   user       User     @relation(fields: [userId], references: [id])
   request    MaintenanceRequest @relation(fields: [requestId], references: [id])
   userId     String
-  requestId  String
+  requestId  String @unique
 }
+
+

@@ -1,4 +1,4 @@
-export default function MaintenanceCard({ request }) {
+﻿export default function MaintenanceCard({ request }) {
   return (
     <div className="bg-white p-3 rounded shadow mb-3">
       <h3 className="fs-5 font-semibold text-gray-800">{request.title}</h3>

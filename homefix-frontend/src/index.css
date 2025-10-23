@@ -1,12 +1,8 @@
-
-
-
-
-:root {
+﻿:root {
   --surface: #ffffff;
   --muted: #f9fafb;
   --text: #1f2937;
-  --accent: #16a34a; 
+  --accent: var(--primary); 
 }
 
 html, body, #root {
@@ -64,3 +60,142 @@ body {
 
 .muted { color: #6b7280 }
 
+
+
+:root {
+  --primary: #ff7a00;
+  --primary-700: #e56d00;
+  --primary-800: #cc6100;
+  --surface: #ffffff;
+  --muted: #f6f7f9;
+  --text: #1f2937;
+}
+
+/* Navbar */
+.homefix-navbar {
+  background: #ffffff;
+}
+.homefix-navbar .navbar-brand {
+  color: var(--primary);
+}
+.homefix-navbar .navbar-brand:hover {
+  color: var(--primary-700);
+}
+.homefix-navbar .nav-link {
+  color: #4b5563;
+}
+.homefix-navbar .nav-link:hover {
+  color: var(--primary-700);
+}
+.homefix-navbar .btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.homefix-navbar .btn-primary:hover {
+  background: var(--primary-700);
+  border-color: var(--primary-700);
+}
+.homefix-navbar .btn-outline-primary {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.homefix-navbar .btn-outline-primary:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Hero */
+.home-hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-800) 100%);
+}
+.stats-card {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.stat-number { font-size: 1.25rem; font-weight: 700; }
+.stat-label { font-size: .8rem; opacity: .9; }
+
+/* Buttons re-theme */
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.btn-primary:hover { background: var(--primary-700); border-color: var(--primary-700); }
+.btn-outline-primary { color: var(--primary); border-color: var(--primary); }
+.btn-outline-primary:hover { background: var(--primary); color: #fff; }
+
+/* Service cards */
+.service-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.service-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+/* Status badges */
+.status-badge { background: #f3f4f6; color: #374151; }
+.status-pendente { background: #fff7ed; color: #9a3412; }
+.status-em_andamento { background: #eff6ff; color: #1e40af; }
+.status-concluido { background: #ecfdf5; color: #065f46; }
+
+/* Global page polish for all views */
+.form-control:focus, input.form-control:focus, textarea.form-control:focus, select.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 .2rem rgba(255, 122, 0, .15);
+}
+.list-group-item {
+  border: 1px solid #edf0f3;
+  border-radius: .5rem;
+  margin-bottom: .5rem;
+}
+.list-group-item h5, .list-group-item h6 {
+  color: #111827;
+}
+.badge {
+  font-weight: 600;
+  border-radius: .375rem;
+}
+/* Navbar toggler visibility */
+.homefix-navbar .navbar-toggler {
+  border-color: rgba(0,0,0,0.1);
+}
+.homefix-navbar .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0,0,0,0.6)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+/* Headings */
+h1, .display-6 { color: #0f172a; }
+h2, .h4 { color: #111827; }
+/* Links */
+a { color: var(--primary); }
+a:hover { color: var(--primary-700); }
+
+/* Attractive background and service category cards */
+body {
+  background: radial-gradient(1200px 600px at -10% -10%, rgba(255,122,0,0.12), transparent 60%),
+              radial-gradient(900px 500px at 110% 0%, rgba(255,180,0,0.10), transparent 60%),
+              linear-gradient(180deg, #fff, #fff);
+}
+
+.service-cats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1200px) { .service-cats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .service-cats { grid-template-columns: repeat(2, 1fr); } }
+
+.service-cat-card {
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  border: 1px solid #eee;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.service-cat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(0,0,0,0.10); }
+.service-cat-img { width: 100%; height: 120px; object-fit: cover; display: block; }
+.service-cat-label {
+  position: absolute; left: 10px; bottom: 10px; 
+  background: rgba(0,0,0,0.55); color: #fff; padding: 4px 8px; border-radius: 8px; font-weight: 600; font-size: .9rem;
+}

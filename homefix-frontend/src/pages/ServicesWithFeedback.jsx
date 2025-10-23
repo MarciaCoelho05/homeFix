@@ -1,6 +1,6 @@
-
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import HeroBanner from '../components/HeroBanner';
 import api from '../services/api';
 
 const ServicesWithFeedback = () => {
@@ -10,7 +10,7 @@ const ServicesWithFeedback = () => {
     const fetchServices = async () => {
       try {
         const res = await api.get('/requests?status=concluido');
-        const concludedRequests = res.data.filter(r => r.feedback);
+        const concludedRequests = (res.data || []).filter(r => r.feedback);
         setRequests(concludedRequests);
       } catch (err) {
         console.error('Erro ao carregar serviços com feedback:', err);
@@ -22,7 +22,7 @@ const ServicesWithFeedback = () => {
 
   return (
     <Layout>
-      <div>
+            <HeroBanner title="Serviços com feedback" subtitle="Veja avaliações reais dos clientes" imageUrl="https://upload.wikimedia.org/wikipedia/commons/0/0a/Hand_in_toolbox.jpg" /><div>
         <h2>Serviços Concluídos com Feedback</h2>
         {requests.length === 0 ? (
           <p>Nenhum feedback encontrado.</p>
@@ -33,9 +33,9 @@ const ServicesWithFeedback = () => {
                 <h5>{req.title}</h5>
                 <p><strong>Categoria:</strong> {req.category}</p>
                 <p><strong>Descrição:</strong> {req.description}</p>
-                <p><strong>Cliente:</strong> {req.feedback.user.firstName}</p>
-                <p><strong>Avaliação:</strong> ⭐ {req.feedback.rating}</p>
-                {req.feedback.comment && (
+                <p><strong>Cliente:</strong> {req.feedback?.user?.firstName}</p>
+                <p><strong>Avaliação:</strong> ★ {req.feedback?.rating}</p>
+                {req.feedback?.comment && (
                   <p><strong>Comentário:</strong> {req.feedback.comment}</p>
                 )}
               </li>
@@ -48,3 +48,4 @@ const ServicesWithFeedback = () => {
 };
 
 export default ServicesWithFeedback;
+

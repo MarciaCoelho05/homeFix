@@ -1,30 +1,19 @@
-const express = require('express');
-const prisma = require('../prismaClient');
-const { protect, admin } = require('../middlewares/authMiddleware');
+﻿const express = require('express');
+const { protect } = require('../middlewares/authMiddleware');
+const mailer = require('../config/email');
 
 const router = express.Router();
 
-// POST /api/email/maintenance/:id/schedule-email
-router.post('/maintenance/:id/schedule-email', protect, admin, async (req, res) => {
-    const { toEmail, subject, body, sendAt } = req.body;
-    const id = Number(req.params.id);
-
-    const mr = await prisma.maintenanceRequest.findUnique({ where: { id } });
-    if (!mr) {
-        return res.status(404).json({ message: 'Solicitação de manutenção não encontrada' });
-    }
-
-    const schedule = await prisma.scheduledEmail.create({
-        data: {
-            maintenanceId: id,
-            toEmail,
-            subject,
-            body,
-            sendAt: new Date(sendAt)
-        }
-    });
-
-    res.status(201).json(schedule);
+// POST /api/email/test -> envia email de teste
+router.post('/test', protect, async (req, res) => {
+  const { to, subject = 'Teste HomeFix', text = 'Email de teste HomeFix', html } = req.body || {};
+  if (!to) return res.status(400).json({ message: "Campo 'to' é obrigatório" });
+  try {
+    const info = await mailer.sendMail({ from: '"HomeFix" <no-reply@homefix.com>', to, subject, text, html });
+    res.json({ ok: true, messageId: info.messageId, accepted: info.accepted });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 module.exports = router;

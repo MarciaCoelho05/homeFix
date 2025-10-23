@@ -10,7 +10,7 @@ const Chat = () => {
   const [requestId, setRequestId] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Simulação: pegar o primeiro pedido como ativo
+
   useEffect(() => {
     const fetchRequests = async () => {
       try {
