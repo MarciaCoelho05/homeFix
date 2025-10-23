@@ -1,17 +1,23 @@
-﻿import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Route,
+  Routes,
+} from 'react-router-dom';
 
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import Chat from './pages/Chat';
-import NewRequest from './pages/NewRequest';
-import Schedule from './pages/Schedule';
 import AdminDashboard from './pages/AdminDashboard';
+import Chat from './pages/Chat';
+import Dashboard from './pages/Dashboard';
+import ForgotPassword from './pages/ForgotPassword';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import NewRequest from './pages/NewRequest';
+import Profile from './pages/Profile';
+import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
+import Schedule from './pages/Schedule';
+import ServicesWithFeedback from './pages/ServicesWithFeedback';
 
 const isAuthenticated = () => !!localStorage.getItem('token');
 const isAdmin = () => localStorage.getItem('role') === 'admin';
@@ -26,56 +32,68 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
-const AppRoutes = () => {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+const AppRoutes = () => (
+  <Router>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/services" element={<ServicesWithFeedback />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Público */}
-        <Route path="/" element={<Home />} />
-
-        {/* User Routes */}
-        <Route path="/dashboard" element={
+      <Route
+        path="/dashboard"
+        element={(
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
-        }/>
-        <Route path="/profile" element={
+        )}
+      />
+      <Route
+        path="/profile"
+        element={(
           <PrivateRoute>
             <Profile />
           </PrivateRoute>
-        }/>
-        <Route path="/chat" element={
+        )}
+      />
+      <Route
+        path="/chat"
+        element={(
           <PrivateRoute>
             <Chat />
           </PrivateRoute>
-        }/>
-        <Route path="/new-request" element={
+        )}
+      />
+      <Route
+        path="/new-request"
+        element={(
           <PrivateRoute>
             <NewRequest />
           </PrivateRoute>
-        }/>
-        <Route path="/schedule" element={
+        )}
+      />
+      <Route
+        path="/schedule"
+        element={(
           <PrivateRoute>
             <Schedule />
           </PrivateRoute>
-        }/>
-
-        {/* Admin Only */}
-        <Route path="/admin" element={
-          <PrivateRoute adminOnly={true}>
+        )}
+      />
+      <Route
+        path="/admin"
+        element={(
+          <PrivateRoute adminOnly>
             <AdminDashboard />
           </PrivateRoute>
-        }/>
+        )}
+      />
 
-        {/* Default */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
-  );
-};
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Router>
+);
 
 export default AppRoutes;
-

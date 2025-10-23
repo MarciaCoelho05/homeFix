@@ -1,5 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Footer from './Footer';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -22,11 +23,24 @@ const Layout = ({ children }) => {
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav ms-auto align-items-lg-center gap-2">
               <li className="nav-item">
-                <Link className="nav-link" to="/">Início</Link>
+                <Link className="nav-link" to="/">Inicio</Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/#services">Serviços</Link>
+                <Link className="nav-link" to="/services">Servicos</Link>
               </li>
+              {token && (
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/profile">Perfil</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="btn btn-sm btn-primary" to="/new-request">Pedir servico</Link>
+                  </li>
+                  <li className="nav-item">
+                    <button className="btn btn-sm btn-outline-primary" onClick={handleLogout}>Sair</button>
+                  </li>
+                </>
+              )}
               {!token && (
                 <>
                   <li className="nav-item">
@@ -37,11 +51,6 @@ const Layout = ({ children }) => {
                   </li>
                 </>
               )}
-              {token && (
-                <li className="nav-item">
-                  <button className="btn btn-sm btn-outline-primary" onClick={handleLogout}>Sair</button>
-                </li>
-              )}
             </ul>
           </div>
         </div>
@@ -50,9 +59,9 @@ const Layout = ({ children }) => {
       <main className="container py-4">
         {children}
       </main>
+      <Footer />
     </>
   );
 };
 
 export default Layout;
-

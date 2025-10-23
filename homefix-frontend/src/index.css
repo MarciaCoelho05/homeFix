@@ -176,6 +176,12 @@ body {
               linear-gradient(180deg, #fff, #fff);
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 .service-cats {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -194,7 +200,11 @@ body {
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .service-cat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(0,0,0,0.10); }
-.service-cat-img { width: 100%; height: 120px; object-fit: cover; display: block; }
+.service-cat-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
 .service-cat-label {
   position: absolute; left: 10px; bottom: 10px; 
   background: rgba(0,0,0,0.55); color: #fff; padding: 4px 8px; border-radius: 8px; font-weight: 600; font-size: .9rem;

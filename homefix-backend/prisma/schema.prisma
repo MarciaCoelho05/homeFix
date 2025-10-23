@@ -1,4 +1,4 @@
-﻿generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -8,64 +8,63 @@ datasource db {
 }
 
 model User {
-  avatarUrl   String?\n  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   password     String
   firstName    String
   lastName     String
+  avatarUrl    String?
   birthDate    DateTime
-  isAdmin      Boolean   @default(false)
-  isTechnician Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isAdmin      Boolean  @default(false)
+  isTechnician Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  feedbacks    Feedback[]
-  requests     MaintenanceRequest[] @relation("ClientRequests")
-  assignments  MaintenanceRequest[] @relation("TechnicianAssignments")
-  messages     Message[]
+  feedbacks   Feedback[]
+  requests    MaintenanceRequest[] @relation("ClientRequests")
+  assignments MaintenanceRequest[] @relation("TechnicianAssignments")
+  messages    Message[]
 }
 
 model MaintenanceRequest {
-  id           String    @id @default(uuid())
-  title        String
-  description  String
-  category     String
-  status       String
-  price        Float?
-  scheduledAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  category    String
+  status      String   @default("pendente")
+  price       Float?
+  scheduledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  owner        User      @relation("ClientRequests", fields: [ownerId], references: [id])
-  ownerId      String
+  owner   User   @relation("ClientRequests", fields: [ownerId], references: [id])
+  ownerId String
 
-  technician   User?     @relation("TechnicianAssignments", fields: [technicianId], references: [id])
+  technician   User?   @relation("TechnicianAssignments", fields: [technicianId], references: [id])
   technicianId String?
 
-  messages     Message[]
-  feedback     Feedback?
+  messages Message[]
+  feedback Feedback?
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  content    String
-  sender     User     @relation(fields: [senderId], references: [id])
-  request    MaintenanceRequest @relation(fields: [requestId], references: [id])
-  senderId   String
-  requestId  String
-  createdAt  DateTime @default(now())
+  id        String             @id @default(uuid())
+  content   String
+  sender    User               @relation(fields: [senderId], references: [id])
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+  senderId  String
+  requestId String
+  createdAt DateTime           @default(now())
 }
 
 model Feedback {
-  id         String   @id @default(uuid())
-  rating     Int
-  comment    String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
-  request    MaintenanceRequest @relation(fields: [requestId], references: [id])
-  userId     String
-  requestId  String @unique
+  user      User               @relation(fields: [userId], references: [id])
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+  userId    String
+  requestId String             @unique
 }
-
-

@@ -4,13 +4,29 @@ const prisma = require('../prismaClient');
 
 async function register(req, res) {
   try {
-    const { email, password, firstName, lastName, birthDate } = req.body || {};
+    let { email, password, firstName, lastName, birthDate } = req.body || {};
     const errors = {};
     if (!firstName || !firstName.trim()) errors.firstName = 'Indique o nome';
     if (!lastName || !lastName.trim()) errors.lastName = 'Indique o apelido';
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Email inválido';
     if (!password || password.length < 6 || !/[^A-Za-z0-9]/.test(password)) errors.password = 'Senha com pelo menos 6 caracteres e 1 carácter especial';
-    if (!birthDate) errors.birthDate = 'Indique a data de nascimento';
+    if (!birthDate) {
+      errors.birthDate = 'Indique a data de nascimento';
+    } else {
+      const birth = new Date(birthDate);
+      if (Number.isNaN(birth.getTime())) {
+        errors.birthDate = 'Data de nascimento inválida';
+      } else {
+        const today = new Date();
+        const oldestAllowed = new Date(today);
+        oldestAllowed.setFullYear(today.getFullYear() - 100);
+        const youngestAllowed = new Date(today);
+        youngestAllowed.setFullYear(today.getFullYear() - 18);
+        if (birth < oldestAllowed || birth > youngestAllowed) {
+          errors.birthDate = 'Data de nascimento deve indicar idade entre 18 e 100 anos';
+        }
+      }
+    }
     if (Object.keys(errors).length) {
       return res.status(400).json({ message: 'Campos inválidos', errors });
     }
@@ -33,7 +49,7 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
-    const { email, password } = req.body || {};
+    let { email, password } = req.body || {};
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
@@ -95,4 +111,5 @@ async function resetPassword(req, res) {
 
 module.exports.forgotPassword = forgotPassword;
 module.exports.resetPassword = resetPassword;
+
 

@@ -19,6 +19,7 @@ const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 // registar rotas
 app.use('/api/admin', adminRoutes);
@@ -29,6 +30,7 @@ app.use('/api/requests', maintenanceRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/public', publicRoutes);
 
 // profile
 app.get('/api/profile', protect, (req, res) => {
@@ -67,6 +69,7 @@ if (require.main === module) {
   });
 }
 module.exports = app;
+
 
 
 

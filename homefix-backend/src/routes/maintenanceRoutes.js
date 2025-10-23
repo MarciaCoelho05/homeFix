@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const prisma = require('../prismaClient');
 const { protect } = require('../middlewares/authMiddleware');
 const { sendMessage, getMessages } = require('../controllers/messageController');
@@ -7,13 +7,14 @@ const router = express.Router();
 
 // GET all requests (admin or technician). Supports optional ?status=
 router.get('/', protect, async (req, res) => {
-  const canListAll = (req.user.isAdmin === true) || (req.user.isTechnician === true);
+  const canListAll = req.user.isAdmin === true || req.user.isTechnician === true;
   if (!canListAll) {
     return res.status(403).json({ message: 'Acesso negado' });
   }
-  const { status } = req.query;
   const where = {};
-  if (status) where.status = status.toString();
+  if (req.query.status) {
+    where.status = req.query.status.toString();
+  }
 
   const requests = await prisma.maintenanceRequest.findMany({
     where,
@@ -21,9 +22,9 @@ router.get('/', protect, async (req, res) => {
       owner: true,
       technician: true,
       messages: true,
-      feedback: { include: { user: { select: { firstName: true } } } }
+      feedback: { include: { user: { select: { firstName: true } } } },
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
   res.json(requests);
 });
@@ -36,53 +37,58 @@ router.get('/mine', protect, async (req, res) => {
       owner: true,
       technician: true,
       messages: true,
-      feedback: true
+      feedback: true,
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
   res.json(requests);
 });
 
 // Create new request
 router.post('/', protect, async (req, res) => {
-  const { title, description, category, price, scheduledAt } = req.body;
+  const { title, description, category, price, scheduledAt, status } = req.body;
   const errors = {};
-  if (!title || !title.trim()) errors.title = 'Indique o título';
-  if (!description || !description.trim()) errors.description = 'Indique a descrição';
+  if (!title || !title.trim()) errors.title = 'Indique o titulo';
+  if (!description || !description.trim()) errors.description = 'Indique a descricao';
   if (!category || !category.trim()) errors.category = 'Selecione a categoria';
-  if (price !== undefined && price !== null && isNaN(Number(price))) errors.price = 'Preço deve ser numérico';
-  if (Object.keys(errors).length) return res.status(400).json({ message: 'Campos inválidos', errors });
+  if (price !== undefined && price !== null && Number.isNaN(Number(price))) {
+    errors.price = 'Preco deve ser numerico';
+  }
+  if (Object.keys(errors).length) {
+    return res.status(400).json({ message: 'Campos invalidos', errors });
+  }
 
   const request = await prisma.maintenanceRequest.create({
     data: {
-      title,
-      description,
-      category,
-      price,
+      title: title.trim(),
+      description: description.trim(),
+      category: category.trim(),
+      price: price !== undefined && price !== null ? Number(price) : null,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-      ownerId: req.user.id
-    }
+      ownerId: req.user.id,
+      status: typeof status === 'string' && status.trim() ? status.trim() : 'pendente',
+    },
   });
   res.status(201).json(request);
 });
 
 // GET by id
 router.get('/:id', protect, async (req, res) => {
-  const id = req.params.id;
   const request = await prisma.maintenanceRequest.findUnique({
-    where: { id },
+    where: { id: req.params.id },
     include: {
       owner: true,
       technician: true,
       messages: true,
-      feedback: { include: { user: { select: { firstName: true } } } }
-    }
+      feedback: { include: { user: { select: { firstName: true } } } },
+    },
   });
-  if (!request) return res.status(404).json({ message: 'Não encontrado' });
+  if (!request) {
+    return res.status(404).json({ message: 'Nao encontrado' });
+  }
   const isOwner = request.ownerId === req.user.id;
   const isAssignedTech = request.technicianId && request.technicianId === req.user.id;
-  const isAdmin = req.user.isAdmin === true;
-  if (!(isAdmin || isOwner || isAssignedTech)) {
+  if (!(req.user.isAdmin === true || isOwner || isAssignedTech)) {
     return res.status(403).json({ message: 'Acesso negado' });
   }
   res.json(request);
@@ -90,10 +96,9 @@ router.get('/:id', protect, async (req, res) => {
 
 // Update
 router.put('/:id', protect, async (req, res) => {
-  const id = req.params.id;
   const { title, description, category, price, status, techId, technicianId, scheduledAt } = req.body;
   const updated = await prisma.maintenanceRequest.update({
-    where: { id },
+    where: { id: req.params.id },
     data: {
       title,
       description,
@@ -101,16 +106,15 @@ router.put('/:id', protect, async (req, res) => {
       price,
       status,
       technicianId: technicianId || techId,
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : null
-    }
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+    },
   });
   res.json(updated);
 });
 
 // Delete
 router.delete('/:id', protect, async (req, res) => {
-  const id = req.params.id;
-  await prisma.maintenanceRequest.delete({ where: { id } });
+  await prisma.maintenanceRequest.delete({ where: { id: req.params.id } });
   res.status(204).send();
 });
 
