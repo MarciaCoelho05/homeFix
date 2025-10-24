@@ -51,7 +51,7 @@ const NewRequest = () => {
     if (!files.length) return;
 
     if (files.length + media.length > MAX_FILES) {
-      setStatus(`Pode anexar até ${MAX_FILES} ficheiros.`);
+      setStatus(`Pode anexar ate ${MAX_FILES} ficheiros.`);
       return;
     }
 
@@ -116,7 +116,7 @@ const NewRequest = () => {
           <div className="col-12 col-lg-7">
             <h1 className="display-6 fw-semibold mb-2 text-white">Novo pedido de manutencao</h1>
             <p className="lead mb-0">
-              Descreva o serviço que precisa, escolha a categoria e indique uma data preferêncial. A equipa certa entra em contacto.
+              Descreva o servico que precisa, escolha a categoria e indique uma data preferencial. A equipa certa entra em contacto.
             </p>
           </div>
           <div className="col-12 col-lg-5 text-lg-end">
@@ -212,7 +212,7 @@ const NewRequest = () => {
                   className="form-control"
                   onChange={handleMediaChange}
                 />
-                <small className="text-muted d-block mt-1">Pode anexar até {MAX_FILES} ficheiros.</small>
+                <small className="text-muted d-block mt-1">Pode anexar ate {MAX_FILES} ficheiros.</small>
                 {uploading && <div className="small text-muted mt-2">A carregar ficheiros...</div>}
                 {media.length > 0 && (
                   <div className="media-preview-grid mt-3">

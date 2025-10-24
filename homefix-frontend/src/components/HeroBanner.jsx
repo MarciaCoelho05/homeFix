@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 
 export default function HeroBanner({ title, subtitle, imageUrl }) {
   return (
@@ -10,7 +10,7 @@ export default function HeroBanner({ title, subtitle, imageUrl }) {
         </div>
         {imageUrl && (
           <div className="col-12 col-lg-5 text-lg-end">
-            <img className="hero-illus" src={imageUrl} alt="Ilustração" />
+            <img className="hero-illus" src={imageUrl} alt="Ilustracao" />
           </div>
         )}
       </div>

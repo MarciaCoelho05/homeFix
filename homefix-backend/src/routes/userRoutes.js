@@ -12,7 +12,7 @@ router.post('/login', login);
 router.post('/forgot', forgotPassword);
 router.post('/reset', resetPassword);
 
-// PATCH /api/users/:id/role -> promote/demote user (admin only)
+// PATCH /api/users/:id/role  (admin only)
 router.patch('/:id/role', protect, admin, async (req, res) => {
   const id = req.params.id;
   const { isAdmin, isTechnician } = req.body || {};

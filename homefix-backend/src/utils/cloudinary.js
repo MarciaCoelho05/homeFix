@@ -15,7 +15,6 @@ async function uploadToCloudinary(filePath) {
     });
     return res;
   } finally {
-    // clean temp file if exists
     fs.existsSync(filePath) && fs.unlink(filePath, () => {});
   }
 }

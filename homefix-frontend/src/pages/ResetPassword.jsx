@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import Layout from '../components/Layout'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
@@ -15,9 +15,9 @@ export default function ResetPassword() {
   const token = params.get('token') || ''
   const validate = () => {
     const e = {}
-    if (!password || password.length < 6) e.password = 'Mínimo 6 caracteres'
-    if (confirm !== password) e.confirm = 'As palavras-passe não coincidem'
-    if (!token) e.token = 'Token inválido'
+    if (!password || password.length < 6) e.password = 'Minimo 6 caracteres'
+    if (confirm !== password) e.confirm = 'As palavras-passe nao coincidem'
+    if (!token) e.token = 'Token invalido'
     return e
   }
   const isValid = useMemo(() => Object.keys(validate()).length === 0, [password, confirm, token])
@@ -33,7 +33,7 @@ export default function ResetPassword() {
       setStatus(res.data?.message || 'Palavra-passe atualizada')
       setTimeout(() => navigate('/login'), 1200)
     } catch (err) {
-      setStatus('Token inválido ou expirado')
+      setStatus('Token invalido ou expirado')
     } finally { setSubmitting(false) }
   }
 

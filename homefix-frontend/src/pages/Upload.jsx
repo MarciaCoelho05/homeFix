@@ -22,7 +22,7 @@ export default function Upload() {
 
     const formData = new FormData()
     formData.append("file", image)
-    // Exemplo: incluir ID de um pedido de manutenção
+    // Exemplo: incluir ID de um pedido de manutencao
     formData.append("maintenanceRequestId", "ID_DO_PEDIDO")
 
     try {

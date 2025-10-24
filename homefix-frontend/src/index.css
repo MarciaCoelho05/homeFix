@@ -220,18 +220,18 @@ a:hover { color: var(--primary-700); }
 }
 .home-carousel-img {
   width: 100%;
-  height: 360px;
+  height: 260px;
   object-fit: cover;
   object-position: center;
 }
 @media (max-width: 992px) {
   .home-carousel-img {
-    height: 280px;
+    height: 200px;
   }
 }
 @media (max-width: 576px) {
   .home-carousel-img {
-    height: 220px;
+    height: 160px;
   }
 }
 .auth-card {
@@ -368,4 +368,31 @@ img {
 }
 .service-cat-card .btn {
   width: 100%;
+}
+
+.table-sort-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.table-sort-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.table-sort-indicator {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+.category-price-table th,
+.category-price-table td {
+  vertical-align: middle;
+}
+.category-price-table td.text-end {
+  font-variant-numeric: tabular-nums;
 }

@@ -38,16 +38,63 @@ app.get('/api/profile', protect, (req, res) => {
 });
 app.patch('/api/profile', protect, async (req, res) => {
   try {
-    const { firstName, lastName, avatarUrl, birthDate } = req.body || {};
+    const { firstName, lastName, avatarUrl, birthDate, technicianCategory } = req.body || {};
     const data = {};
-    if (firstName) data.firstName = firstName;
-    if (lastName) data.lastName = lastName;
-    if (avatarUrl) data.avatarUrl = avatarUrl;
+    if (typeof firstName === 'string' && firstName.trim()) data.firstName = firstName.trim();
+    if (typeof lastName === 'string' && lastName.trim()) data.lastName = lastName.trim();
+    if (typeof avatarUrl === 'string' && avatarUrl.trim()) data.avatarUrl = avatarUrl.trim();
     if (birthDate) data.birthDate = new Date(birthDate);
-    const updated = await prisma.user.update({ where: { id: req.user.id }, data });
-    res.json({ id: updated.id, firstName: updated.firstName, lastName: updated.lastName, avatarUrl: updated.avatarUrl });
+    if (req.user.isTechnician === true && typeof technicianCategory === 'string') {
+      data.technicianCategory = technicianCategory.trim();
+    }
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        technicianCategory: true,
+      },
+    });
+    res.json(updated);
   } catch (e) {
     res.status(400).json({ message: 'Não foi possível atualizar o perfil' });
+  }
+});
+
+app.delete('/api/profile', protect, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const ownedRequests = await tx.maintenanceRequest.findMany({
+        where: { ownerId: userId },
+        select: { id: true },
+      });
+      const ownedRequestIds = ownedRequests.map((req) => req.id);
+
+      if (ownedRequestIds.length) {
+        await tx.message.deleteMany({ where: { requestId: { in: ownedRequestIds } } });
+        await tx.feedback.deleteMany({ where: { requestId: { in: ownedRequestIds } } });
+        await tx.maintenanceRequest.deleteMany({ where: { id: { in: ownedRequestIds } } });
+      }
+
+      await tx.feedback.deleteMany({ where: { userId } });
+      await tx.message.deleteMany({ where: { senderId: userId } });
+      await tx.maintenanceRequest.updateMany({
+        where: { technicianId: userId },
+        data: { technicianId: null, status: 'pendente' },
+      });
+
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Erro ao eliminar conta:', error);
+    res.status(400).json({ message: 'Não foi possível eliminar a conta.' });
   }
 });
 
@@ -57,7 +104,7 @@ app.use(express.static(clientDist));
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
-//error
+
 app.use(errorHandler);
 
 // iniciar o servidor

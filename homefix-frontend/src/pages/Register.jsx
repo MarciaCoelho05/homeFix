@@ -25,6 +25,7 @@ export default function Register() {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     birthDate: "",
   });
   const [error, setError] = useState("");
@@ -40,6 +41,9 @@ export default function Register() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email || "")) errs.email = "Email invalido";
     if (!data.password || data.password.length < 6 || !/[^A-Za-z0-9]/.test(data.password)) {
       errs.password = "Senha com minimo 6 caracteres e 1 caracter especial";
+    }
+    if ((data.confirmPassword || "") !== (data.password || "")) {
+      errs.confirmPassword = "As senhas devem coincidir";
     }
 
     if (!data.birthDate) {
@@ -85,7 +89,8 @@ export default function Register() {
 
     try {
       setSubmitting(true);
-      await API.post("/auth/register", form);
+      const { confirmPassword, ...payload } = form;
+      await API.post("/auth/register", payload);
       navigate("/login");
     } catch (err) {
       const resp = err?.response?.data;
@@ -167,6 +172,21 @@ export default function Register() {
             />
             {fieldErrors.password && (
               <div className="invalid-feedback">{fieldErrors.password}</div>
+            )}
+          </div>
+
+          <div className="mt-3">
+            <label className="form-label small text-uppercase">Confirmar senha</label>
+            <input
+              name="confirmPassword"
+              type="password"
+              placeholder="Repita a senha"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              className={`form-control ${fieldErrors.confirmPassword ? "is-invalid" : ""}`}
+            />
+            {fieldErrors.confirmPassword && (
+              <div className="invalid-feedback">{fieldErrors.confirmPassword}</div>
             )}
           </div>
 

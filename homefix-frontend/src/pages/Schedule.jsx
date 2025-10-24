@@ -5,7 +5,7 @@ import API from '../services/api'
 export default function Schedule() {
   const [datetime, setDatetime] = useState("")
   const [status, setStatus] = useState("")
-  const [requestId] = useState("ID_DO_PEDIDO") // substituir conforme necessário
+  const [requestId] = useState("ID_DO_PEDIDO") // substituir conforme necessario
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,7 +23,7 @@ export default function Schedule() {
     <>
       <Navbar />
       <div className="p-6 max-w-lg mx-auto bg-white rounded shadow">
-        <h2 className="fs-4 font-bold mb-3">Agendar Manutenção</h2>
+        <h2 className="fs-4 font-bold mb-3">Agendar Manutencao</h2>
         {status && <p className="fs-6 text-blue-500 mb-2">{status}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">

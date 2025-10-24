@@ -1,7 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
+
+const technicianCategories = [
+  'Canalizacao',
+  'Eletricidade',
+  'Pintura',
+  'Remodelacoes',
+  'Jardinagem',
+  'Carpintaria',
+  'Outro',
+];
 
 const formatDateInput = (date) => {
   const year = date.getFullYear();
@@ -11,6 +21,11 @@ const formatDateInput = (date) => {
 };
 
 const Profile = () => {
+  const navigate = useNavigate();
+  const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
+  const isTechnician = role === 'technician';
+  const isAdmin = role === 'admin';
+
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -18,11 +33,15 @@ const Profile = () => {
     firstName: '',
     lastName: '',
     birthDate: '',
+    technicianCategory: '',
   });
   const [avatarUrl, setAvatarUrl] = useState('');
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestsError, setRequestsError] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deletingRequestId, setDeletingRequestId] = useState('');
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState('');
 
   const dateBounds = useMemo(() => {
     const today = new Date();
@@ -45,10 +64,12 @@ const Profile = () => {
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           birthDate: data.birthDate ? data.birthDate.slice(0, 10) : '',
+          technicianCategory: data.technicianCategory || '',
         });
         setAvatarUrl(data.avatarUrl || '');
       } catch (err) {
-        setStatus('Nao foi possivel carregar o perfil');
+        console.error('Erro ao carregar perfil:', err);
+        setStatus('Nao foi possivel carregar o perfil.');
       } finally {
         setLoading(false);
       }
@@ -57,18 +78,24 @@ const Profile = () => {
   }, []);
 
   useEffect(() => {
+    if (isAdmin || isTechnician) {
+      setRequestsLoading(false);
+      return;
+    }
+
     const fetchRequests = async () => {
       try {
         const res = await api.get('/requests/mine');
         setRequests(res.data || []);
       } catch (err) {
+        console.error('Erro ao carregar pedidos:', err);
         setRequestsError('Nao foi possivel carregar os pedidos.');
       } finally {
         setRequestsLoading(false);
       }
     };
     fetchRequests();
-  }, []);
+  }, [isAdmin, isTechnician]);
 
   const validate = (payload) => {
     const errors = {};
@@ -90,6 +117,10 @@ const Profile = () => {
       }
     }
 
+    if (isTechnician && !(payload.technicianCategory || '').trim()) {
+      errors.technicianCategory = 'Selecione a sua categoria';
+    }
+
     return errors;
   };
 
@@ -109,7 +140,8 @@ const Profile = () => {
     try {
       await api.patch('/profile', { ...form, avatarUrl });
       setStatus('Perfil atualizado com sucesso');
-    } catch {
+    } catch (err) {
+      console.error('Erro ao guardar perfil:', err);
       setStatus('Nao foi possivel atualizar o perfil');
     }
   };
@@ -117,17 +149,87 @@ const Profile = () => {
   const handleAvatarChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
     try {
-      const res = await api.post('/upload', fd, {
+      const res = await api.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setAvatarUrl(res.data.url);
       setStatus('Fotografia atualizada');
-    } catch {
+    } catch (err) {
+      console.error('Erro ao carregar avatar:', err);
       setStatus('Erro ao enviar fotografia');
+    }
+  };
+
+  const downloadBlob = (data, fileName) => {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const extractFileName = (disposition, fallback) => {
+    if (typeof disposition !== 'string') return fallback;
+    const match = disposition.match(/filename="?([^"]+)"?/i);
+    return match && match[1] ? match[1] : fallback;
+  };
+
+  const handleDownloadInvoice = async (requestId) => {
+    setDownloadingInvoiceId(requestId);
+    try {
+      const response = await api.get(`/requests/${requestId}/invoice`, { responseType: 'blob' });
+      const fileName = extractFileName(response.headers['content-disposition'], `fatura-${requestId}.pdf`);
+      downloadBlob(response.data, fileName);
+      setStatus('Fatura descarregada com sucesso.');
+    } catch (err) {
+      console.error('Erro ao descarregar fatura:', err);
+      setStatus(err?.response?.data?.message || 'Nao foi possivel descarregar a fatura.');
+    } finally {
+      setDownloadingInvoiceId('');
+    }
+  };
+
+  const handleDeleteRequest = async (requestId) => {
+    if (!window.confirm('Eliminar este pedido? Esta acao e irreversivel.')) return;
+    setDeletingRequestId(requestId);
+    setStatus('');
+    setRequestsError('');
+    try {
+      await api.delete(`/requests/${requestId}`);
+      setRequests((prev) => prev.filter((request) => request.id !== requestId));
+      setStatus('Pedido eliminado com sucesso.');
+    } catch (err) {
+      console.error('Erro ao eliminar pedido:', err);
+      setStatus(err?.response?.data?.message || 'Nao foi possivel eliminar o pedido.');
+    } finally {
+      setDeletingRequestId('');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Tem a certeza de que pretende eliminar a conta?')) return;
+    setDeletingAccount(true);
+    setStatus('');
+    try {
+      await api.delete('/profile');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userName');
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error('Erro ao eliminar conta:', err);
+      setStatus(err?.response?.data?.message || 'Nao foi possivel eliminar a conta.');
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -163,7 +265,7 @@ const Profile = () => {
                 <div className="text-center text-md-start">
                   <h1 className="h4 fw-semibold mb-1">O seu perfil</h1>
                   <p className="text-muted small mb-3">
-                    Atualize os seus dados pessoais e acompanhe os seus pedidos.
+                    Atualize os seus dados pessoais e mantenha a seguranca da conta.
                   </p>
                   <label className="btn btn-outline-secondary btn-sm mb-0">
                     Alterar fotografia
@@ -219,89 +321,149 @@ const Profile = () => {
                     <div className="invalid-feedback">{fieldErrors.birthDate}</div>
                   )}
                 </div>
+                {isTechnician && (
+                  <div className="col-12">
+                    <label className="form-label small text-uppercase">Categoria de especializacao</label>
+                    <select
+                      name="technicianCategory"
+                      className={`form-select ${fieldErrors.technicianCategory ? 'is-invalid' : ''}`}
+                      value={form.technicianCategory}
+                      onChange={handleChange}
+                    >
+                      <option value="">Selecione...</option>
+                      {technicianCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.technicianCategory && (
+                      <div className="invalid-feedback">{fieldErrors.technicianCategory}</div>
+                    )}
+                  </div>
+                )}
                 <div className="col-12">
                   <button type="submit" className="btn btn-primary px-4">
                     Guardar alteracoes
                   </button>
                 </div>
               </form>
+
+              <hr className="my-4" />
+
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+              >
+                {deletingAccount ? 'A eliminar conta...' : 'Eliminar conta'}
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="col-12 col-lg-7">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body p-4 p-md-5">
-              <h2 className="h5 fw-semibold mb-3">Pedidos de serviço</h2>
-              {requestsLoading ? (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">A carregar pedidos...</span>
-                  </div>
-                </div>
-              ) : requestsError ? (
-                <div className="alert alert-danger py-2">{requestsError}</div>
-              ) : requests.length === 0 ? (
-                <p className="text-muted small mb-0">Ainda nao submeteu pedidos de servico.</p>
-              ) : (
-                <div className="d-flex flex-column gap-3">
-                  {requests.map((req) => (
-                    <div key={req.id} className="border rounded-3 p-3">
-                      <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
-                        <div>
-                          <h3 className="h6 fw-semibold mb-1">{req.title}</h3>
-                          <div className="small text-muted">
-                            <span className="me-3"><strong>Categoria:</strong> {req.category || '-'}</span>
-                            <span><strong>Status:</strong> {req.status || 'pendente'}</span>
-                          </div>
-                          {req.scheduledAt && (
-                            <div className="small text-muted">
-                              <strong>Data preferencial:</strong>{' '}
-                              {new Date(req.scheduledAt).toLocaleString()}
-                            </div>
-                          )}
-                          {req.price != null && (
-                            <div className="small text-muted">
-                              <strong>Preco indicado:</strong> EUR {Number(req.price).toFixed(2)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="d-flex gap-2 align-items-start">
-                          <Link className="btn btn-sm btn-outline-primary" to={`/chat?requestId=${req.id}`}>
-                            Abrir chat
-                          </Link>
-                        </div>
-                      </div>
-                      {req.mediaUrls?.length > 0 && (
-                        <div className="mt-3">
-                          <span className="small text-muted d-block mb-1">Anexos:</span>
-                          <div className="d-flex flex-wrap gap-2">
-                            {req.mediaUrls.map((url, idx) => (
-                              <a
-                                key={`${req.id}-media-${idx}`}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="badge text-bg-light text-decoration-none"
-                              >
-                                Ficheiro {idx + 1}
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {req.description && (
-                        <p className="small text-muted mt-2 mb-0">
-                          <strong>Descricao:</strong> {req.description}
-                        </p>
-                      )}
+        {!isAdmin && !isTechnician && (
+          <div className="col-12 col-lg-7">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body p-4 p-md-5">
+                <h2 className="h5 fw-semibold mb-3">Pedidos de servico</h2>
+                {requestsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">A carregar pedidos...</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ) : requestsError ? (
+                  <div className="alert alert-danger py-2">{requestsError}</div>
+                ) : requests.length === 0 ? (
+                  <p className="text-muted small mb-0">Ainda nao submeteu pedidos de servico.</p>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {requests.map((req) => {
+                      const normalizedStatus = (req.status || '').toLowerCase();
+                      const isConcluded = normalizedStatus === 'concluido';
+                      const hasMedia = Array.isArray(req.mediaUrls) && req.mediaUrls.length > 0;
+                      return (
+                        <div key={req.id} className="border rounded-3 p-3">
+                          <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
+                            <div>
+                              <h3 className="h6 fw-semibold mb-1">{req.title}</h3>
+                              <div className="small text-muted">
+                                <span className="me-3">
+                                  <strong>Categoria:</strong> {req.category || '-'}
+                                </span>
+                                <span>
+                                  <strong>Status:</strong> {req.status || 'pendente'}
+                                </span>
+                              </div>
+                              {req.scheduledAt && (
+                                <div className="small text-muted">
+                                  <strong>Data preferencial:</strong> {new Date(req.scheduledAt).toLocaleString()}
+                                </div>
+                              )}
+                              {req.price != null && (
+                                <div className="small text-muted">
+                                  <strong>Preco indicado:</strong> EUR {Number(req.price).toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="d-flex flex-column gap-2 align-items-stretch align-items-md-end">
+                              <Link className="btn btn-sm btn-outline-primary" to={`/chat?requestId=${req.id}`}>
+                                Abrir chat
+                              </Link>
+                              {isConcluded && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-secondary"
+                                  onClick={() => handleDownloadInvoice(req.id)}
+                                  disabled={downloadingInvoiceId === req.id}
+                                >
+                                  {downloadingInvoiceId === req.id ? 'A descarregar...' : 'Descarregar fatura'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteRequest(req.id)}
+                                disabled={deletingRequestId === req.id}
+                              >
+                                {deletingRequestId === req.id ? 'A eliminar...' : 'Eliminar pedido'}
+                              </button>
+                            </div>
+                          </div>
+                          {hasMedia && (
+                            <div className="mt-3">
+                              <span className="small text-muted d-block mb-1">Anexos:</span>
+                              <div className="d-flex flex-wrap gap-2">
+                                {req.mediaUrls.map((url, idx) => (
+                                  <a
+                                    key={`${req.id}-media-${idx}`}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="badge text-bg-light text-decoration-none"
+                                  >
+                                    Ficheiro {idx + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {req.description && (
+                            <p className="small text-muted mt-2 mb-0">
+                              <strong>Descricao:</strong> {req.description}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );

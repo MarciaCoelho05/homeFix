@@ -55,7 +55,8 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     const token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    return res.json({ token, user });
+    const { password: _password, ...safeUser } = user;
+    return res.json({ token, user: safeUser });
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ message: 'Erro de autenticação' });

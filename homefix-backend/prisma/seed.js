@@ -36,6 +36,7 @@ async function main() {
       birthDate: new Date("1985-05-15"),
       isAdmin: false,
       isTechnician: true,
+      technicianCategory: "Canalização",
     },
     create: {
       email: "tecnico@homefix.com",
@@ -44,6 +45,7 @@ async function main() {
       lastName: "Tecnico",
       birthDate: new Date("1985-05-15"),
       isTechnician: true,
+      technicianCategory: "Canalização",
     },
   });
 
