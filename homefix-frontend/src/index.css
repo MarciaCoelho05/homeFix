@@ -396,3 +396,52 @@ img {
 .category-price-table td.text-end {
   font-variant-numeric: tabular-nums;
 }
+.category-price-wrapper {
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+}
+.category-price-table {
+  margin: 0;
+}
+.category-price-table thead {
+  background: linear-gradient(135deg, var(--primary), var(--primary-700));
+  color: #fff;
+  border: none;
+}
+.category-price-table thead th {
+  border: none;
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+}
+.category-price-table .table-sort-button {
+  color: inherit;
+  font-weight: 600;
+}
+.category-price-table .table-sort-button:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.category-price-table tbody tr {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  transition: background 0.2s ease;
+}
+.category-price-table tbody tr:hover {
+  background: rgba(255, 122, 0, 0.08);
+}
+.category-price-table tbody td {
+  border: none;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+}
+.category-price-table tbody td:first-child {
+  color: var(--primary-700);
+  font-weight: 600;
+}
+.category-price-table tbody td:nth-child(2) {
+  color: #374151;
+}
+.category-price-table tbody td:nth-child(n + 3) {
+  color: #111827;
+  font-weight: 500;
+}

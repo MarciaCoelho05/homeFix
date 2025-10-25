@@ -4,11 +4,11 @@ import Layout from "../components/Layout";
 import api from "../services/api";
 
 const carouselImages = [
-  { src: "/img/a1.jpg", alt: "Projetos concluidos 1" },
-  { src: "/img/a2.jpg", alt: "Projetos concluidos 2" },
-  { src: "/img/a3.jpg", alt: "Projetos concluidos 3" },
-  { src: "/img/a4.jpg", alt: "Projetos concluidos 4" },
-  { src: "/img/a5.jpg", alt: "Projetos concluidos 5" },
+  { src: "/img/a1.jpg", alt: "Projetos concluídos 1" },
+  { src: "/img/a2.jpg", alt: "Projetos concluídos 2" },
+  { src: "/img/a3.jpg", alt: "Projetos concluídos 3" },
+  { src: "/img/a4.jpg", alt: "Projetos concluídos 4" },
+  { src: "/img/a5.jpg", alt: "Projetos concluídos 5" },
 ];
 
 const Home = () => {
@@ -26,9 +26,9 @@ const Home = () => {
         try {
           const resFallback = await api.get("/public/requests?status=concluido");
           setRequests(resFallback.data || []);
-          setStatusMsg("Mostramos servicos concluidos recentemente.");
+          setStatusMsg("Mostramos serviços concluídos recentemente.");
         } catch (secondError) {
-          setStatusMsg("Para ver todos os servicos, inicie sessao.");
+          setStatusMsg("Para ver todos os serviços, inicie sessão.");
         }
       }
     };
@@ -44,9 +44,11 @@ const Home = () => {
     navigate(target);
   };
 
+  const normalizedRequests = Array.isArray(requests) ? requests : [];
+
   const requestsWithFeedback = useMemo(() => {
-    if (!requests.length) return [];
-    return requests
+    if (!normalizedRequests.length) return [];
+    return normalizedRequests
       .map((req) => {
         const feedbackRecord = req.feedback;
         const isConcluded = (req.status || "").toLowerCase() === "concluido";
@@ -60,7 +62,7 @@ const Home = () => {
         };
       })
       .filter((req) => req.hasFeedback);
-  }, [requests]);
+  }, [normalizedRequests]);
 
   return (
     <Layout>
@@ -68,16 +70,16 @@ const Home = () => {
         <section className="home-hero rounded-3 p-4 p-md-5 mb-5 text-white">
           <div className="row align-items-center g-4">
             <div className="col-12 col-lg-7">
-              <h1 className="display-6 fw-bold mb-3">Manutencao de qualidade, do pedido a conclusao.</h1>
+              <h1 className="display-6 fw-bold mb-3">Manutenção de qualidade, do pedido à conclusão.</h1>
               <p className="lead mb-4">
-                Compare tecnicos certificados, leia feedback real e marque o servico ideal para a sua casa.
+                Compare técnicos certificados, leia feedback real e marque o serviço ideal para a sua casa.
               </p>
               <div className="d-flex flex-wrap gap-2">
                 <button type="button" className="btn btn-primary btn-lg" onClick={() => pedirOrcamento()}>
-                  Pedir orcamento
+                  Pedir orçamento
                 </button>
                 <Link to="/services" className="btn btn-outline-light btn-lg">
-                  Ver servicos com feedback
+                  Ver serviços com feedback
                 </Link>
               </div>
             </div>
@@ -86,15 +88,15 @@ const Home = () => {
                 <div className="d-flex justify-content-between text-center">
                   <div>
                     <div className="stat-number">24h</div>
-                    <div className="stat-label">Resposta media</div>
+                    <div className="stat-label">Resposta média</div>
                   </div>
                   <div>
                     <div className="stat-number">+500</div>
-                    <div className="stat-label">Servicos executados</div>
+                    <div className="stat-label">Serviços executados</div>
                   </div>
                   <div>
                     <div className="stat-number">4.8</div>
-                    <div className="stat-label">Avaliacao media</div>
+                    <div className="stat-label">Avaliação média</div>
                   </div>
                 </div>
               </div>
@@ -139,9 +141,9 @@ const Home = () => {
           <div className="card bg-light border-0 shadow-sm">
             <div className="card-body p-4 p-md-5 d-flex flex-column flex-md-row align-items-md-center gap-4">
               <div className="flex-grow-1">
-                <h2 className="h4 fw-semibold mb-2">Tecnicos validados</h2>
+                <h2 className="h4 fw-semibold mb-2">Técnicos validados</h2>
                 <p className="text-muted mb-0">
-                  Cada prestador e verificado pela equipa HomeFix. Garantimos orcamentos transparentes e acompanhamento ate a conclusao do trabalho.
+                  Cada prestador é verificado pela equipa HomeFix. Garantimos orçamentos transparentes e acompanhamento até à conclusão do trabalho.
                 </p>
               </div>
               <button type="button" className="btn btn-primary btn-lg" onClick={() => pedirOrcamento()}>
@@ -162,7 +164,7 @@ const Home = () => {
                   <div className="service-card h-100 p-3 rounded-3">
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <h3 className="h6 fw-semibold m-0">{req.title}</h3>
-                      <span className="badge status-badge status-concluido">Concluido</span>
+                      <span className="badge status-badge status-concluido">Concluído</span>
                     </div>
                     <p className="text-muted small mb-3">{req.description}</p>
                     <div className="feedback-snippet mb-3">
@@ -170,7 +172,7 @@ const Home = () => {
                         <strong>{req.feedbackAuthor || "Cliente"}:</strong> {req.feedbackQuote}
                       </p>
                       <span className="feedback-rating text-muted small">
-                        Avaliacao: {Number(req.feedbackRating || 5).toFixed(1)}/5
+                        Avaliação: {Number(req.feedbackRating || 5).toFixed(1)}/5
                       </span>
                     </div>
                     <div className="d-flex justify-content-between small text-muted">

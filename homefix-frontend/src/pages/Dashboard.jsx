@@ -29,7 +29,7 @@ const Dashboard = () => {
         setRequests(res.data || []);
       } catch (err) {
         console.error('Erro ao carregar pedidos:', err);
-        setError('Nao foi possivel carregar os pedidos.');
+        setError('Não foi possível carregar os pedidos.');
       } finally {
         if (!silent) {
           setLoading(false);
@@ -71,7 +71,7 @@ const Dashboard = () => {
         console.error(`Erro ao ${action === 'accept' ? 'aceitar' : 'recusar'} pedido:`, err);
         setError(
           err?.response?.data?.message ||
-            `Nao foi possivel ${action === 'accept' ? 'aceitar' : 'marcar'} este pedido.`,
+            `Não foi possível ${action === 'accept' ? 'aceitar' : 'marcar'} este pedido.`,
         );
       }
     },
@@ -112,7 +112,7 @@ const Dashboard = () => {
       setError('');
       try {
         const res = await api.post(`/requests/${id}/complete`);
-        const message = res.data?.message || 'Pedido concluido com sucesso.';
+        const message = res.data?.message || 'Pedido concluído com sucesso.';
         setStatus(message);
         if (res.data?.invoice) {
           downloadBase64Pdf(res.data.fileName || `fatura-${id}.pdf`, res.data.invoice);
@@ -120,7 +120,7 @@ const Dashboard = () => {
         await fetchRequests(true);
       } catch (err) {
         console.error('Erro ao concluir pedido:', err);
-        setError(err?.response?.data?.message || 'Nao foi possivel concluir o pedido.');
+        setError(err?.response?.data?.message || 'Não foi possível concluir o pedido.');
       } finally {
         setCompletingId('');
       }
@@ -130,7 +130,7 @@ const Dashboard = () => {
 
   const handleDeleteRequest = useCallback(
     async (id) => {
-      if (!window.confirm('Eliminar este pedido? Esta acao e irreversivel.')) return;
+      if (!window.confirm('Eliminar este pedido? Esta ação é irreversível.')) return;
       setDeletingRequestId(id);
       setStatus('');
       setError('');
@@ -140,7 +140,7 @@ const Dashboard = () => {
         await fetchRequests(true);
       } catch (err) {
         console.error('Erro ao eliminar pedido:', err);
-        setError(err?.response?.data?.message || 'Nao foi possivel eliminar o pedido.');
+        setError(err?.response?.data?.message || 'Não foi possível eliminar o pedido.');
       } finally {
         setDeletingRequestId('');
       }
@@ -207,7 +207,7 @@ const Dashboard = () => {
           className="btn btn-sm btn-outline-secondary flex-fill"
           onClick={() => respondToRequest(request.id, 'decline')}
         >
-          Nao aceitar
+          Não aceitar
         </button>,
       );
     }
@@ -220,7 +220,7 @@ const Dashboard = () => {
           onClick={() => handleCompleteRequest(request.id)}
           disabled={completingId === request.id}
         >
-          {completingId === request.id ? 'A concluir...' : 'Marcar como concluido'}
+          {completingId === request.id ? 'A concluir...' : 'Marcar como concluído'}
         </button>,
       );
     }
@@ -275,7 +275,7 @@ const Dashboard = () => {
           </p>
           {request.description && (
             <p className="text-muted small mb-2">
-              <strong>Descricao:</strong> {request.description}
+              <strong>Descrição:</strong> {request.description}
             </p>
           )}
           <p className="text-muted small mb-2">
@@ -290,14 +290,14 @@ const Dashboard = () => {
           )}
           {request.technician && (
             <p className="text-muted small mb-2">
-              <strong>Tecnico:</strong>{' '}
+              <strong>Técnico:</strong>{' '}
               {[request.technician.firstName, request.technician.lastName].filter(Boolean).join(' ') ||
                 request.technician.email}
             </p>
           )}
           {request.price != null && (
             <p className="text-muted small mb-2">
-              <strong>Preco indicado:</strong> EUR {Number(request.price).toFixed(2)}
+              <strong>Preço indicado:</strong> EUR {Number(request.price).toFixed(2)}
             </p>
           )}
           <p className="text-muted small mb-0">
@@ -314,10 +314,10 @@ const Dashboard = () => {
   return (
     <Layout>
       <HeroBanner
-        title={role === 'technician' ? 'Painel do tecnico' : 'Os meus pedidos'}
+        title={role === 'technician' ? 'Painel do técnico' : 'Os meus pedidos'}
         subtitle={
           role === 'technician'
-            ? 'Acompanhe e aceite pedidos de manutencao atribuidos a sua equipa.'
+            ? 'Acompanhe e aceite pedidos de manutenção atribuídos à sua equipa.'
             : 'Acompanhe o estado e os detalhes de todos os seus pedidos.'
         }
         imageUrl="https://images.unsplash.com/photo-1581092795360-7d294c00fdfd?q=80&w=1080&auto=format&fit=crop"
@@ -337,13 +337,13 @@ const Dashboard = () => {
             <>
               <section className="mb-5">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h2 className="h5 fw-semibold mb-0">Pedidos disponiveis</h2>
+                  <h2 className="h5 fw-semibold mb-0">Pedidos disponíveis</h2>
                   <span className="badge text-bg-secondary">
                     {availableRequests.length} em espera
                   </span>
                 </div>
                 {availableRequests.length === 0 ? (
-                  <p className="text-muted">Nao existem pedidos a aguardar aceitacao.</p>
+                  <p className="text-muted">Não existem pedidos à aguardar aceitação.</p>
                 ) : (
                   <div className="row g-3">
                     {availableRequests.map((request) => (
@@ -357,13 +357,13 @@ const Dashboard = () => {
 
               <section className="mb-5">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h2 className="h5 fw-semibold mb-0">Pedidos atribuidos</h2>
+                  <h2 className="h5 fw-semibold mb-0">Pedidos atribuídos</h2>
                   <span className="badge text-bg-secondary">
                     {assignedRequests.length} em curso
                   </span>
                 </div>
                 {assignedRequests.length === 0 ? (
-                  <p className="text-muted">Ainda nao aceitou pedidos.</p>
+                  <p className="text-muted">Ainda não aceitou pedidos.</p>
                 ) : (
                   <div className="row g-3">
                     {assignedRequests.map((request) => (

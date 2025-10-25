@@ -13,7 +13,7 @@ const Login = () => {
 
   const validate = (data) => {
     const errs = {};
-    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errs.email = 'Email invalido';
+    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errs.email = 'Email inválido';
     if (!data.password || data.password.length < 6) errs.password = 'Senha com pelo menos 6 caracteres';
     return errs;
   };
@@ -45,7 +45,7 @@ const Login = () => {
       else if (role === 'technician') navigate('/dashboard');
       else navigate('/profile');
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Credenciais invalidas.';
+      const msg = err?.response?.data?.message || 'Credenciais inválidas.';
       setError(msg);
     } finally {
       setSubmitting(false);

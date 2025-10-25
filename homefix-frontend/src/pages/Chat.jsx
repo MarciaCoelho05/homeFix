@@ -36,7 +36,7 @@ const Chat = () => {
         setMessages(res.data || []);
       } catch (err) {
         console.error('Erro ao carregar mensagens:', err);
-        setErrorMessage('Nao foi possivel carregar mensagens.');
+        setErrorMessage('Não foi possível carregar mensagens.');
         setMessages([]);
       } finally {
         setLoading(false);
@@ -67,7 +67,7 @@ const Chat = () => {
         }
       } catch (err) {
         console.error('Erro ao carregar pedidos:', err);
-        setErrorMessage('Nao foi possivel carregar pedidos.');
+        setErrorMessage('Não foi possível carregar pedidos.');
       } finally {
         setRequestsLoading(false);
       }
@@ -113,7 +113,7 @@ const Chat = () => {
       setPendingAttachments((prev) => [...prev, ...uploaded]);
     } catch (err) {
       console.error('Erro ao carregar anexos:', err);
-      setErrorMessage('Nao foi possivel carregar os anexos.');
+      setErrorMessage('Não foi possível carregar os anexos.');
     } finally {
       setUploading(false);
     }
@@ -141,7 +141,7 @@ const Chat = () => {
       fetchMessages(requestId);
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
-      setErrorMessage(err?.response?.data?.message || 'Nao foi possivel enviar a mensagem.');
+      setErrorMessage(err?.response?.data?.message || 'Não foi possível enviar a mensagem.');
     }
   };
 
@@ -156,7 +156,7 @@ const Chat = () => {
       setStatusMessage('Mensagem eliminada.');
     } catch (err) {
       console.error('Erro ao eliminar mensagem:', err);
-      setErrorMessage(err?.response?.data?.message || 'Nao foi possivel eliminar a mensagem.');
+      setErrorMessage(err?.response?.data?.message || 'Não foi possível eliminar a mensagem.');
     } finally {
       setDeletingMessageId('');
     }
@@ -170,7 +170,7 @@ const Chat = () => {
   return (
     <Layout>
       <div className="card border-0 shadow-sm p-4 p-md-5">
-        <h1 className="h4 fw-semibold mb-4">Chat com tecnico</h1>
+        <h1 className="h4 fw-semibold mb-4">Chat com técnico</h1>
 
         {statusMessage && <div className="alert alert-success py-2">{statusMessage}</div>}
         {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
@@ -182,7 +182,7 @@ const Chat = () => {
             </div>
           </div>
         ) : requests.length === 0 ? (
-          <p className="text-muted">Nao tem pedidos associados ao chat.</p>
+          <p className="text-muted">Não tem pedidos associados ao chat.</p>
         ) : (
           <>
             <div className="mb-3">

@@ -9,7 +9,25 @@ const { protect } = require('./middlewares/authMiddleware');
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+}));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Vary', 'Origin');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  return next();
+});
 app.use(express.json());
 
 // importar rotas existentes

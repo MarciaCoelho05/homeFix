@@ -32,15 +32,139 @@ const serviceCategories = [
   {
     name: 'Carpintaria',
     image: '/img/carpintaria.jpeg',
-    blurb: 'Mobiliario por medida, portas interiores e pavimentos.',
+    blurb: 'Mobilario por medida, portas interiores e pavimentos.',
   },
 ];
+
+const priceReference = {
+  Canalizacao: [
+    {
+      service: 'Reparacao de fugas de agua',
+      priceRange: '60 € – 120 €',
+      travel: '40 €',
+      total: '100 € – 160 €',
+    },
+    {
+      service: 'Instalacao de torneiras',
+      priceRange: '50 € – 90 €',
+      travel: '40 €',
+      total: '90 € – 130 €',
+    },
+    {
+      service: 'Manutencao preventiva (tubagens, sifoes, etc.)',
+      priceRange: '70 € – 140 €',
+      travel: '40 €',
+      total: '110 € – 180 €',
+    },
+  ],
+  Eletricidade: [
+    {
+      service: 'Instalacao de iluminacao (candeeiros, focos LED)',
+      priceRange: '60 € – 100 €',
+      travel: '40 €',
+      total: '100 € – 140 €',
+    },
+    {
+      service: 'Reparacao de quadros eletricos',
+      priceRange: '80 € – 150 €',
+      travel: '40 €',
+      total: '120 € – 190 €',
+    },
+    {
+      service: 'Certificacoes eletricas',
+      priceRange: '100 € – 180 €',
+      travel: '40 €',
+      total: '140 € – 220 €',
+    },
+  ],
+  Pintura: [
+    {
+      service: 'Pintura de interiores (por divisao)',
+      priceRange: '100 € – 250 €',
+      travel: '40 €',
+      total: '140 € – 290 €',
+    },
+    {
+      service: 'Pintura de fachadas',
+      priceRange: '300 € – 800 €',
+      travel: '40 €',
+      total: '340 € – 840 €',
+    },
+    {
+      service: 'Tratamento de paredes (humidade, massa corrida, lixagem)',
+      priceRange: '150 € – 400 €',
+      travel: '40 €',
+      total: '190 € – 440 €',
+    },
+  ],
+  Remodelacoes: [
+    {
+      service: 'Remodelacao completa de cozinha ou WC',
+      priceRange: '2.000 € – 8.000 €',
+      travel: '40 €',
+      total: '2.040 € – 8.040 €',
+    },
+    {
+      service: 'Renovacao parcial (pavimentos, azulejos, pintura)',
+      priceRange: '800 € – 2.500 €',
+      travel: '40 €',
+      total: '840 € – 2.540 €',
+    },
+    {
+      service: 'Melhorias personalizadas (layout, acabamentos)',
+      priceRange: '500 € – 1.500 €',
+      travel: '40 €',
+      total: '540 € – 1.540 €',
+    },
+  ],
+  Jardinagem: [
+    {
+      service: 'Manutencao de jardim (poda, limpeza, relva)',
+      priceRange: '50 € – 120 €',
+      travel: '40 €',
+      total: '90 € – 160 €',
+    },
+    {
+      service: 'Instalacao de sistemas de rega',
+      priceRange: '150 € – 400 €',
+      travel: '40 €',
+      total: '190 € – 440 €',
+    },
+    {
+      service: 'Desenho e execucao de espacos verdes',
+      priceRange: '500 € – 2.000 €',
+      travel: '40 €',
+      total: '540 € – 2.040 €',
+    },
+  ],
+  Carpintaria: [
+    {
+      service: 'Mobilario por medida (armarios, roupeiros, etc.)',
+      priceRange: '300 € – 2.000 €',
+      travel: '40 €',
+      total: '340 € – 2.040 €',
+    },
+    {
+      service: 'Instalacao de portas interiores',
+      priceRange: '100 € – 250 €',
+      travel: '40 €',
+      total: '140 € – 290 €',
+    },
+    {
+      service: 'Colocacao de pavimentos em madeira',
+      priceRange: '200 € – 600 €',
+      travel: '40 €',
+      total: '240 € – 640 €',
+    },
+  ],
+};
 
 const ServicesWithFeedback = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
+  const [priceSort, setPriceSort] = useState({ column: 'category', direction: 'asc' });
   const navigate = useNavigate();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -86,53 +210,43 @@ const ServicesWithFeedback = () => {
       .filter((service) => service.feedback || service.comment);
   }, [services]);
 
-  const categoryStats = useMemo(() => {
-    if (!services.length) return [];
-    const accumulator = new Map();
-    services.forEach((service) => {
-      const category = (service.category || 'Outros').trim();
-      if (!accumulator.has(category)) {
-        accumulator.set(category, {
-          category,
-          total: 0,
-          priced: 0,
-          sum: 0,
-          min: Number.POSITIVE_INFINITY,
-          max: Number.NEGATIVE_INFINITY,
-        });
+  const priceRows = useMemo(() => {
+    const rows = Object.entries(priceReference).flatMap(([category, list]) =>
+      list.map((item) => ({
+        category,
+        service: item.service,
+        priceRange: item.priceRange,
+        travel: item.travel,
+        total: item.total,
+      })),
+    );
+
+    rows.sort((a, b) => {
+      const factor = priceSort.direction === 'asc' ? 1 : -1;
+      if (priceSort.column === 'service') {
+        const mergeA = `${a.category} ${a.service}`.toLowerCase();
+        const mergeB = `${b.category} ${b.service}`.toLowerCase();
+        return mergeA.localeCompare(mergeB) * factor;
       }
-      const entry = accumulator.get(category);
-      entry.total += 1;
-      if (service.price != null) {
-        const value = Number(service.price);
-        if (!Number.isNaN(value)) {
-          entry.priced += 1;
-          entry.sum += value;
-          entry.min = Math.min(entry.min, value);
-          entry.max = Math.max(entry.max, value);
-        }
-      }
+      return a.category.localeCompare(b.category) * factor;
     });
 
-    return Array.from(accumulator.values()).map((entry) => ({
-      category: entry.category,
-      total: entry.total,
-      priced: entry.priced,
-      average: entry.priced ? entry.sum / entry.priced : null,
-      min: entry.priced ? entry.min : null,
-      max: entry.priced ? entry.max : null,
-    }));
-  }, [services]);
+    let currentCategory = null;
+    return rows.map((row) => {
+      const showCategory = row.category !== currentCategory;
+      currentCategory = row.category;
+      return { ...row, showCategory };
+    });
+  }, [priceSort]);
 
-  const sortedCategoryStats = useMemo(() => {
-    const list = [...categoryStats];
-    list.sort((a, b) =>
-      sortAsc
-        ? a.category.localeCompare(b.category)
-        : b.category.localeCompare(a.category),
-    );
-    return list;
-  }, [categoryStats, sortAsc]);
+  const togglePriceSort = (column) => {
+    setPriceSort((prev) => {
+      if (prev.column === column) {
+        return { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { column, direction: 'asc' };
+    });
+  };
 
   return (
     <Layout>
@@ -160,13 +274,6 @@ const ServicesWithFeedback = () => {
                   <img className="service-cat-img" src={service.image} alt={service.name} />
                 </div>
                 <p className="service-cat-text">{service.blurb}</p>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary mt-auto"
-                  onClick={() => pedirOrcamento(service.name)}
-                >
-                  Pedir orcamento
-                </button>
               </div>
             ))}
         </div>
@@ -176,43 +283,67 @@ const ServicesWithFeedback = () => {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2 className="h5 fw-semibold m-0">Tabela de precos por categoria</h2>
           <span className="text-muted small">
-            Baseado nos servicos concluidos partilhados com a comunidade.
+            Baseado em praticas de mercado e feedbacks recentes da comunidade.
           </span>
         </div>
-        {!categoryStats.length ? (
-          <div className="text-muted small">Ainda nao existem valores para apresentar.</div>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-striped align-middle category-price-table">
-              <thead>
-                <tr>
-                  <th className="text-start">Categoria</th>
-                  <th className="text-center">Servicos concluidos</th>
-                  <th className="text-center">Com preco registado</th>
-                  <th className="text-end">Preco medio</th>
-                  <th className="text-end">Intervalo observado</th>
+        <div className="table-responsive category-price-wrapper shadow-sm rounded-4">
+          <table className="table align-middle category-price-table table-hover mb-0">
+            <thead>
+              <tr>
+                <th
+                  className="text-start"
+                  aria-sort={
+                    priceSort.column === 'category'
+                      ? priceSort.direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : 'none'
+                  }
+                >
+                  <button type="button" className="table-sort-button" onClick={() => togglePriceSort('category')}>
+                    Categoria
+                    <span className="table-sort-indicator">
+                      {priceSort.column === 'category' ? (priceSort.direction === 'asc' ? '▲' : '▼') : ''}
+                    </span>
+                  </button>
+                </th>
+                <th
+                  className="text-start"
+                  aria-sort={
+                    priceSort.column === 'service'
+                      ? priceSort.direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : 'none'
+                  }
+                >
+                  <button type="button" className="table-sort-button" onClick={() => togglePriceSort('service')}>
+                    Exemplos de servicos
+                    <span className="table-sort-indicator">
+                      {priceSort.column === 'service' ? (priceSort.direction === 'asc' ? '▲' : '▼') : ''}
+                    </span>
+                  </button>
+                </th>
+                <th className="text-end">Preco estimado (€)</th>
+                <th className="text-end">Deslocacao (€)</th>
+                <th className="text-end">Total estimado (€)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {priceRows.map((row, index) => (
+                <tr key={`${row.category}-${row.service}-${index}`}>
+                  <td className="text-start fw-semibold text-primary-emphasis">
+                    {row.showCategory ? row.category : ''}
+                  </td>
+                  <td className="text-start text-secondary">{row.service}</td>
+                  <td className="text-end">{row.priceRange}</td>
+                  <td className="text-end">{row.travel}</td>
+                  <td className="text-end fw-semibold">{row.total}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {sortedCategoryStats.map((stat) => (
-                  <tr key={stat.category}>
-                    <td className="text-start fw-semibold">{stat.category}</td>
-                    <td className="text-center">{stat.total}</td>
-                    <td className="text-center">{stat.priced}</td>
-                    <td className="text-end">
-                      {stat.average != null ? `EUR ${stat.average.toFixed(2)}` : '-'}
-                    </td>
-                    <td className="text-end">
-                      {stat.min != null && stat.max != null
-                        ? `EUR ${stat.min.toFixed(2)} - EUR ${stat.max.toFixed(2)}`
-                        : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {loading ? (

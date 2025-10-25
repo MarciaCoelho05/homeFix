@@ -98,7 +98,32 @@ export default function Register() {
         setFieldErrors(resp.errors);
         setError(resp.message || "");
       } else {
-        setError(resp?.message || "Erro ao registar. Verifique os dados.");
+        const fallbackMessage = resp?.message || "Erro ao registar. Verifique os dados.";
+        const lowerMessage = fallbackMessage.toLowerCase();
+        const keywordMap = {
+          firstName: ["nome"],
+          lastName: ["apelido", "sobrenome"],
+          email: ["email"],
+          password: ["senha", "password"],
+          confirmPassword: ["confirmacao", "confirmar", "confirme"],
+          birthDate: ["nascimento", "idade", "data"],
+        };
+
+        const derivedFieldErrors = {};
+        Object.entries(keywordMap).forEach(([field, keywords]) => {
+          if (keywords.some((keyword) => lowerMessage.includes(keyword))) {
+            derivedFieldErrors[field] = fallbackMessage;
+          }
+        });
+
+        if (!Object.keys(derivedFieldErrors).length) {
+          ["firstName", "lastName", "email", "password", "confirmPassword", "birthDate"].forEach((field) => {
+            derivedFieldErrors[field] = fallbackMessage;
+          });
+        }
+
+        setFieldErrors(derivedFieldErrors);
+        setError(fallbackMessage);
       }
     } finally {
       setSubmitting(false);
@@ -126,9 +151,7 @@ export default function Register() {
                 onChange={handleChange}
                 className={`form-control ${fieldErrors.firstName ? "is-invalid" : ""}`}
               />
-              {fieldErrors.firstName && (
-                <div className="invalid-feedback">{fieldErrors.firstName}</div>
-              )}
+              {fieldErrors.firstName && <div className="invalid-feedback">{fieldErrors.firstName}</div>}
             </div>
             <div className="col-12 col-md-6">
               <label className="form-label small text-uppercase">Apelido</label>
@@ -139,9 +162,7 @@ export default function Register() {
                 onChange={handleChange}
                 className={`form-control ${fieldErrors.lastName ? "is-invalid" : ""}`}
               />
-              {fieldErrors.lastName && (
-                <div className="invalid-feedback">{fieldErrors.lastName}</div>
-              )}
+              {fieldErrors.lastName && <div className="invalid-feedback">{fieldErrors.lastName}</div>}
             </div>
           </div>
 
@@ -155,9 +176,7 @@ export default function Register() {
               onChange={handleChange}
               className={`form-control ${fieldErrors.email ? "is-invalid" : ""}`}
             />
-            {fieldErrors.email && (
-              <div className="invalid-feedback">{fieldErrors.email}</div>
-            )}
+            {fieldErrors.email && <div className="invalid-feedback">{fieldErrors.email}</div>}
           </div>
 
           <div className="mt-3">
@@ -170,9 +189,7 @@ export default function Register() {
               onChange={handleChange}
               className={`form-control ${fieldErrors.password ? "is-invalid" : ""}`}
             />
-            {fieldErrors.password && (
-              <div className="invalid-feedback">{fieldErrors.password}</div>
-            )}
+            {fieldErrors.password && <div className="invalid-feedback">{fieldErrors.password}</div>}
           </div>
 
           <div className="mt-3">
@@ -185,9 +202,7 @@ export default function Register() {
               onChange={handleChange}
               className={`form-control ${fieldErrors.confirmPassword ? "is-invalid" : ""}`}
             />
-            {fieldErrors.confirmPassword && (
-              <div className="invalid-feedback">{fieldErrors.confirmPassword}</div>
-            )}
+            {fieldErrors.confirmPassword && <div className="invalid-feedback">{fieldErrors.confirmPassword}</div>}
           </div>
 
           <div className="mt-3">
@@ -201,12 +216,10 @@ export default function Register() {
               onChange={handleChange}
               className={`form-control ${fieldErrors.birthDate ? "is-invalid" : ""}`}
             />
-            {fieldErrors.birthDate && (
-              <div className="invalid-feedback">{fieldErrors.birthDate}</div>
-            )}
+            {fieldErrors.birthDate && <div className="invalid-feedback">{fieldErrors.birthDate}</div>}
           </div>
 
-          <button type="submit" className="btn btn-primary w-100 mt-4" disabled={!isValid || submitting}>
+          <button type="submit" className="btn btn-primary w-100 mt-4" disabled={submitting}>
             {submitting ? "A criar conta..." : "Criar conta"}
           </button>
         </form>

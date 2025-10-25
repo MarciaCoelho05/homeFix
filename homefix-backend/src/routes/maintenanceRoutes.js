@@ -6,7 +6,7 @@ const { generateInvoicePDF } = require('../utils/pdf');
 
 const router = express.Router();
 
-// GET all requests (admin or technician)
+// Obter todos os pedidos (administrador ou técnico)
 router.get('/', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
   const isTechnician = req.user.isTechnician === true;
@@ -52,7 +52,7 @@ router.get('/', protect, async (req, res) => {
   res.json(requests);
 });
 
-// GET my requests (client)
+// Obter os meus pedidos (cliente)
 router.get('/mine', protect, async (req, res) => {
   const requests = await prisma.maintenanceRequest.findMany({
     where: { ownerId: req.user.id },
@@ -67,18 +67,18 @@ router.get('/mine', protect, async (req, res) => {
   res.json(requests);
 });
 
-// Create new request
+// Criar novo pedido
 router.post('/', protect, async (req, res) => {
   const { title, description, category, price, scheduledAt, status, mediaUrls } = req.body;
   const errors = {};
-  if (!title || !title.trim()) errors.title = 'Indique o titulo';
-  if (!description || !description.trim()) errors.description = 'Indique a descricao';
+  if (!title || !title.trim()) errors.title = 'Indique o título';
+  if (!description || !description.trim()) errors.description = 'Indique a descrição';
   if (!category || !category.trim()) errors.category = 'Selecione a categoria';
   if (price !== undefined && price !== null && Number.isNaN(Number(price))) {
-    errors.price = 'Preco deve ser numerico';
+    errors.price = 'Preço deve ser numérico';
   }
   if (Object.keys(errors).length) {
-    return res.status(400).json({ message: 'Campos invalidos', errors });
+    return res.status(400).json({ message: 'Campos inválidos', errors });
   }
 
   const normalizedMedia = Array.isArray(mediaUrls)
@@ -101,11 +101,11 @@ router.post('/', protect, async (req, res) => {
   });
   res.status(201).json(request);
   notifyTechniciansAboutRequest(request, req.user.id).catch((err) =>
-    console.error('Erro ao notificar tecnicos:', err)
+    console.error('Erro ao notificar técnicos:', err)
   );
 });
 
-// GET by id
+// Obter por ID
 router.get('/:id', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
@@ -117,7 +117,7 @@ router.get('/:id', protect, async (req, res) => {
     },
   });
   if (!request) {
-    return res.status(404).json({ message: 'Nao encontrado' });
+    return res.status(404).json({ message: 'Não encontrado' });
   }
   const isOwner = request.ownerId === req.user.id;
   const isAssignedTech = request.technicianId && request.technicianId === req.user.id;
@@ -136,7 +136,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
   });
 
   if (!request) {
-    return res.status(404).json({ message: 'Pedido nao encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
 
   const isAdmin = req.user.isAdmin === true;
@@ -153,7 +153,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
 
   const loweredStatus = (request.status || '').toLowerCase();
   if (loweredStatus !== 'concluido' && !request.completedAt) {
-    return res.status(400).json({ message: 'Pedido ainda nao foi concluido.' });
+    return res.status(400).json({ message: 'Pedido ainda não foi concluído.' });
   }
 
   const buffer = await generateInvoicePDF(request, request.owner);
@@ -166,7 +166,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
   res.send(buffer);
 });
 
-// Update
+// Atualizar
 router.put('/:id', protect, async (req, res) => {
   const { title, description, category, price, status, techId, technicianId, scheduledAt, mediaUrls } = req.body;
   const existing = await prisma.maintenanceRequest.findUnique({
@@ -175,7 +175,7 @@ router.put('/:id', protect, async (req, res) => {
   });
 
   if (!existing) {
-    return res.status(404).json({ message: 'Pedido nÃ£o encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
 
   const isOwner = existing.ownerId === req.user.id;
@@ -213,7 +213,7 @@ router.put('/:id', protect, async (req, res) => {
   res.json(updated);
 });
 
-// Delete
+// Eliminar
 router.delete('/:id', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
   const request = await prisma.maintenanceRequest.findUnique({
@@ -221,7 +221,7 @@ router.delete('/:id', protect, async (req, res) => {
     select: { ownerId: true },
   });
   if (!request) {
-    return res.status(404).json({ message: 'Pedido nÃ£o encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
   if (!(isAdmin || request.ownerId === req.user.id)) {
     return res.status(403).json({ message: 'Acesso negado' });
@@ -236,7 +236,7 @@ router.delete('/:id', protect, async (req, res) => {
 
 router.post('/:id/accept', protect, async (req, res) => {
   if (req.user.isTechnician !== true) {
-    return res.status(403).json({ message: 'Apenas tÃ©cnicos podem aceitar pedidos.' });
+    return res.status(403).json({ message: 'Apenas técnicos podem aceitar pedidos.' });
   }
 
   const request = await prisma.maintenanceRequest.findUnique({
@@ -244,11 +244,11 @@ router.post('/:id/accept', protect, async (req, res) => {
   });
 
   if (!request) {
-    return res.status(404).json({ message: 'Pedido nÃ£o encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
 
   if (request.technicianId && request.technicianId !== req.user.id) {
-    return res.status(409).json({ message: 'O pedido jÃ¡ foi atribuÃ­do a outro tÃ©cnico.' });
+    return res.status(409).json({ message: 'O pedido já foi atribuído a outro técnico.' });
   }
 
   const updated = await prisma.maintenanceRequest.update({
@@ -265,13 +265,13 @@ router.post('/:id/accept', protect, async (req, res) => {
 
   res.json(updated);
   notifyAcceptance(updated).catch((error) =>
-    console.error('Erro ao enviar email de confirmaÃ§Ã£o de pedido:', error)
+    console.error('Erro ao enviar email de confirmação de pedido:', error)
   );
 });
 
 router.post('/:id/decline', protect, async (req, res) => {
   if (req.user.isTechnician !== true) {
-    return res.status(403).json({ message: 'Apenas tÃ©cnicos podem recusar pedidos.' });
+    return res.status(403).json({ message: 'Apenas técnicos podem recusar pedidos.' });
   }
 
   const request = await prisma.maintenanceRequest.findUnique({
@@ -279,11 +279,11 @@ router.post('/:id/decline', protect, async (req, res) => {
   });
 
   if (!request) {
-    return res.status(404).json({ message: 'Pedido nÃ£o encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
 
   if (request.technicianId && request.technicianId !== req.user.id) {
-    return res.status(409).json({ message: 'O pedido pertence a outro tÃ©cnico.' });
+    return res.status(409).json({ message: 'O pedido pertence a outro técnico.' });
   }
 
   const updated = await prisma.maintenanceRequest.update({
@@ -307,14 +307,14 @@ router.post('/:id/complete', protect, async (req, res) => {
   });
 
   if (!request) {
-    return res.status(404).json({ message: 'Pedido nÃ£o encontrado' });
+    return res.status(404).json({ message: 'Pedido não encontrado' });
   }
 
   const isAdmin = req.user.isAdmin === true;
   const isAssignedTech = request.technicianId && request.technicianId === req.user.id;
 
   if (!(isAdmin || isAssignedTech)) {
-    return res.status(403).json({ message: 'Apenas o tÃ©cnico atribuÃ­do ou o administrador podem concluir o pedido.' });
+    return res.status(403).json({ message: 'Apenas o técnico atribuído ou o administrador podem concluir o pedido.' });
   }
 
   const updated = await prisma.maintenanceRequest.update({
@@ -338,7 +338,7 @@ router.post('/:id/complete', protect, async (req, res) => {
   }
 
   res.json({
-    message: 'Pedido marcado como concluido.',
+    message: 'Pedido marcado como concluído.',
     request: updated,
     invoice: invoiceBase64,
     fileName,
@@ -368,25 +368,25 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
       : '';
 
     const text = [
-      'Novo pedido de orÃ§amento disponÃ­vel no HomeFix.',
-      `TÃ­tulo: ${request.title}`,
+      'Novo pedido de orçamento disponível no HomeFix.',
+      `Título: ${request.title}`,
       `Categoria: ${request.category}`,
       owner ? `Cliente: ${owner.firstName || ''} ${owner.lastName || ''} (${owner.email || 'sem email'})` : '',
       request.scheduledAt ? `Data preferencial: ${new Date(request.scheduledAt).toLocaleString()}` : '',
-      `DescriÃ§Ã£o: ${request.description}`,
+      `Descrição: ${request.description}`,
       mediaSection ? 'Existem anexos associados ao pedido.' : '',
       `Revise o pedido em: ${requestLink}`,
     ].filter(Boolean).join('\n');
 
     const html = `
-      <p>Existe um novo pedido de orÃ§amento disponÃ­vel no HomeFix.</p>
+      <p>Existe um novo pedido de orçamento disponível no HomeFix.</p>
       <ul>
-        <li><strong>TÃ­tulo:</strong> ${request.title}</li>
+        <li><strong>Título:</strong> ${request.title}</li>
         <li><strong>Categoria:</strong> ${request.category}</li>
         ${owner ? `<li><strong>Cliente:</strong> ${owner.firstName || ''} ${owner.lastName || ''} (${owner.email || 'sem email'})</li>` : ''}
         ${request.scheduledAt ? `<li><strong>Data preferencial:</strong> ${new Date(request.scheduledAt).toLocaleString()}</li>` : ''}
       </ul>
-      <p><strong>DescriÃ§Ã£o:</strong></p>
+      <p><strong>Descrição:</strong></p>
       <p>${request.description || '-'}</p>
       ${mediaSection}
       <p><a href="${requestLink}">Abrir painel para responder ao pedido</a></p>
@@ -395,7 +395,7 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     await mailer.sendMail({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: recipients,
-      subject: `Novo pedido de orÃ§amento: ${request.title}`,
+      subject: `Novo pedido de orçamento: ${request.title}`,
       text,
       html,
     });
@@ -420,11 +420,11 @@ async function notifyAcceptance(request) {
         to: request.technician.email,
         subject: `Pedido aceite: ${request.title}`,
         html: `
-          <p>OlÃ¡ ${technicianName || 'tÃ©cnico'},</p>
+          <p>Olá ${technicianName || 'técnico'},</p>
           <p>Confirmamos que aceitaste o pedido <strong>${request.title}</strong> (${request.category}).</p>
-          <p>Podes falar com o cliente e acompanhar o trabalho atravÃ©s do painel.</p>
+          <p>Podes falar com o cliente e acompanhar o trabalho através do painel.</p>
           <p><a href="${chatLink}">Abrir chat com o cliente</a></p>
-          <p><a href="${dashboardLink}">Ver pedidos atribuÃ­dos</a></p>
+          <p><a href="${dashboardLink}">Ver pedidos atribuídos</a></p>
         `,
       });
     }
@@ -440,18 +440,18 @@ async function notifyAcceptance(request) {
         to: request.owner.email,
         subject: `O seu pedido foi aceite: ${request.title}`,
         html: `
-          <p>OlÃ¡ ${ownerName || 'cliente'},</p>
-          <p>O tÃ©cnico <strong>${technicianName || request.technician.email}</strong> aceitou o pedido <strong>${
+          <p>Olá ${ownerName || 'cliente'},</p>
+          <p>O técnico <strong>${technicianName || request.technician.email}</strong> aceitou o pedido <strong>${
             request.title
           }</strong>.</p>
-          <p>PoderÃ¡ acompanhar o estado do trabalho e conversar com o tÃ©cnico atravÃ©s da plataforma.</p>
-          <p><a href="${chatLink}">Abrir chat com o tÃ©cnico</a></p>
+          <p>Poderá acompanhar o estado do trabalho e conversar com o técnico através da plataforma.</p>
+          <p><a href="${chatLink}">Abrir chat com o técnico</a></p>
           <p><a href="${dashboardLink}">Ver pedidos</a></p>
         `,
       });
     }
   } catch (error) {
-    console.error('Erro ao enviar email de confirmaÃ§Ã£o:', error);
+    console.error('Erro ao enviar email de confirmação:', error);
   }
 }
 

@@ -3,10 +3,10 @@ import Layout from '../components/Layout';
 import api from '../services/api';
 
 const categories = [
-  'Canalizacao',
+  'Canalização',
   'Eletricidade',
   'Pintura',
-  'Remodelacoes',
+  'Remodelações',
   'Jardinagem',
   'Outro',
 ];
@@ -29,10 +29,10 @@ const NewRequest = () => {
 
   const validate = (data) => {
     const errs = {};
-    if (!data.title?.trim()) errs.title = 'Indique o titulo';
-    if (!data.description?.trim()) errs.description = 'Indique a descricao';
+    if (!data.title?.trim()) errs.title = 'Indique o título';
+    if (!data.description?.trim()) errs.description = 'Indique a descrição';
     if (!data.category?.trim()) errs.category = 'Selecione a categoria';
-    if (data.price && Number.isNaN(Number(data.price))) errs.price = 'Preco deve ser numerico';
+    if (data.price && Number.isNaN(Number(data.price))) errs.price = 'Preço deve ser numérico';
     return errs;
   };
 
@@ -51,7 +51,7 @@ const NewRequest = () => {
     if (!files.length) return;
 
     if (files.length + media.length > MAX_FILES) {
-      setStatus(`Pode anexar ate ${MAX_FILES} ficheiros.`);
+      setStatus(`Pode anexar até ${MAX_FILES} ficheiros.`);
       return;
     }
 
@@ -114,9 +114,9 @@ const NewRequest = () => {
       <section className="request-hero rounded-3 p-4 p-md-5 mb-4 text-white">
         <div className="row align-items-center g-4">
           <div className="col-12 col-lg-7">
-            <h1 className="display-6 fw-semibold mb-2 text-white">Novo pedido de manutencao</h1>
+            <h1 className="display-6 fw-semibold mb-2 text-white">Novo pedido de manutenção</h1>
             <p className="lead mb-0">
-              Descreva o servico que precisa, escolha a categoria e indique uma data preferencial. A equipa certa entra em contacto.
+              Descreva o serviço que precisa, escolha a categoria e indique uma data preferencial. A equipa certa entra em contacto.
             </p>
           </div>
           <div className="col-12 col-lg-5 text-lg-end">
@@ -136,7 +136,7 @@ const NewRequest = () => {
           <form onSubmit={handleSubmit} noValidate className="request-form">
             <div className="row g-3">
               <div className="col-12 col-md-6">
-                <label className="form-label text-uppercase small fw-semibold" htmlFor="title">Titulo</label>
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="title">Título</label>
                 <input
                   id="title"
                   name="title"
@@ -144,7 +144,7 @@ const NewRequest = () => {
                   className={`form-control ${fieldErrors.title ? 'is-invalid' : ''}`}
                   value={form.title}
                   onChange={handleChange}
-                  placeholder="Ex.: Revisao da instalacao eletrica"
+                  placeholder="Ex.: Revisão da instalação elétrica"
                 />
                 {fieldErrors.title && <div className="invalid-feedback">{fieldErrors.title}</div>}
               </div>
@@ -165,7 +165,7 @@ const NewRequest = () => {
                 {fieldErrors.category && <div className="invalid-feedback">{fieldErrors.category}</div>}
               </div>
               <div className="col-12">
-                <label className="form-label text-uppercase small fw-semibold" htmlFor="description">Descricao</label>
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="description">Descrição</label>
                 <textarea
                   id="description"
                   name="description"
@@ -173,12 +173,12 @@ const NewRequest = () => {
                   className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
                   value={form.description}
                   onChange={handleChange}
-                  placeholder="Indique detalhes relevantes (medidas, sintomas, urgencia...)."
+                  placeholder="Indique detalhes relevantes (medidas, sintomas, urgência...)."
                 />
                 {fieldErrors.description && <div className="invalid-feedback">{fieldErrors.description}</div>}
               </div>
               <div className="col-12 col-md-6">
-                <label className="form-label text-uppercase small fw-semibold" htmlFor="price">Preco estimado (opcional)</label>
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="price">Preço estimado (opcional)</label>
                 <input
                   id="price"
                   name="price"
@@ -202,7 +202,7 @@ const NewRequest = () => {
                 />
               </div>
               <div className="col-12">
-                <label className="form-label text-uppercase small fw-semibold" htmlFor="media">Anexos (imagens ou videos)</label>
+                <label className="form-label text-uppercase small fw-semibold" htmlFor="media">Anexos (imagens ou vídeos)</label>
                 <input
                   id="media"
                   name="media"
@@ -212,7 +212,7 @@ const NewRequest = () => {
                   className="form-control"
                   onChange={handleMediaChange}
                 />
-                <small className="text-muted d-block mt-1">Pode anexar ate {MAX_FILES} ficheiros.</small>
+                <small className="text-muted d-block mt-1">Pode anexar até {MAX_FILES} ficheiros.</small>
                 {uploading && <div className="small text-muted mt-2">A carregar ficheiros...</div>}
                 {media.length > 0 && (
                   <div className="media-preview-grid mt-3">
