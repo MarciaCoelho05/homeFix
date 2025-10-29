@@ -30,6 +30,15 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 
+// Debug middleware for Vercel (placed before routes)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/public')) {
+    console.log(`[DEBUG] Request to: ${req.method} ${req.path}`);
+    console.log(`[DEBUG] Query:`, req.query);
+  }
+  next();
+});
+
 // importar rotas existentes
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -50,7 +59,9 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/public', publicRoutes);
 
-// profile
+console.log('Public routes registered at /api/public');
+
+// profile routes
 app.get('/api/profile', protect, (req, res) => {
   res.json(req.user);
 });
@@ -86,6 +97,12 @@ app.delete('/api/profile', protect, async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // Buscar dados do usuário antes de eliminar para enviar email de confirmação
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true, lastName: true },
+    });
+
     await prisma.$transaction(async (tx) => {
       const ownedRequests = await tx.maintenanceRequest.findMany({
         where: { ownerId: userId },
@@ -109,6 +126,90 @@ app.delete('/api/profile', protect, async (req, res) => {
       await tx.user.delete({ where: { id: userId } });
     });
 
+    // Enviar email de confirmação de eliminação
+    if (user && user.email) {
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
+      const mailer = require('./config/email');
+      
+      const text = [
+        `Olá ${userName},`,
+        '',
+        'Confirmamos que a sua conta na HomeFix foi eliminada com sucesso.',
+        '',
+        'Todos os seus dados pessoais, pedidos e informações associadas foram permanentemente removidos do nosso sistema.',
+        '',
+        'Se foi um erro e deseja criar uma nova conta, pode registar-se novamente a qualquer momento.',
+        '',
+        'Obrigado por ter usado os nossos serviços.',
+        '',
+        'Atenciosamente,',
+        'Equipa HomeFix'
+      ].join('\n');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #6c757d; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+            .info-box { background-color: #e7f3ff; border-left: 4px solid #2196F3; padding: 16px; margin: 16px 0; border-radius: 4px; }
+            .footer { margin-top: 24px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">HomeFix - Conta Eliminada</h2>
+            </div>
+            <div class="content">
+              <p>Olá <strong>${userName}</strong>,</p>
+              
+              <p>Confirmamos que a sua conta na HomeFix foi eliminada com sucesso.</p>
+              
+              <div class="info-box">
+                <p style="margin: 0;"><strong>O que foi removido:</strong></p>
+                <ul style="margin: 8px 0;">
+                  <li>Dados pessoais e perfil</li>
+                  <li>Pedidos de serviço</li>
+                  <li>Mensagens e histórico de conversas</li>
+                  <li>Feedback e avaliações</li>
+                </ul>
+                <p style="margin: 8px 0 0 0;">Todos os dados foram permanentemente removidos do nosso sistema.</p>
+              </div>
+              
+              <p>Se foi um erro e deseja criar uma nova conta, pode registar-se novamente a qualquer momento através do nosso site.</p>
+              
+              <p>Obrigado por ter usado os nossos serviços. Esperamos vê-lo novamente no futuro!</p>
+              
+              <div class="footer">
+                <p>Atenciosamente,<br>Equipa HomeFix</p>
+                <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      try {
+        await mailer.sendMail({
+          from: '"HomeFix" <no-reply@homefix.com>',
+          to: user.email,
+          subject: 'Conta eliminada - HomeFix',
+          text,
+          html,
+        });
+        console.log(`Email de confirmação de eliminação enviado para ${user.email}`);
+      } catch (emailError) {
+        console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
+        // Não falhar a eliminação se o email falhar
+      }
+    }
+
     res.status(204).send();
   } catch (error) {
     console.error('Erro ao eliminar conta:', error);
@@ -119,6 +220,8 @@ app.delete('/api/profile', protect, async (req, res) => {
 // serve frontend build
 const clientDist = path.resolve(__dirname, '../../homefix-frontend/dist');
 app.use(express.static(clientDist));
+
+// Catch-all route for frontend (must be last, after all API routes)
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
@@ -134,15 +237,3 @@ if (require.main === module) {
   });
 }
 module.exports = app;
-
-
-
-
-
-
-
-
-
-
-
-

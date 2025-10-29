@@ -49,6 +49,12 @@ async function deleteUser(req, res) {
   const { id } = req.params;
 
   try {
+    // Buscar dados do usuário antes de eliminar para enviar email de confirmação
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { email: true, firstName: true, lastName: true },
+    });
+
     await prisma.$transaction(async (tx) => {
       const ownedRequests = await tx.maintenanceRequest.findMany({
         where: { ownerId: id },
@@ -71,6 +77,86 @@ async function deleteUser(req, res) {
 
       await tx.user.delete({ where: { id } });
     });
+
+    // Enviar email de confirmação de eliminação
+    if (user && user.email) {
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
+      const mailer = require('../config/email');
+      
+      const text = [
+        `Olá ${userName},`,
+        '',
+        'Informamos que a sua conta na HomeFix foi eliminada por um administrador.',
+        '',
+        'Todos os seus dados pessoais, pedidos e informações associadas foram permanentemente removidos do nosso sistema.',
+        '',
+        'Se tiver questões sobre esta ação, por favor contacte o suporte.',
+        '',
+        'Atenciosamente,',
+        'Equipa HomeFix'
+      ].join('\n');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #dc3545; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+            .info-box { background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px; margin: 16px 0; border-radius: 4px; }
+            .footer { margin-top: 24px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">HomeFix - Conta Eliminada</h2>
+            </div>
+            <div class="content">
+              <p>Olá <strong>${userName}</strong>,</p>
+              
+              <p>Informamos que a sua conta na HomeFix foi eliminada por um administrador.</p>
+              
+              <div class="info-box">
+                <p style="margin: 0;"><strong>O que foi removido:</strong></p>
+                <ul style="margin: 8px 0;">
+                  <li>Dados pessoais e perfil</li>
+                  <li>Pedidos de serviço</li>
+                  <li>Mensagens e histórico de conversas</li>
+                  <li>Feedback e avaliações</li>
+                </ul>
+                <p style="margin: 8px 0 0 0;">Todos os dados foram permanentemente removidos do nosso sistema.</p>
+              </div>
+              
+              <p>Se tiver questões sobre esta ação, por favor contacte o suporte através do nosso site.</p>
+              
+              <div class="footer">
+                <p>Atenciosamente,<br>Equipa HomeFix</p>
+                <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      try {
+        await mailer.sendMail({
+          from: '"HomeFix" <no-reply@homefix.com>',
+          to: user.email,
+          subject: 'Conta eliminada - HomeFix',
+          text,
+          html,
+        });
+        console.log(`Email de confirmação de eliminação (admin) enviado para ${user.email}`);
+      } catch (emailError) {
+        console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
+        // Não falhar a eliminação se o email falhar
+      }
+    }
 
     res.status(204).send();
   } catch (error) {

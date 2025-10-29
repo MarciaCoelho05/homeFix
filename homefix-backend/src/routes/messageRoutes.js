@@ -15,19 +15,38 @@ async function canAccessRequest(user, request) {
 }
 
 router.get('/:requestId', async (req, res) => {
-  const { requestId } = req.params;
-  const request = await prisma.maintenanceRequest.findUnique({ where: { id: requestId } });
-  if (!(await canAccessRequest(req.user, request))) {
-    return res.status(403).json({ message: 'Acesso negado' });
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Utilizador não autenticado' });
+    }
+    
+    const { requestId } = req.params;
+    if (!requestId) {
+      return res.status(400).json({ message: 'requestId é obrigatório' });
+    }
+    
+    const request = await prisma.maintenanceRequest.findUnique({ where: { id: requestId } });
+    if (!request) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+    
+    if (!(await canAccessRequest(req.user, request))) {
+      return res.status(403).json({ message: 'Acesso negado' });
+    }
+    
+    const messages = await prisma.message.findMany({
+      where: { requestId },
+      include: {
+        sender: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(messages);
+  } catch (err) {
+    console.error('Erro ao obter mensagens:', err);
+    console.error('Stack:', err.stack);
+    res.status(500).json({ message: 'Erro ao carregar mensagens', error: err.message });
   }
-  const messages = await prisma.message.findMany({
-    where: { requestId },
-    include: {
-      sender: { select: { id: true, email: true, firstName: true, lastName: true } },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
-  res.json(messages);
 });
 
 router.post('/', async (req, res) => {
