@@ -13,6 +13,15 @@ router.get('/requests', async (req, res) => {
   console.log('Query params:', req.query);
   console.log('Full URL:', req.url);
   console.log('Path:', req.path);
+  console.log('Origin:', req.headers.origin);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  
+  // Garantir que CORS está configurado
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
   
   const { status } = req.query || {};
   const where = {
