@@ -27,6 +27,8 @@ export default function Register() {
     password: "",
     confirmPassword: "",
     birthDate: "",
+    userType: "cliente", // "cliente" ou "tecnico"
+    technicianCategory: "",
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -64,13 +66,24 @@ export default function Register() {
       }
     }
 
+    if (data.userType === "tecnico" && !data.technicianCategory?.trim()) {
+      errs.technicianCategory = "Indique a categoria do técnico";
+    }
+
     return errs;
   };
 
   const isValid = useMemo(() => Object.keys(validate(form)).length === 0, [form]);
 
   const handleChange = (event) => {
-    const next = { ...form, [event.target.name]: event.target.value };
+    const { name, value } = event.target;
+    const next = { ...form, [name]: value };
+    
+    // Se mudar de técnico para cliente, limpar a categoria
+    if (name === "userType" && value === "cliente") {
+      next.technicianCategory = "";
+    }
+    
     setForm(next);
     if (showErrors) {
       setFieldErrors(validate(next));
@@ -89,7 +102,12 @@ export default function Register() {
 
     try {
       setSubmitting(true);
-      const { confirmPassword, ...payload } = form;
+      const { confirmPassword, userType, technicianCategory, ...basePayload } = form;
+      const payload = {
+        ...basePayload,
+        isTechnician: userType === "tecnico",
+        ...(userType === "tecnico" && technicianCategory ? { technicianCategory } : {}),
+      };
       await API.post("/auth/register", payload);
       navigate("/login");
     } catch (err) {
@@ -107,6 +125,7 @@ export default function Register() {
           password: ["senha", "password"],
           confirmPassword: ["confirmacao", "confirmar", "confirme"],
           birthDate: ["nascimento", "idade", "data"],
+          technicianCategory: ["categoria", "tecnico"],
         };
 
         const derivedFieldErrors = {};
@@ -218,6 +237,64 @@ export default function Register() {
             />
             {fieldErrors.birthDate && <div className="invalid-feedback">{fieldErrors.birthDate}</div>}
           </div>
+
+          <div className="mt-3">
+            <label className="form-label small text-uppercase">Tipo de conta</label>
+            <div className="d-flex gap-3">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="userType"
+                  id="userTypeCliente"
+                  value="cliente"
+                  checked={form.userType === "cliente"}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="userTypeCliente">
+                  Cliente
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="userType"
+                  id="userTypeTecnico"
+                  value="tecnico"
+                  checked={form.userType === "tecnico"}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="userTypeTecnico">
+                  Técnico
+                </label>
+              </div>
+            </div>
+            {fieldErrors.userType && <div className="invalid-feedback d-block">{fieldErrors.userType}</div>}
+          </div>
+
+          {form.userType === "tecnico" && (
+            <div className="mt-3">
+              <label className="form-label small text-uppercase">Categoria do técnico</label>
+              <select
+                name="technicianCategory"
+                value={form.technicianCategory}
+                onChange={handleChange}
+                className={`form-select ${fieldErrors.technicianCategory ? "is-invalid" : ""}`}
+              >
+                <option value="">Selecione uma categoria</option>
+                <option value="Canalizacao">Canalização</option>
+                <option value="Eletricidade">Eletricidade</option>
+                <option value="Pintura">Pintura</option>
+                <option value="Remodelacoes">Remodelações</option>
+                <option value="Jardinagem">Jardinagem</option>
+                <option value="Carpintaria">Carpintaria</option>
+              </select>
+              {fieldErrors.technicianCategory && (
+                <div className="invalid-feedback">{fieldErrors.technicianCategory}</div>
+              )}
+            </div>
+          )}
 
           <button type="submit" className="btn btn-primary w-100 mt-4" disabled={submitting}>
             {submitting ? "A criar conta..." : "Criar conta"}

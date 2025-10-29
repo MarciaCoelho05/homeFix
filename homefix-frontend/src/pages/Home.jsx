@@ -78,9 +78,6 @@ const Home = () => {
                 <button type="button" className="btn btn-primary btn-lg" onClick={() => pedirOrcamento()}>
                   Pedir orçamento
                 </button>
-                <Link to="/services" className="btn btn-outline-light btn-lg">
-                  Ver serviços com feedback
-                </Link>
               </div>
             </div>
             <div className="col-12 col-lg-5">
@@ -95,7 +92,7 @@ const Home = () => {
                     <div className="stat-label">Serviços executados</div>
                   </div>
                   <div>
-                    <div className="stat-number">4.8</div>
+                    <div className="stat-number">4.8⭐</div>
                     <div className="stat-label">Avaliação média</div>
                   </div>
                 </div>
@@ -146,9 +143,6 @@ const Home = () => {
                   Cada prestador é verificado pela equipa HomeFix. Garantimos orçamentos transparentes e acompanhamento até à conclusão do trabalho.
                 </p>
               </div>
-              <button type="button" className="btn btn-primary btn-lg" onClick={() => pedirOrcamento()}>
-                Criar pedido agora
-              </button>
             </div>
           </div>
         </section>

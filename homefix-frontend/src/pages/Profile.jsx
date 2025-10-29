@@ -82,19 +82,8 @@ const Profile = () => {
       setRequestsLoading(false);
       return;
     }
-
-    const fetchRequests = async () => {
-      try {
-        const res = await api.get('/requests/mine');
-        setRequests(res.data || []);
-      } catch (err) {
-        console.error('Erro ao carregar pedidos:', err);
-        setRequestsError('Nao foi possivel carregar os pedidos.');
-      } finally {
-        setRequestsLoading(false);
-      }
-    };
-    fetchRequests();
+    // Removido: não carregar pedidos no perfil
+    setRequestsLoading(false);
   }, [isAdmin, isTechnician]);
 
   const validate = (payload) => {
@@ -363,107 +352,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {!isAdmin && !isTechnician && (
-          <div className="col-12 col-lg-7">
-            <div className="card border-0 shadow-sm h-100">
-              <div className="card-body p-4 p-md-5">
-                <h2 className="h5 fw-semibold mb-3">Pedidos de servico</h2>
-                {requestsLoading ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">A carregar pedidos...</span>
-                    </div>
-                  </div>
-                ) : requestsError ? (
-                  <div className="alert alert-danger py-2">{requestsError}</div>
-                ) : requests.length === 0 ? (
-                  <p className="text-muted small mb-0">Ainda nao submeteu pedidos de servico.</p>
-                ) : (
-                  <div className="d-flex flex-column gap-3">
-                    {requests.map((req) => {
-                      const normalizedStatus = (req.status || '').toLowerCase();
-                      const isConcluded = normalizedStatus === 'concluido';
-                      const hasMedia = Array.isArray(req.mediaUrls) && req.mediaUrls.length > 0;
-                      return (
-                        <div key={req.id} className="border rounded-3 p-3">
-                          <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
-                            <div>
-                              <h3 className="h6 fw-semibold mb-1">{req.title}</h3>
-                              <div className="small text-muted">
-                                <span className="me-3">
-                                  <strong>Categoria:</strong> {req.category || '-'}
-                                </span>
-                                <span>
-                                  <strong>Status:</strong> {req.status || 'pendente'}
-                                </span>
-                              </div>
-                              {req.scheduledAt && (
-                                <div className="small text-muted">
-                                  <strong>Data preferencial:</strong> {new Date(req.scheduledAt).toLocaleString()}
-                                </div>
-                              )}
-                              {req.price != null && (
-                                <div className="small text-muted">
-                                  <strong>Preco indicado:</strong> EUR {Number(req.price).toFixed(2)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="d-flex flex-column gap-2 align-items-stretch align-items-md-end">
-                              <Link className="btn btn-sm btn-outline-primary" to={`/chat?requestId=${req.id}`}>
-                                Abrir chat
-                              </Link>
-                              {isConcluded && (
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-secondary"
-                                  onClick={() => handleDownloadInvoice(req.id)}
-                                  disabled={downloadingInvoiceId === req.id}
-                                >
-                                  {downloadingInvoiceId === req.id ? 'A descarregar...' : 'Descarregar fatura'}
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDeleteRequest(req.id)}
-                                disabled={deletingRequestId === req.id}
-                              >
-                                {deletingRequestId === req.id ? 'A eliminar...' : 'Eliminar pedido'}
-                              </button>
-                            </div>
-                          </div>
-                          {hasMedia && (
-                            <div className="mt-3">
-                              <span className="small text-muted d-block mb-1">Anexos:</span>
-                              <div className="d-flex flex-wrap gap-2">
-                                {req.mediaUrls.map((url, idx) => (
-                                  <a
-                                    key={`${req.id}-media-${idx}`}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="badge text-bg-light text-decoration-none"
-                                  >
-                                    Ficheiro {idx + 1}
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {req.description && (
-                            <p className="small text-muted mt-2 mb-0">
-                              <strong>Descricao:</strong> {req.description}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Removido: seção de pedidos de serviço */}
       </div>
     </Layout>
   );

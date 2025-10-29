@@ -147,7 +147,6 @@ const Dashboard = () => {
     },
     [fetchRequests],
   );
-
   const handleDownloadInvoice = useCallback(
     async (id) => {
       setDownloadingInvoiceId(id);
@@ -160,7 +159,7 @@ const Dashboard = () => {
         setStatus('Fatura descarregada com sucesso.');
       } catch (err) {
         console.error('Erro ao descarregar fatura:', err);
-        setError(err?.response?.data?.message || 'Nao foi possivel descarregar a fatura.');
+        setError(err?.response?.data?.message || 'Nao foi possivel -egar a fatura.');
       } finally {
         setDownloadingInvoiceId('');
       }
@@ -320,7 +319,7 @@ const Dashboard = () => {
             ? 'Acompanhe e aceite pedidos de manutenção atribuídos à sua equipa.'
             : 'Acompanhe o estado e os detalhes de todos os seus pedidos.'
         }
-        imageUrl="https://images.unsplash.com/photo-1581092795360-7d294c00fdfd?q=80&w=1080&auto=format&fit=crop"
+        imageUrl={role === 'technician' ? "https://images.unsplash.com/photo-1581092795360-7d294c00fdfd?q=80&w=1080&auto=format&fit=crop" : undefined}
       />
 
       {status && <div className="alert alert-success py-2">{status}</div>}
