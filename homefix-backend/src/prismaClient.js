@@ -3,18 +3,30 @@ const { PrismaClient } = require('@prisma/client');
 // Singleton pattern para evitar múltiplas instâncias no serverless (Vercel)
 const globalForPrisma = globalThis;
 
-const prismaClient = globalForPrisma.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+let prismaClient;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prismaClient;
+try {
+  prismaClient = globalForPrisma.prisma || new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prismaClient;
+  }
+} catch (error) {
+  console.error('Erro ao inicializar Prisma Client:', error);
+  console.error('Verifique se o Prisma Client foi gerado corretamente com: npx prisma generate');
+  throw error;
 }
 
 // Cleanup on process termination
 if (typeof process !== 'undefined') {
   process.on('beforeExit', async () => {
-    await prismaClient.$disconnect();
+    try {
+      await prismaClient.$disconnect();
+    } catch (error) {
+      console.error('Erro ao desconectar Prisma:', error);
+    }
   });
 }
 

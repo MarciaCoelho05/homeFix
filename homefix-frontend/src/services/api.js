@@ -12,13 +12,7 @@ const getApiUrl = () => {
     return apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
   }
   
-  // Se estiver em produção no Vercel e não tiver VITE_API_URL, 
-  // assume que o backend está no mesmo domínio
-  if (import.meta.env.PROD) {
-    return '/api';
-  }
-  
-  // Development: usar o proxy do Vite
+  // Em produção no Vercel sem VITE_API_URL: backend e frontend no mesmo domínio
   return '/api';
 };
 

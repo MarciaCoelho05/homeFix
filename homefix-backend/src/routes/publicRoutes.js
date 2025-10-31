@@ -1,5 +1,13 @@
 ﻿const express = require('express');
-const prisma = require('../prismaClient');
+
+// Importar Prisma de forma segura
+let prisma;
+try {
+  prisma = require('../prismaClient');
+} catch (error) {
+  console.error('Erro ao carregar Prisma Client nas rotas públicas:', error);
+  prisma = null;
+}
 
 const router = express.Router();
 
@@ -14,13 +22,21 @@ router.get('/requests', async (req, res) => {
   console.log('Full URL:', req.url);
   console.log('Path:', req.path);
   console.log('Origin:', req.headers.origin);
-  console.log('Headers:', JSON.stringify(req.headers, null, 2));
   
   // Garantir que CORS está configurado
   const origin = req.headers.origin;
   if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  // Verificar se Prisma está disponível
+  if (!prisma || !prisma.maintenanceRequest) {
+    console.error('Prisma não está disponível');
+    return res.status(503).json({ 
+      message: 'Serviço temporariamente indisponível',
+      error: 'Prisma Client não inicializado'
+    });
   }
   
   const { status } = req.query || {};

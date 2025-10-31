@@ -1,22 +1,35 @@
-﻿const prisma = require('../prismaClient');
+﻿// Importar Prisma de forma segura
+let prisma;
+try {
+  prisma = require('../prismaClient');
+} catch (error) {
+  console.error('Erro ao carregar Prisma Client no authMiddleware:', error);
+  prisma = null;
+}
+
 const jwt = require('jsonwebtoken');
 
 const protect = async (req, res, next) => {
+    // Verificar se Prisma está disponível
+    if (!prisma) {
+        return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
+    }
+    
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Token nÃ£o fornecido' });
+        return res.status(401).json({ message: 'Token não fornecido' });
     }
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await prisma.user.findUnique({ where: { id: decoded.id } });
         if (!user) {
-            return res.status(401).json({ message: 'Utilizador nÃ£o encontrado' });
+            return res.status(401).json({ message: 'Utilizador não encontrado' });
         }
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ message: 'Token invÃ¡lido' });
+        return res.status(401).json({ message: 'Token inválido' });
     }
 };
 

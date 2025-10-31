@@ -3,10 +3,26 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/errorHandler');
 const path = require('path');
-const prisma = require('./prismaClient');
-const { protect } = require('./middlewares/authMiddleware');
 
 dotenv.config();
+
+// Tentar importar o Prisma com tratamento de erro
+let prisma;
+let protect;
+try {
+  prisma = require('./prismaClient');
+  protect = require('./middlewares/authMiddleware').protect;
+  console.log('✅ Prisma Client carregado com sucesso');
+} catch (error) {
+  console.error('❌ Erro ao carregar Prisma Client:', error);
+  console.error('Por favor, execute: cd homefix-backend && npx prisma generate');
+  // Criar um Prisma mock para evitar crash completo
+  prisma = {
+    user: { findUnique: () => Promise.reject(new Error('Prisma não inicializado')) },
+    maintenanceRequest: { findMany: () => Promise.reject(new Error('Prisma não inicializado')) },
+  };
+  protect = (req, res, next) => res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
+}
 
 const app = express();
 
@@ -128,6 +144,10 @@ app.delete('/api/profile', protect, async (req, res) => {
   const userId = req.user.id;
 
   try {
+    if (!prisma || !prisma.user) {
+      return res.status(503).json({ message: 'Serviço temporariamente indisponível' });
+    }
+    
     // Buscar dados do usuário antes de eliminar para enviar email de confirmação
     const user = await prisma.user.findUnique({
       where: { id: userId },

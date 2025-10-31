@@ -1,9 +1,22 @@
 ﻿const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const prisma = require('../prismaClient');
+
+// Importar Prisma de forma segura
+let prisma;
+try {
+  prisma = require('../prismaClient');
+} catch (error) {
+  console.error('Erro ao carregar Prisma Client no authControllers:', error);
+  prisma = null;
+}
 
 async function register(req, res) {
   try {
+    // Verificar se Prisma está disponível
+    if (!prisma) {
+      return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
+    }
+    
     let { email, password, firstName, lastName, birthDate, isTechnician, technicianCategory } = req.body || {};
     const errors = {};
     if (!firstName || !firstName.trim()) errors.firstName = 'Indique o nome';
@@ -69,6 +82,11 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
+    // Verificar se Prisma está disponível
+    if (!prisma) {
+      return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
+    }
+    
     let { email, password } = req.body || {};
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
