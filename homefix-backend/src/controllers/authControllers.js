@@ -143,22 +143,42 @@ async function login(req, res) {
       return res.status(500).json({ message: 'Erro ao gerar token de autenticação' });
     }
     
-    const { password: _password, ...safeUser } = user;
+    const { password: _password, ...userWithoutPassword } = user;
+    
+    const safeUser = {
+      id: userWithoutPassword.id,
+      email: userWithoutPassword.email,
+      firstName: userWithoutPassword.firstName,
+      lastName: userWithoutPassword.lastName,
+      nif: userWithoutPassword.nif,
+      avatarUrl: userWithoutPassword.avatarUrl,
+      birthDate: userWithoutPassword.birthDate,
+      isAdmin: userWithoutPassword.isAdmin === true,
+      isTechnician: userWithoutPassword.isTechnician === true,
+      createdAt: userWithoutPassword.createdAt,
+      updatedAt: userWithoutPassword.updatedAt,
+      technicianCategory: []
+    };
     
     try {
-      if (safeUser.technicianCategory !== undefined && safeUser.technicianCategory !== null) {
-        if (Array.isArray(safeUser.technicianCategory)) {
-          safeUser.technicianCategory = safeUser.technicianCategory.filter(cat => cat != null && String(cat).trim());
-        } else if (typeof safeUser.technicianCategory === 'string') {
-          safeUser.technicianCategory = safeUser.technicianCategory.trim() ? [safeUser.technicianCategory.trim()] : [];
+      const rawCategory = userWithoutPassword.technicianCategory;
+      if (rawCategory !== undefined && rawCategory !== null) {
+        if (Array.isArray(rawCategory)) {
+          safeUser.technicianCategory = rawCategory
+            .filter(cat => cat != null)
+            .map(cat => String(cat).trim())
+            .filter(cat => cat.length > 0);
+        } else if (typeof rawCategory === 'string') {
+          const trimmed = rawCategory.trim();
+          safeUser.technicianCategory = trimmed ? [trimmed] : [];
         } else {
           safeUser.technicianCategory = [];
         }
-      } else {
-        safeUser.technicianCategory = [];
       }
     } catch (normalizeError) {
       console.error('Erro ao normalizar technicianCategory:', normalizeError);
+      console.error('Raw category value:', userWithoutPassword.technicianCategory);
+      console.error('Type:', typeof userWithoutPassword.technicianCategory);
       safeUser.technicianCategory = [];
     }
     
