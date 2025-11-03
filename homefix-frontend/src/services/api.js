@@ -12,7 +12,19 @@ const getApiUrl = () => {
     return apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
   }
   
-  // Em produção no Vercel sem VITE_API_URL: backend e frontend no mesmo domínio
+  // Fallback: se estiver em produção e não tiver VITE_API_URL configurado,
+  // tentar inferir do hostname (para deployments separados no Vercel)
+  if (import.meta.env.PROD && typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Se o hostname contém 'homefix-frontend', assumir backend separado
+    if (hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
+      // Tentar inferir o backend URL
+      const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
+      return `https://${backendUrl}/api`;
+    }
+  }
+  
+  // Em desenvolvimento ou quando backend e frontend estão no mesmo domínio
   return '/api';
 };
 
