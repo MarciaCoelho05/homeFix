@@ -25,45 +25,55 @@ try {
 
 const app = express();
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowOrigin = origin && (
-    origin.includes('vercel.app') ||
-    origin.includes('localhost') ||
-    origin.includes('127.0.0.1')
-  ) ? origin : '*';
-  
-  res.header('Access-Control-Allow-Origin', allowOrigin);
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  
-  next();
-});
-
+// Configuração CORS aprimorada
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    // Permitir requisições sem origin (Postman, mobile apps, etc.)
+    if (!origin) {
       return callback(null, true);
     }
+    
+    // Permitir domínios Vercel
+    if (origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Permitir localhost e IPs locais
+    if (origin.includes('localhost') || 
+        origin.includes('127.0.0.1') || 
+        origin.includes('0.0.0.0')) {
+      return callback(null, true);
+    }
+    
+    // Em desenvolvimento, permitir tudo
     if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // Em produção, permitir origens conhecidas ou todas (ajustar conforme necessário)
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+  preflightContinue: false,
+}));
+app.use(express.json());
+
+// Handler explícito para OPTIONS (preflight) - garante funcionamento no Vercel
+app.options('*', cors({
+  origin: function (origin, callback) {
+    if (!origin || origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
     callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 204,
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 }));
-app.use(express.json());
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/public')) {
