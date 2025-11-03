@@ -310,8 +310,8 @@ if (clientDist && require('fs').existsSync(clientDist)) {
   });
 }
 
-// Handler para rotas API não encontradas (deve ser o último middleware)
-app.all('/api/*', (req, res) => {
+// Handler para rotas API não encontradas (usar regex para compatibilidade)
+app.use(/^\/api\/.*/, (req, res) => {
   res.status(404).json({ message: 'Rota API não encontrada' });
 });
 
