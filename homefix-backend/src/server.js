@@ -15,10 +15,22 @@ try {
   console.log('✅ Prisma Client carregado com sucesso');
 } catch (error) {
   console.error('❌ Erro ao carregar Prisma Client:', error);
+  console.error('Stack:', error.stack);
   console.error('Por favor, execute: cd homefix-backend && npx prisma generate');
+  
+  // Criar objeto Prisma mock para evitar crashes
   prisma = {
-    user: { findUnique: () => Promise.reject(new Error('Prisma não inicializado')) },
-    maintenanceRequest: { findMany: () => Promise.reject(new Error('Prisma não inicializado')) },
+    user: { 
+      findUnique: () => Promise.reject(new Error('Prisma não inicializado')),
+      findMany: () => Promise.reject(new Error('Prisma não inicializado')),
+      update: () => Promise.reject(new Error('Prisma não inicializado')),
+      delete: () => Promise.reject(new Error('Prisma não inicializado')),
+    },
+    maintenanceRequest: { 
+      findMany: () => Promise.reject(new Error('Prisma não inicializado')),
+      findUnique: () => Promise.reject(new Error('Prisma não inicializado')),
+    },
+    $disconnect: () => Promise.resolve(),
   };
   protect = (req, res, next) => res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
 }
@@ -282,14 +294,30 @@ app.delete('/api/profile', protect, async (req, res) => {
   }
 });
 
+// Servir arquivos estáticos do frontend (apenas em produção quando estiver no mesmo deploy)
 const clientDist = path.resolve(__dirname, '../../homefix-frontend/dist');
-app.use(express.static(clientDist));
+if (clientDist && require('fs').existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(clientDist, 'index.html'));
+// Handler para rotas API não encontradas
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'Rota API não encontrada' });
 });
 
 app.use(errorHandler);
+
+// Handler para erros não capturados (evita crash do servidor)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
