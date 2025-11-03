@@ -860,7 +860,7 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     console.log('🔔 Notificando técnicos sobre novo pedido:', request.id, 'Categoria:', request.category);
     
     const technicians = await prisma.user.findMany({
-      where: { isTechnician: true, email: { not: null } },
+      where: { isTechnician: true, email: { not: { equals: null } } },
       select: { email: true, firstName: true, lastName: true, technicianCategory: true },
     });
     
