@@ -12,5 +12,11 @@
       "src": "/(.*)",
       "dest": "src/server.js"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/src/server.js"
+    }
   ]
 }

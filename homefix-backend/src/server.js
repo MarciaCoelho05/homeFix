@@ -310,12 +310,16 @@ if (clientDist && require('fs').existsSync(clientDist)) {
   });
 }
 
-// Handler para rotas API não encontradas (usar regex para compatibilidade)
-app.use(/^\/api\/.*/, (req, res) => {
-  res.status(404).json({ message: 'Rota API não encontrada' });
-});
-
 app.use(errorHandler);
+
+// Handler 404 padrão (apenas para rotas não-API)
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({ message: 'Rota API não encontrada' });
+  } else {
+    res.status(404).json({ message: 'Rota não encontrada' });
+  }
+});
 
 // Handler para erros não capturados (evita crash do servidor)
 process.on('unhandledRejection', (reason, promise) => {
