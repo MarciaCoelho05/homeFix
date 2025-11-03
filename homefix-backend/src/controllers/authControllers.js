@@ -95,10 +95,27 @@ async function login(req, res) {
     }
     
     let { email, password } = req.body || {};
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+    
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET não está configurado');
+      return res.status(500).json({ message: 'Erro de configuração do servidor' });
+    }
+    
+    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    
+    if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
+    
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+    
     const token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const { password: _password, ...safeUser } = user;
     return res.json({ token, user: safeUser });
