@@ -7,12 +7,9 @@ const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
-
-// password reset
 router.post('/forgot', forgotPassword);
 router.post('/reset', resetPassword);
 
-// PATCH /api/users/:id/role  (admin only)
 router.patch('/:id/role', protect, admin, async (req, res) => {
   const id = req.params.id;
   const { isAdmin, isTechnician } = req.body || {};

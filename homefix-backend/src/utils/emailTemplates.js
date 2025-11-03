@@ -1,4 +1,3 @@
-// Template base padronizado para todos os emails
 function getBaseEmailTemplate(title, headerColor = '#ff7a00') {
   return {
     styles: `

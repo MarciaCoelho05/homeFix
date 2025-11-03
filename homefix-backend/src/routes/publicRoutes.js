@@ -1,6 +1,5 @@
 ﻿const express = require('express');
 
-// Importar Prisma de forma segura
 let prisma;
 try {
   prisma = require('../prismaClient');
@@ -11,7 +10,6 @@ try {
 
 const router = express.Router();
 
-// Test route
 router.get('/test', (req, res) => {
   res.json({ message: 'Public routes working!' });
 });
@@ -23,14 +21,12 @@ router.get('/requests', async (req, res) => {
   console.log('Path:', req.path);
   console.log('Origin:', req.headers.origin);
   
-  // Garantir que CORS está configurado
   const origin = req.headers.origin;
   if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
   }
   
-  // Verificar se Prisma está disponível
   if (!prisma || !prisma.maintenanceRequest) {
     console.error('Prisma não está disponível');
     return res.status(503).json({ 

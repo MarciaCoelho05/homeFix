@@ -84,7 +84,6 @@ const Profile = () => {
       setRequestsLoading(false);
       return;
     }
-    // Removido: não carregar pedidos no perfil
     setRequestsLoading(false);
   }, [isAdmin, isTechnician]);
 
@@ -93,7 +92,6 @@ const Profile = () => {
     if (!payload.firstName.trim()) errors.firstName = 'Indique o nome';
     if (!payload.lastName.trim()) errors.lastName = 'Indique o apelido';
     
-    // Validar NIF (opcional mas se fornecido deve ter 9 dígitos)
     if (payload.nif && payload.nif.trim() && !/^\d{9}$/.test(payload.nif.trim())) {
       errors.nif = 'NIF deve ter 9 dígitos';
     }

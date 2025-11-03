@@ -298,7 +298,6 @@ const ServicesWithFeedback = () => {
     if (!query) return;
 
     setTimeout(() => {
-      // Try to find first matching element with firstMatch flag
       const firstCategoryMatch = document.querySelector('[data-first-match="true"]');
       if (firstCategoryMatch) {
         firstCategoryMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });

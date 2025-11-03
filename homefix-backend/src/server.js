@@ -1,5 +1,4 @@
-﻿// Wrapper para capturar erros de inicialização
-try {
+﻿try {
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -14,13 +13,11 @@ let protect;
 try {
   prisma = require('./prismaClient');
   protect = require('./middlewares/authMiddleware').protect;
-  console.log('✅ Prisma Client carregado com sucesso');
+  console.log('Prisma Client carregado com sucesso');
 } catch (error) {
-  console.error('❌ Erro ao carregar Prisma Client:', error);
+  console.error('Erro ao carregar Prisma Client:', error);
   console.error('Stack:', error.stack);
   console.error('Por favor, execute: cd homefix-backend && npx prisma generate');
-  
-  // Criar objeto Prisma mock para evitar crashes
   prisma = {
     user: { 
       findUnique: () => Promise.reject(new Error('Prisma não inicializado')),
@@ -39,14 +36,12 @@ try {
 
 const app = express();
 
-// Rota de diagnóstico simples (antes de qualquer middleware)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Configuração CORS - funciona localmente e no Vercel
 app.use(cors({
-  origin: true, // Permite qualquer origem (funciona localmente e no Vercel)
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
@@ -55,13 +50,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/public')) {
-    console.log(`[DEBUG] Request to: ${req.method} ${req.path}`);
-    console.log(`[DEBUG] Query:`, req.query);
-  }
-  next();
-});
 
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -80,7 +68,6 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/public', publicRoutes);
 
-console.log('Public routes registered at /api/public');
 
 app.get('/api/profile', protect, (req, res) => {
   res.json(req.user);
@@ -221,7 +208,6 @@ app.delete('/api/profile', protect, async (req, res) => {
       await tx.user.delete({ where: { id: userId } });
     });
 
-    // Enviar email de confirmação de eliminação
     if (user && user.email) {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
       const mailer = require('./config/email');
@@ -288,7 +274,7 @@ app.delete('/api/profile', protect, async (req, res) => {
           text,
           html,
         });
-        console.log(`✅ Email de confirmação de eliminação enviado para ${user.email}`);
+        console.log(`Email de confirmacao de eliminacao enviado para ${user.email}`);
       } catch (emailError) {
         console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
       }
@@ -301,7 +287,6 @@ app.delete('/api/profile', protect, async (req, res) => {
   }
 });
 
-// Servir arquivos estáticos do frontend (apenas em produção quando estiver no mesmo deploy)
 const clientDist = path.resolve(__dirname, '../../homefix-frontend/dist');
 if (clientDist && require('fs').existsSync(clientDist)) {
   app.use(express.static(clientDist));
@@ -312,7 +297,6 @@ if (clientDist && require('fs').existsSync(clientDist)) {
 
 app.use(errorHandler);
 
-// Handler para favicon e outros recursos estáticos comuns (retorna 204 - No Content)
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
@@ -321,12 +305,10 @@ app.get('/robots.txt', (req, res) => {
   res.status(204).end();
 });
 
-// Handler 404 padrão
 app.use((req, res) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'Rota API não encontrada' });
   } else {
-    // Para rotas não-API, retornar 404 apenas se não for um recurso estático comum
     const staticResources = ['/favicon.ico', '/robots.txt', '/sitemap.xml'];
     if (staticResources.includes(req.path)) {
       res.status(204).end();
@@ -336,7 +318,6 @@ app.use((req, res) => {
   }
 });
 
-// Handler para erros não capturados (evita crash do servidor)
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
@@ -355,8 +336,7 @@ if (require.main === module) {
 module.exports = app;
 
 } catch (initError) {
-  // Se houver erro na inicialização, criar um servidor mínimo que retorna erro
-  console.error('❌ ERRO CRÍTICO na inicialização do servidor:', initError);
+  console.error('ERRO CRITICO na inicializacao do servidor:', initError);
   console.error('Stack:', initError.stack);
   
   const express = require('express');

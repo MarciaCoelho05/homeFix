@@ -7,10 +7,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Upload de buffer (para Vercel/serverless) ou filePath (para desenvolvimento)
 async function uploadToCloudinary(fileData, options = {}) {
   try {
-    // Se for buffer (memory storage), usar stream upload
     if (Buffer.isBuffer(fileData)) {
       return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -29,9 +27,8 @@ async function uploadToCloudinary(fileData, options = {}) {
         const stream = Readable.from(fileData);
         stream.pipe(uploadStream);
       });
-    } 
+    }
     
-    // Se for filePath (desenvolvimento local)
     const res = await cloudinary.uploader.upload(fileData, {
       folder: 'homefix',
       resource_type: 'auto'

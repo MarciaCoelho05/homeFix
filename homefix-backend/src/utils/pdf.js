@@ -22,7 +22,6 @@ async function generateInvoicePDF(request, user) {
       const margin = 50;
       const contentWidth = pageWidth - (margin * 2);
 
-      // Header
       doc.fontSize(26).fillColor('#ff7a00').text('FATURA', margin, 80, { 
         width: contentWidth, 
         align: 'center' 
@@ -33,12 +32,10 @@ async function generateInvoicePDF(request, user) {
       });
       doc.moveDown(1.5);
 
-      // Linha separadora
       doc.strokeColor('#ff7a00').lineWidth(2)
          .moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke();
       doc.moveDown(1);
 
-      // Informações do Cliente
       doc.fontSize(11).fillColor('#000000').text('DADOS DO CLIENTE', { underline: true });
       doc.moveDown(0.5);
       doc.fontSize(10).fillColor('#333333')
@@ -47,7 +44,6 @@ async function generateInvoicePDF(request, user) {
          .text(`NIF: ${user.nif || 'Não informado'}`)
          .moveDown(1.2);
 
-      // Informações do Serviço
       doc.fontSize(11).fillColor('#000000').text('DETALHES DO SERVIÇO', { underline: true });
       doc.moveDown(0.5);
       doc.fontSize(10).fillColor('#333333')
@@ -63,7 +59,6 @@ async function generateInvoicePDF(request, user) {
       }
       doc.moveDown(1.5);
 
-      // Tabela de Valores
       doc.fontSize(11).fillColor('#000000').text('VALORES', { underline: true });
       doc.moveDown(0.8);
 
@@ -72,7 +67,6 @@ async function generateInvoicePDF(request, user) {
       const col2X = pageWidth - margin - 120;
       const colWidth = 120;
 
-      // Cabeçalho da tabela
       doc.rect(col1X, tableY, contentWidth, 25).fillAndStroke('#f5f5f5', '#cccccc');
       doc.fillColor('#000000').fontSize(10)
          .text('Descrição', col1X + 10, tableY + 7, { width: contentWidth - colWidth - 20 })
@@ -80,37 +74,31 @@ async function generateInvoicePDF(request, user) {
 
       let currentY = tableY + 30;
 
-      // Valor Base
       doc.fillColor('#333333').fontSize(10)
          .text('Valor Base do Serviço', col1X + 10, currentY)
          .text(`€ ${basePrice.toFixed(2)}`, col2X, currentY, { width: colWidth - 10, align: 'right' });
       
       currentY += 22;
 
-      // IVA
       doc.text(`IVA (${(IVA_RATE * 100).toFixed(0)}%)`, col1X + 10, currentY)
          .text(`€ ${ivaAmount.toFixed(2)}`, col2X, currentY, { width: colWidth - 10, align: 'right' });
       
       currentY += 28;
 
-      // Linha separadora
       doc.strokeColor('#cccccc').lineWidth(1)
          .moveTo(col1X, currentY).lineTo(pageWidth - margin, currentY).stroke();
       
       currentY += 10;
 
-      // Total
       doc.fontSize(13).fillColor('#ff7a00').font('Helvetica-Bold')
          .text('TOTAL A PAGAR', col1X + 10, currentY)
          .text(`€ ${totalPrice.toFixed(2)}`, col2X, currentY, { width: colWidth - 10, align: 'right' });
       
       currentY += 22;
 
-      // Linha separadora final
       doc.strokeColor('#ff7a00').lineWidth(2)
          .moveTo(col1X, currentY).lineTo(pageWidth - margin, currentY).stroke();
 
-      // Rodapé
       doc.font('Helvetica').fontSize(9).fillColor('#666666');
       const footerY = doc.page.height - 100;
       doc.text('Obrigado por utilizar a HomeFix!', margin, footerY, { 
