@@ -1,0 +1,719 @@
+{
+  "info": {
+    "name": "HomeFix API",
+    "description": "API completa da aplicação HomeFix - Sistema de gestão de manutenção",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Autenticação",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registar novo utilizador"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login e obter token JWT"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot"]
+            },
+            "description": "Solicitar reset de password"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token\",\n  \"password\": \"newPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset"]
+            },
+            "description": "Alterar password com token de reset"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile - Perfil",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Obter perfil do utilizador autenticado"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"nif\": \"123456789\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"birthDate\": \"1990-01-01\",\n  \"technicianCategory\": \"Canalização\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Atualizar perfil do utilizador"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Requests - Pedidos de Manutenção",
+      "item": [
+        {
+          "name": "Get All Requests (Admin/Tech)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance?status=pendente",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pendente",
+                  "description": "pendente, em_progresso, concluido"
+                }
+              ]
+            },
+            "description": "Obter todos os pedidos (apenas Admin ou Técnico)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/mine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", "mine"]
+            },
+            "description": "Obter os meus pedidos (cliente)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Reparação de fugas\",\n  \"description\": \"Preciso reparar fugas de água no banheiro\",\n  \"category\": \"Canalização\",\n  \"price\": 100,\n  \"scheduledAt\": \"2024-01-15T10:00:00Z\",\n  \"status\": \"pendente\",\n  \"mediaUrls\": [\"https://example.com/image.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance"]
+            },
+            "description": "Criar novo pedido de manutenção"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Request by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Obter pedido por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Reparação de fugas (atualizado)\",\n  \"description\": \"Descrição atualizada\",\n  \"category\": \"Canalização\",\n  \"price\": 150,\n  \"status\": \"em_progresso\",\n  \"technicianId\": \"tech_id_here\",\n  \"scheduledAt\": \"2024-01-15T14:00:00Z\",\n  \"mediaUrls\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Atualizar pedido"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Eliminar pedido (Admin ou Owner)"
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id", "accept"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Técnico aceitar pedido"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invoice PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id/invoice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id", "invoice"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Obter fatura em PDF"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"request_id_here\",\n  \"rating\": 5,\n  \"comment\": \"Excelente serviço!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id", "feedback"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Adicionar feedback a um pedido"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maintenance", ":id", "complete"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Marcar pedido como concluído"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages - Mensagens",
+      "item": [
+        {
+          "name": "Get Messages by Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/:requestId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", ":requestId"],
+              "variable": [
+                {
+                  "key": "requestId",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Obter mensagens de um pedido"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"request_id_here\",\n  \"content\": \"Olá, gostaria de mais informações sobre o pedido\",\n  \"attachments\": [\"https://example.com/file.pdf\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages"]
+            },
+            "description": "Enviar mensagem"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/:messageId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", ":messageId"],
+              "variable": [
+                {
+                  "key": "messageId",
+                  "value": "message_id_here"
+                }
+              ]
+            },
+            "description": "Eliminar mensagem (Owner ou Admin)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Administração",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Obter todos os utilizadores (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAdmin\": true,\n  \"isTechnician\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/:id/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", ":id", "role"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user_id_here"
+                }
+              ]
+            },
+            "description": "Atualizar role de utilizador (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user_id_here"
+                }
+              ]
+            },
+            "description": "Eliminar utilizador (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "requests"]
+            },
+            "description": "Obter todos os pedidos (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/requests/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "requests", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "request_id_here"
+                }
+              ]
+            },
+            "description": "Eliminar pedido (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/feedbacks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "feedbacks"]
+            },
+            "description": "Obter todos os feedbacks (Admin apenas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Feedback",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/feedbacks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "feedbacks", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "feedback_id_here"
+                }
+              ]
+            },
+            "description": "Eliminar feedback (Admin apenas)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Upload - Upload de Ficheiros",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload"]
+            },
+            "description": "Upload de ficheiro (suporta imagens e PDFs)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Public - Rotas Públicas",
+      "item": [
+        {
+          "name": "Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "test"]
+            },
+            "description": "Test route"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/requests?status=concluido",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "requests"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "concluido",
+                  "description": "pendente, em_progresso, concluido"
+                }
+              ]
+            },
+            "description": "Obter pedidos públicos com feedback (sem autenticação)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email - Teste de Email",
+      "item": [
+        {
+          "name": "Send Test Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"destinatario@example.com\",\n  \"subject\": \"Teste HomeFix\",\n  \"text\": \"Email de teste HomeFix\",\n  \"html\": \"<h1>Teste</h1>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/email/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "email", "test"]
+            },
+            "description": "Enviar email de teste"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+
