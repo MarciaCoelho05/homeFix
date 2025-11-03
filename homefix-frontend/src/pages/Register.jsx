@@ -23,6 +23,7 @@ export default function Register() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
+    nif: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -40,6 +41,12 @@ export default function Register() {
     const errs = {};
     if (!data.firstName?.trim()) errs.firstName = "Indique o nome";
     if (!data.lastName?.trim()) errs.lastName = "Indique o apelido";
+    
+    // Validar NIF (opcional mas se fornecido deve ter 9 dígitos)
+    if (data.nif && data.nif.trim() && !/^\d{9}$/.test(data.nif.trim())) {
+      errs.nif = "NIF deve ter 9 dígitos";
+    }
+    
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email || "")) errs.email = "Email invalido";
     if (!data.password || data.password.length < 6 || !/[^A-Za-z0-9]/.test(data.password)) {
       errs.password = "Senha com minimo 6 caracteres e 1 caracter especial";
@@ -196,6 +203,21 @@ export default function Register() {
               className={`form-control ${fieldErrors.email ? "is-invalid" : ""}`}
             />
             {fieldErrors.email && <div className="invalid-feedback">{fieldErrors.email}</div>}
+          </div>
+
+          <div className="mt-3">
+            <label className="form-label small text-uppercase">NIF (Opcional)</label>
+            <input
+              name="nif"
+              type="text"
+              placeholder="000000000"
+              value={form.nif}
+              onChange={handleChange}
+              maxLength={9}
+              className={`form-control ${fieldErrors.nif ? "is-invalid" : ""}`}
+            />
+            {fieldErrors.nif && <div className="invalid-feedback">{fieldErrors.nif}</div>}
+            <small className="text-muted">Necessário para fatura com IVA</small>
           </div>
 
           <div className="mt-3">

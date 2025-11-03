@@ -12,6 +12,11 @@ const Dashboard = () => {
   const [completingId, setCompletingId] = useState('');
   const [deletingRequestId, setDeletingRequestId] = useState('');
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState('');
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [priceInput, setPriceInput] = useState('');
+  const [currentRequestId, setCurrentRequestId] = useState('');
+  const [feedbackForm, setFeedbackForm] = useState({});
+  const [submittingFeedback, setSubmittingFeedback] = useState('');
 
   const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
@@ -57,7 +62,8 @@ const Dashboard = () => {
     if (role !== 'technician') return [];
     return requests.filter((request) => {
       const technicianId = request.technicianId || request.technician?.id || null;
-      return !technicianId;
+      const status = (request.status || '').toLowerCase();
+      return !technicianId && status === 'pendente';
     });
   }, [requests, role]);
 
@@ -106,16 +112,36 @@ const Dashboard = () => {
   };
 
   const handleCompleteRequest = useCallback(
-    async (id) => {
-      setCompletingId(id);
+    (id, currentPrice) => {
+      setCurrentRequestId(id);
+      setPriceInput(currentPrice != null ? String(currentPrice) : '');
+      setShowPriceModal(true);
+    },
+    [],
+  );
+
+  const confirmCompleteRequest = useCallback(
+    async () => {
+      if (!currentRequestId) return;
+      
+      const price = parseFloat(priceInput);
+      if (!priceInput || isNaN(price) || price < 0) {
+        setError('Preço inválido. Insira um valor válido.');
+        return;
+      }
+
+      setCompletingId(currentRequestId);
+      setShowPriceModal(false);
       setStatus('');
       setError('');
+      
       try {
-        const res = await api.post(`/requests/${id}/complete`);
+        await api.patch(`/requests/${currentRequestId}/price`, { price });
+        const res = await api.post(`/requests/${currentRequestId}/complete`);
         const message = res.data?.message || 'Pedido concluído com sucesso.';
         setStatus(message);
         if (res.data?.invoice) {
-          downloadBase64Pdf(res.data.fileName || `fatura-${id}.pdf`, res.data.invoice);
+          downloadBase64Pdf(res.data.fileName || `fatura-${currentRequestId}.pdf`, res.data.invoice);
         }
         await fetchRequests(true);
       } catch (err) {
@@ -123,9 +149,11 @@ const Dashboard = () => {
         setError(err?.response?.data?.message || 'Não foi possível concluir o pedido.');
       } finally {
         setCompletingId('');
+        setCurrentRequestId('');
+        setPriceInput('');
       }
     },
-    [fetchRequests],
+    [currentRequestId, priceInput, fetchRequests],
   );
 
   const handleDeleteRequest = useCallback(
@@ -167,6 +195,50 @@ const Dashboard = () => {
     [],
   );
 
+  const handleFeedbackChange = useCallback((requestId, field, value) => {
+    setFeedbackForm((prev) => ({
+      ...prev,
+      [requestId]: {
+        ...prev[requestId],
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const handleSubmitFeedback = useCallback(
+    async (requestId) => {
+      const feedback = feedbackForm[requestId];
+      if (!feedback || !feedback.rating) {
+        setError('Por favor, selecione uma avaliação.');
+        return;
+      }
+
+      setSubmittingFeedback(requestId);
+      setStatus('');
+      setError('');
+
+      try {
+        await api.post(`/requests/${requestId}/feedback`, {
+          rating: parseInt(feedback.rating, 10),
+          comment: feedback.comment || '',
+        });
+        setStatus('Feedback enviado com sucesso!');
+        setFeedbackForm((prev) => {
+          const updated = { ...prev };
+          delete updated[requestId];
+          return updated;
+        });
+        await fetchRequests(true);
+      } catch (err) {
+        console.error('Erro ao enviar feedback:', err);
+        setError(err?.response?.data?.message || 'Não foi possível enviar o feedback.');
+      } finally {
+        setSubmittingFeedback('');
+      }
+    },
+    [feedbackForm, fetchRequests],
+  );
+
   const formatDate = (value) => {
     if (!value) return '-';
     try {
@@ -187,6 +259,8 @@ const Dashboard = () => {
     const canDelete = isOwner && role !== 'technician';
     const canDownloadInvoice = isConcluded && (isOwner || isAssignedTech || role === 'admin');
     const canOpenChat = isOwner || isAssignedTech || role === 'admin';
+    const hasFeedback = request.feedback && request.feedback.id;
+    const canLeaveFeedback = isConcluded && isOwner && role !== 'technician' && !hasFeedback;
 
     const actionButtons = [];
 
@@ -216,7 +290,7 @@ const Dashboard = () => {
         <button
           key="complete"
           className="btn btn-sm btn-success flex-fill"
-          onClick={() => handleCompleteRequest(request.id)}
+          onClick={() => handleCompleteRequest(request.id, request.price)}
           disabled={completingId === request.id}
         >
           {completingId === request.id ? 'A concluir...' : 'Marcar como concluído'}
@@ -305,6 +379,74 @@ const Dashboard = () => {
           {actionButtons.length > 0 && (
             <div className="mt-3 d-flex flex-column flex-sm-row gap-2">{actionButtons}</div>
           )}
+          
+          {canLeaveFeedback && (
+            <div className="mt-3 border-top pt-3">
+              <h6 className="fw-semibold mb-2">Deixe o seu feedback</h6>
+              <p className="text-muted small mb-3">Como avalia o serviço prestado?</p>
+              
+              <div className="mb-3">
+                <label className="form-label small">Avaliação *</label>
+                <div className="d-flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      className={`btn ${
+                        feedbackForm[request.id]?.rating >= star
+                          ? 'btn-warning'
+                          : 'btn-outline-warning'
+                      } btn-sm`}
+                      onClick={() => handleFeedbackChange(request.id, 'rating', star)}
+                      style={{ fontSize: '1.2rem', padding: '0.25rem 0.5rem' }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <label className="form-label small">Comentário (opcional)</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="3"
+                  placeholder="Conte-nos sobre a sua experiência..."
+                  value={feedbackForm[request.id]?.comment || ''}
+                  onChange={(e) => handleFeedbackChange(request.id, 'comment', e.target.value)}
+                />
+              </div>
+              
+              <button
+                type="button"
+                className="btn btn-primary btn-sm w-100"
+                onClick={() => handleSubmitFeedback(request.id)}
+                disabled={
+                  submittingFeedback === request.id || !feedbackForm[request.id]?.rating
+                }
+              >
+                {submittingFeedback === request.id ? 'A enviar...' : 'Enviar feedback'}
+              </button>
+            </div>
+          )}
+          
+          {hasFeedback && (
+            <div className="mt-3 border-top pt-3">
+              <h6 className="fw-semibold mb-2">Feedback enviado</h6>
+              <div className="d-flex align-items-center mb-2">
+                <span className="text-warning me-2" style={{ fontSize: '1.2rem' }}>
+                  {'★'.repeat(request.feedback.rating)}
+                  {'☆'.repeat(5 - request.feedback.rating)}
+                </span>
+                <small className="text-muted">
+                  {new Date(request.feedback.createdAt).toLocaleDateString('pt-PT')}
+                </small>
+              </div>
+              {request.feedback.comment && (
+                <p className="text-muted small mb-0">{request.feedback.comment}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -319,11 +461,71 @@ const Dashboard = () => {
             ? 'Acompanhe e aceite pedidos de manutenção atribuídos à sua equipa.'
             : 'Acompanhe o estado e os detalhes de todos os seus pedidos.'
         }
-        imageUrl={role === 'technician' ? "https://images.unsplash.com/photo-1581092795360-7d294c00fdfd?q=80&w=1080&auto=format&fit=crop" : undefined}
       />
 
       {status && <div className="alert alert-success py-2">{status}</div>}
       {error && <div className="alert alert-danger py-2">{error}</div>}
+
+      {showPriceModal && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Definir preço do serviço</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowPriceModal(false);
+                    setCurrentRequestId('');
+                    setPriceInput('');
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-3">
+                  Insira o preço do serviço antes de marcar como concluído. Este valor será usado para gerar a fatura.
+                </p>
+                <div className="mb-3">
+                  <label className="form-label">Preço (EUR)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="form-control"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    placeholder="0.00"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowPriceModal(false);
+                    setCurrentRequestId('');
+                    setPriceInput('');
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={confirmCompleteRequest}
+                  disabled={!priceInput}
+                >
+                  Confirmar e concluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-5">
           <div className="spinner-border text-primary" role="status">

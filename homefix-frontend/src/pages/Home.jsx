@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import api from "../services/api";
 
@@ -12,7 +12,6 @@ const carouselImages = [
 ];
 
 const Home = () => {
-  const [requests, setRequests] = useState([]);
   const [statusMsg, setStatusMsg] = useState("");
   const navigate = useNavigate();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -20,12 +19,10 @@ const Home = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await api.get("/public/requests");
-        setRequests(res.data || []);
+        await api.get("/public/requests");
       } catch (firstError) {
         try {
-          const resFallback = await api.get("/public/requests?status=concluido");
-          setRequests(resFallback.data || []);
+          await api.get("/public/requests?status=concluido");
           setStatusMsg("Mostramos serviços concluídos recentemente.");
         } catch (secondError) {
           setStatusMsg("Para ver todos os serviços, inicie sessão.");
@@ -43,26 +40,6 @@ const Home = () => {
     const target = category ? `/new-request?category=${encodeURIComponent(category)}` : "/new-request";
     navigate(target);
   };
-
-  const normalizedRequests = Array.isArray(requests) ? requests : [];
-
-  const requestsWithFeedback = useMemo(() => {
-    if (!normalizedRequests.length) return [];
-    return normalizedRequests
-      .map((req) => {
-        const feedbackRecord = req.feedback;
-        const isConcluded = (req.status || "").toLowerCase() === "concluido";
-        const hasFeedback = Boolean(feedbackRecord?.comment && isConcluded);
-        return {
-          ...req,
-          feedbackQuote: hasFeedback ? feedbackRecord.comment : null,
-          feedbackAuthor: hasFeedback ? feedbackRecord.user?.firstName || "Cliente" : null,
-          feedbackRating: hasFeedback ? feedbackRecord.rating : null,
-          hasFeedback,
-        };
-      })
-      .filter((req) => req.hasFeedback);
-  }, [normalizedRequests]);
 
   return (
     <Layout>
@@ -148,36 +125,6 @@ const Home = () => {
         </section>
 
         {statusMsg && <p className="text-muted small">{statusMsg}</p>}
-
-        {requestsWithFeedback.length > 0 && (
-          <section className="mb-5">
-            <h2 className="h5 fw-semibold mb-3">Feedback recente</h2>
-            <div className="row g-3">
-              {requestsWithFeedback.map((req) => (
-                <div className="col-12 col-md-6 col-lg-4" key={req.id}>
-                  <div className="service-card h-100 p-3 rounded-3">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h3 className="h6 fw-semibold m-0">{req.title}</h3>
-                      <span className="badge status-badge status-concluido">Concluído</span>
-                    </div>
-                    <p className="text-muted small mb-3">{req.description}</p>
-                    <div className="feedback-snippet mb-3">
-                      <p className="feedback-text mb-1">
-                        <strong>{req.feedbackAuthor || "Cliente"}:</strong> {req.feedbackQuote}
-                      </p>
-                      <span className="feedback-rating text-muted small">
-                        Avaliação: {Number(req.feedbackRating || 5).toFixed(1)}/5
-                      </span>
-                    </div>
-                    <div className="d-flex justify-content-between small text-muted">
-                      <span><strong>Categoria:</strong> {req.category || "-"}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </Layout>
   );

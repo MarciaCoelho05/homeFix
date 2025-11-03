@@ -1,4 +1,7 @@
 :root {
+  --primary: #ff7a00;
+  --primary-700: #e56d00;
+  --primary-800: #cc6100;
   --surface: #ffffff;
   --muted: #f9fafb;
   --text: #1f2937;
@@ -82,17 +85,6 @@ body::after {
 }
 
 .muted { color: #6b7280 }
-
-
-
-:root {
-  --primary: #ff7a00;
-  --primary-700: #e56d00;
-  --primary-800: #cc6100;
-  --surface: #ffffff;
-  --muted: #f6f7f9;
-  --text: #1f2937;
-}
 
 /* Navbar */
 .homefix-navbar {
@@ -220,18 +212,19 @@ a:hover { color: var(--primary-700); }
 }
 .home-carousel-img {
   width: 100%;
-  height: 260px;
-  object-fit: cover;
+  height: 450px;
+  object-fit: contain;
   object-position: center;
+  background: transparent;
 }
 @media (max-width: 992px) {
   .home-carousel-img {
-    height: 200px;
+    height: 350px;
   }
 }
 @media (max-width: 576px) {
   .home-carousel-img {
-    height: 160px;
+    height: 250px;
   }
 }
 .auth-card {

@@ -46,6 +46,11 @@ const Chat = () => {
   );
 
   useEffect(() => {
+    localStorage.setItem('lastChatVisit', new Date().toISOString());
+    window.dispatchEvent(new CustomEvent('chatVisited'));
+  }, []);
+
+  useEffect(() => {
     const loadRequests = async () => {
       try {
         const endpoint = role === 'technician' || role === 'admin' ? '/requests' : '/requests/mine';
@@ -55,11 +60,11 @@ const Chat = () => {
           role === 'technician' && userId
             ? list.filter((req) => {
                 const technicianId = req.technicianId || req.technician?.id || null;
-                return technicianId === userId;
+                return String(technicianId) === String(userId);
               })
             : list;
         setRequests(visibleRequests);
-        if (initialRequestId && visibleRequests.some((req) => req.id === initialRequestId)) {
+        if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
           setRequestId(initialRequestId);
         } else if (!initialRequestId && visibleRequests.length > 0) {
           setRequestId(visibleRequests[0].id);
@@ -167,10 +172,12 @@ const Chat = () => {
     return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].some((ext) => value.endsWith(ext));
   };
 
+  const chatTitle = role === 'technician' || role === 'admin' ? 'Conversas' : 'Chat com técnico';
+
   return (
     <Layout>
       <div className="card border-0 shadow-sm p-4 p-md-5">
-        <h1 className="h4 fw-semibold mb-4">Chat com técnico</h1>
+        <h1 className="h4 fw-semibold mb-4">{chatTitle}</h1>
 
         {statusMessage && <div className="alert alert-success py-2">{statusMessage}</div>}
         {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
@@ -208,7 +215,7 @@ const Chat = () => {
                     msg.sender?.email ||
                     'Utilizador';
                   const senderId = msg.senderId || msg.sender?.id || null;
-                  const canDelete = role === 'admin' || senderId === userId;
+                  const canDelete = role === 'admin' || String(senderId) === String(userId);
                   return (
                     <div key={msg.id} className="mb-3 border-bottom pb-2">
                       <div className="d-flex justify-content-between align-items-start">

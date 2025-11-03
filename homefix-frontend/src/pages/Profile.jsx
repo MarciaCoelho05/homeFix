@@ -32,6 +32,7 @@ const Profile = () => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    nif: '',
     birthDate: '',
     technicianCategory: '',
   });
@@ -63,6 +64,7 @@ const Profile = () => {
         setForm({
           firstName: data.firstName || '',
           lastName: data.lastName || '',
+          nif: data.nif || '',
           birthDate: data.birthDate ? data.birthDate.slice(0, 10) : '',
           technicianCategory: data.technicianCategory || '',
         });
@@ -90,6 +92,11 @@ const Profile = () => {
     const errors = {};
     if (!payload.firstName.trim()) errors.firstName = 'Indique o nome';
     if (!payload.lastName.trim()) errors.lastName = 'Indique o apelido';
+    
+    // Validar NIF (opcional mas se fornecido deve ter 9 dígitos)
+    if (payload.nif && payload.nif.trim() && !/^\d{9}$/.test(payload.nif.trim())) {
+      errors.nif = 'NIF deve ter 9 dígitos';
+    }
 
     if (!payload.birthDate) {
       errors.birthDate = 'Indique a data de nascimento';
@@ -294,6 +301,22 @@ const Profile = () => {
                   {fieldErrors.lastName && (
                     <div className="invalid-feedback">{fieldErrors.lastName}</div>
                   )}
+                </div>
+                <div className="col-12">
+                  <label className="form-label small text-uppercase">NIF (Opcional)</label>
+                  <input
+                    name="nif"
+                    type="text"
+                    maxLength="9"
+                    placeholder="000000000"
+                    className={`form-control ${fieldErrors.nif ? 'is-invalid' : ''}`}
+                    value={form.nif}
+                    onChange={handleChange}
+                  />
+                  {fieldErrors.nif && (
+                    <div className="invalid-feedback">{fieldErrors.nif}</div>
+                  )}
+                  <small className="text-muted">Necessário para fatura com IVA</small>
                 </div>
                 <div className="col-12">
                   <label className="form-label small text-uppercase">Data de nascimento</label>

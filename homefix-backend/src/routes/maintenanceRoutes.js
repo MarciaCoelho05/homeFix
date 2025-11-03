@@ -3,6 +3,7 @@ const prisma = require('../prismaClient');
 const { protect } = require('../middlewares/authMiddleware');
 const mailer = require('../config/email');
 const { generateInvoicePDF } = require('../utils/pdf');
+const { getBaseEmailTemplate } = require('../utils/emailTemplates');
 
 const router = express.Router();
 
@@ -22,10 +23,17 @@ router.get('/', protect, async (req, res) => {
       where.status = req.query.status.toString();
     }
   } else {
+    const technicianCategory = req.user.technicianCategory;
+    const hasSpecificCategory = technicianCategory && 
+                                technicianCategory.toLowerCase() !== 'outros' && 
+                                technicianCategory.toLowerCase() !== 'other';
+
     const baseFilter = {
       OR: [
         { technicianId: req.user.id },
-        { technicianId: null, status: 'pendente' },
+        hasSpecificCategory 
+          ? { technicianId: null, status: 'pendente', category: technicianCategory }
+          : { technicianId: null, status: 'pendente' },
       ],
     };
 
@@ -33,7 +41,9 @@ router.get('/', protect, async (req, res) => {
       const status = req.query.status.toString();
       baseFilter.OR = [
         { technicianId: req.user.id, status },
-        { technicianId: null, status },
+        hasSpecificCategory 
+          ? { technicianId: null, status, category: technicianCategory }
+          : { technicianId: null, status },
       ];
     }
     where = baseFilter;
@@ -59,15 +69,25 @@ router.get('/mine', protect, async (req, res) => {
       return res.status(401).json({ message: 'Utilizador não autenticado' });
     }
     
-    const requests = await prisma.maintenanceRequest.findMany({
-      where: { ownerId: req.user.id },
-      include: {
+  const requests = await prisma.maintenanceRequest.findMany({
+    where: { ownerId: req.user.id },
+    include: {
         owner: { select: { id: true, firstName: true, lastName: true, email: true } },
         technician: { select: { id: true, firstName: true, lastName: true, email: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(requests);
+        messages: true,
+        feedback: { 
+          select: { 
+            id: true, 
+            rating: true, 
+            comment: true, 
+            createdAt: true, 
+            userId: true 
+          } 
+        },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(requests);
   } catch (err) {
     console.error('Erro ao obter pedidos do usuário:', err);
     console.error('Stack:', err.stack);
@@ -238,7 +258,10 @@ router.delete('/:id', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
-    select: { ownerId: true },
+    include: {
+      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+    },
   });
   if (!request) {
     return res.status(404).json({ message: 'Pedido não encontrado' });
@@ -246,11 +269,140 @@ router.delete('/:id', protect, async (req, res) => {
   if (!(isAdmin || request.ownerId === req.user.id)) {
     return res.status(403).json({ message: 'Acesso negado' });
   }
+  
   await prisma.$transaction([
     prisma.message.deleteMany({ where: { requestId: req.params.id } }),
     prisma.feedback.deleteMany({ where: { requestId: req.params.id } }),
     prisma.maintenanceRequest.delete({ where: { id: req.params.id } }),
   ]);
+
+  if (request.owner && request.owner.email) {
+    const ownerName = `${request.owner.firstName || ''} ${request.owner.lastName || ''}`.trim() || 'Cliente';
+    
+    const text = [
+      `Olá ${ownerName},`,
+      '',
+      'Informamos que o seu pedido de serviço foi eliminado.',
+      '',
+      `Pedido: ${request.title}`,
+      `Categoria: ${request.category || '-'}`,
+      `Estado: ${request.status || 'pendente'}`,
+      '',
+      'Se tiver alguma dúvida, entre em contacto connosco através da aplicação.',
+      '',
+      'Atenciosamente,',
+      'Equipa HomeFix'
+    ].join('\n');
+
+    const template = getBaseEmailTemplate('#dc3545');
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${template.styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          ${template.header('Pedido Eliminado')}
+          <div class="content">
+            <p>Olá <strong>${ownerName}</strong>,</p>
+            
+            <div class="info-box">
+              <p style="margin: 0;"><strong>🗑️ Pedido eliminado</strong></p>
+              <p style="margin: 8px 0 0 0;">Informamos que o seu pedido de serviço foi eliminado.</p>
+            </div>
+            
+            <div class="details">
+              <h3>Detalhes do Pedido</h3>
+              <ul>
+                <li><strong>Serviço:</strong> ${request.title}</li>
+                <li><strong>Categoria:</strong> ${request.category || '-'}</li>
+                <li><strong>Estado:</strong> ${request.status || 'pendente'}</li>
+                ${request.description ? `<li><strong>Descrição:</strong> ${request.description.substring(0, 100)}${request.description.length > 100 ? '...' : ''}</li>` : ''}
+              </ul>
+            </div>
+            
+            <p>Se tiver alguma dúvida ou precisar de ajuda, não hesite em contactar-nos através da aplicação.</p>
+            
+            ${template.footer()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    mailer.sendMail({
+      from: '"HomeFix" <no-reply@homefix.com>',
+      to: request.owner.email,
+      subject: 'Pedido eliminado - HomeFix',
+      text,
+      html,
+    }).catch((err) => {
+      console.error('Erro ao enviar email de eliminação de pedido:', err);
+    });
+  }
+
+  if (request.technician && request.technician.email) {
+    const techName = `${request.technician.firstName || ''} ${request.technician.lastName || ''}`.trim() || 'Técnico';
+    
+    const text = [
+      `Olá ${techName},`,
+      '',
+      'Informamos que um pedido que estava atribuído a si foi eliminado.',
+      '',
+      `Pedido: ${request.title}`,
+      `Categoria: ${request.category || '-'}`,
+      '',
+      'Atenciosamente,',
+      'Equipa HomeFix'
+    ].join('\n');
+
+    const template = getBaseEmailTemplate('#dc3545');
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${template.styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          ${template.header('Pedido Eliminado')}
+          <div class="content">
+            <p>Olá <strong>${techName}</strong>,</p>
+            
+            <div class="info-box">
+              <p style="margin: 0;"><strong>🗑️ Pedido eliminado</strong></p>
+              <p style="margin: 8px 0 0 0;">Um pedido atribuído a si foi eliminado.</p>
+            </div>
+            
+            <div class="details">
+              <h3>Detalhes</h3>
+              <ul>
+                <li><strong>Serviço:</strong> ${request.title}</li>
+                <li><strong>Categoria:</strong> ${request.category || '-'}</li>
+              </ul>
+            </div>
+            
+            ${template.footer()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    mailer.sendMail({
+      from: '"HomeFix" <no-reply@homefix.com>',
+      to: request.technician.email,
+      subject: 'Pedido eliminado - HomeFix',
+      text,
+      html,
+    }).catch((err) => {
+      console.error('Erro ao enviar email de eliminação de pedido ao técnico:', err);
+    });
+  }
+
   res.status(204).send();
 });
 
@@ -321,7 +473,7 @@ router.post('/:id/complete', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -344,7 +496,7 @@ router.post('/:id/complete', protect, async (req, res) => {
       completedAt: new Date(),
     },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -368,6 +520,122 @@ router.post('/:id/complete', protect, async (req, res) => {
   notifyClientAboutRequestCompleted(updated, invoiceBase64, fileName).catch((err) => {
     console.error('Erro ao enviar email de conclusão ao cliente:', err);
   });
+});
+
+// Adicionar/atualizar preço do serviço (apenas para técnico atribuído)
+router.patch('/:id/price', protect, async (req, res) => {
+  try {
+    const { price } = req.body;
+    
+    if (price === undefined || price === null || price === '') {
+      return res.status(400).json({ message: 'Preço é obrigatório' });
+    }
+
+    const numericPrice = Number(price);
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({ message: 'Preço inválido' });
+    }
+
+    const request = await prisma.maintenanceRequest.findUnique({
+      where: { id: req.params.id },
+      select: { technicianId: true, ownerId: true },
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+
+    const isAssignedTech = request.technicianId && request.technicianId === req.user.id;
+    const isAdmin = req.user.isAdmin === true;
+
+    if (!(isAdmin || isAssignedTech)) {
+      return res.status(403).json({ message: 'Apenas o técnico atribuído pode definir o preço' });
+    }
+
+    const updated = await prisma.maintenanceRequest.update({
+      where: { id: req.params.id },
+      data: { price: numericPrice },
+      include: {
+        owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+        technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Erro ao atualizar preço:', error);
+    res.status(500).json({ message: 'Erro ao atualizar preço' });
+  }
+});
+
+// Criar feedback (apenas para cliente que criou o pedido)
+router.post('/:id/feedback', protect, async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Avaliação deve ser entre 1 e 5' });
+    }
+
+    const request = await prisma.maintenanceRequest.findUnique({
+      where: { id: req.params.id },
+      select: { 
+        ownerId: true, 
+        status: true,
+        feedback: { select: { id: true, userId: true } }
+      },
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+
+    const isOwner = request.ownerId === req.user.id;
+    const isAdmin = req.user.isAdmin === true;
+
+    if (!(isAdmin || isOwner)) {
+      return res.status(403).json({ message: 'Apenas o cliente pode deixar feedback' });
+    }
+
+    if (request.status !== 'concluido') {
+      return res.status(400).json({ message: 'Só pode deixar feedback em pedidos concluídos' });
+    }
+
+    const existingFeedback = request.feedback || null;
+    
+    let feedback;
+    if (existingFeedback) {
+      // Atualizar feedback existente
+      feedback = await prisma.feedback.update({
+        where: { id: existingFeedback.id },
+        data: {
+          rating: Number(rating),
+          comment: comment || '',
+        },
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+        },
+      });
+    } else {
+      // Criar novo feedback
+      feedback = await prisma.feedback.create({
+        data: {
+          rating: Number(rating),
+          comment: comment || '',
+          userId: req.user.id,
+          requestId: req.params.id,
+        },
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+        },
+      });
+    }
+
+    res.json({ message: 'Feedback enviado com sucesso', feedback });
+  } catch (error) {
+    console.error('Erro ao criar feedback:', error);
+    res.status(500).json({ message: 'Erro ao enviar feedback' });
+  }
 });
 
 module.exports = router;
@@ -405,27 +673,18 @@ async function notifyClientAboutRequestCreated(request, owner) {
       'Equipa HomeFix'
     ].filter(Boolean).join('\n');
 
+    const template = getBaseEmailTemplate();
+    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #ff7a00; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-          .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .button { display: inline-block; background-color: #ff7a00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
-          .info-box { background-color: #e7f3ff; border-left: 4px solid #2196F3; padding: 16px; margin: 16px 0; border-radius: 4px; }
-          .details { background-color: white; padding: 16px; border-radius: 6px; margin: 16px 0; }
-          .footer { margin-top: 24px; font-size: 12px; color: #666; }
-        </style>
+        <style>${template.styles}</style>
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <h2 style="margin: 0;">HomeFix - Pedido Confirmado</h2>
-          </div>
+          ${template.header('HomeFix - Pedido Confirmado')}
           <div class="content">
             <p>Olá <strong>${userName}</strong>,</p>
             
@@ -435,15 +694,15 @@ async function notifyClientAboutRequestCreated(request, owner) {
             </div>
             
             <div class="details">
-              <h3 style="margin-top: 0; color: #ff7a00;">${request.title}</h3>
-              <ul style="list-style: none; padding: 0;">
+              <h3>${request.title}</h3>
+              <ul>
                 <li><strong>Categoria:</strong> ${request.category}</li>
                 ${request.scheduledAt ? `<li><strong>Data preferencial:</strong> ${new Date(request.scheduledAt).toLocaleString('pt-PT')}</li>` : ''}
                 ${request.price != null ? `<li><strong>Preço indicado:</strong> EUR ${Number(request.price).toFixed(2)}</li>` : ''}
               </ul>
               
               <p><strong>Descrição:</strong></p>
-              <p style="background-color: #f5f5f5; padding: 12px; border-radius: 4px;">${request.description || '-'}</p>
+              <div class="highlight">${request.description || '-'}</div>
             </div>
             
             <p>O seu pedido será atribuído a um técnico qualificado em breve. Assim que um técnico aceitar o pedido, poderá manter contacto através do chat na aplicação.</p>
@@ -458,10 +717,7 @@ async function notifyClientAboutRequestCreated(request, owner) {
               <p style="margin: 8px 0 0 0;">Após a atribuição do técnico, pode usar o chat da aplicação para comunicar diretamente, esclarecer dúvidas e acompanhar o progresso do serviço.</p>
             </div>
             
-            <div class="footer">
-              <p>Atenciosamente,<br>Equipa HomeFix</p>
-              <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-            </div>
+            ${template.footer()}
           </div>
         </div>
       </body>
@@ -476,7 +732,7 @@ async function notifyClientAboutRequestCreated(request, owner) {
       html,
     });
     
-    console.log(`Email de confirmação de pedido enviado para ${owner.email}`);
+    console.log(`✅ Email de confirmação de pedido enviado para ${owner.email}`);
   } catch (error) {
     console.error('Erro ao enviar email de confirmação ao cliente:', error);
   }
@@ -484,8 +740,12 @@ async function notifyClientAboutRequestCreated(request, owner) {
 
 async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileName) {
   try {
+    console.log('📧 Preparando email de conclusão...');
+    console.log('  - Tem invoiceBase64?', !!invoiceBase64, 'Tamanho:', invoiceBase64 ? invoiceBase64.length : 0);
+    console.log('  - Nome do ficheiro:', fileName);
+    
     if (!request.owner || !request.owner.email) {
-      console.log('Cliente sem email, não é possível enviar email de conclusão');
+      console.log('⚠️ Cliente sem email, não é possível enviar email de conclusão');
       return;
     }
 
@@ -493,6 +753,10 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
     const technicianName = request.technician
       ? `${request.technician.firstName || ''} ${request.technician.lastName || ''}`.trim() || request.technician.email
       : 'Técnico';
+    
+    const IVA_RATE = 0.23;
+    const basePrice = Number(request.price) || 0;
+    const totalPrice = basePrice + (basePrice * IVA_RATE);
     
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const feedbackLink = `${appUrl}/dashboard`;
@@ -505,10 +769,8 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
       `Título: ${request.title}`,
       `Categoria: ${request.category}`,
       request.technician ? `Técnico: ${technicianName}` : '',
-      request.price != null ? `Preço: EUR ${Number(request.price).toFixed(2)}` : '',
+      request.price != null ? `Preço (IVA incluído): EUR ${totalPrice.toFixed(2)}` : '',
       request.completedAt ? `Concluído em: ${new Date(request.completedAt).toLocaleString('pt-PT')}` : '',
-      '',
-      'A fatura/recibo está anexada a este email.',
       '',
       'Agradecemos a sua confiança na HomeFix!',
       '',
@@ -518,27 +780,18 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
       'Equipa HomeFix'
     ].filter(Boolean).join('\n');
 
+    const template = getBaseEmailTemplate('#28a745');
+    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #28a745; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-          .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .success-box { background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px; margin: 16px 0; border-radius: 4px; }
-          .details { background-color: white; padding: 16px; border-radius: 6px; margin: 16px 0; }
-          .button { display: inline-block; background-color: #ff7a00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
-          .footer { margin-top: 24px; font-size: 12px; color: #666; }
-        </style>
+        <style>${template.styles}</style>
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <h2 style="margin: 0;">HomeFix - Serviço Concluído</h2>
-          </div>
+          ${template.header('HomeFix - Serviço Concluído')}
           <div class="content">
             <p>Olá <strong>${userName}</strong>,</p>
             
@@ -548,17 +801,14 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
             </div>
             
             <div class="details">
-              <h3 style="margin-top: 0; color: #28a745;">${request.title}</h3>
-              <ul style="list-style: none; padding: 0;">
+              <h3>${request.title}</h3>
+              <ul>
                 <li><strong>Categoria:</strong> ${request.category}</li>
                 ${request.technician ? `<li><strong>Técnico:</strong> ${technicianName}</li>` : ''}
-                ${request.price != null ? `<li><strong>Preço:</strong> EUR ${Number(request.price).toFixed(2)}</li>` : ''}
+                ${request.price != null ? `<li><strong>Preço (IVA incluído):</strong> EUR ${totalPrice.toFixed(2)}</li>` : ''}
                 ${request.completedAt ? `<li><strong>Concluído em:</strong> ${new Date(request.completedAt).toLocaleString('pt-PT')}</li>` : ''}
               </ul>
             </div>
-            
-            <p><strong>📄 Fatura/Recibo:</strong></p>
-            <p>A fatura/recibo está anexada a este email em formato PDF.</p>
             
             <p>Agradecemos a sua confiança na HomeFix! Esperamos que tenha ficado satisfeito com o serviço prestado.</p>
             
@@ -568,10 +818,7 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
             
             <p>Se tiver alguma questão ou precisar de esclarecimentos, pode contactar-nos através da aplicação.</p>
             
-            <div class="footer">
-              <p>Atenciosamente,<br>Equipa HomeFix</p>
-              <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-            </div>
+            ${template.footer()}
           </div>
         </div>
       </body>
@@ -586,7 +833,12 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
         encoding: 'base64',
         contentType: 'application/pdf',
       });
+      console.log(`✅ Anexo adicionado: ${fileName} (${Math.round(invoiceBase64.length / 1024)}KB)`);
+    } else {
+      console.log('⚠️ AVISO: PDF não será anexado - invoiceBase64 ou fileName ausentes');
     }
+
+    console.log(`📤 Enviando email com ${attachments.length} anexo(s) para ${request.owner.email}...`);
 
     await mailer.sendMail({
       from: '"HomeFix" <no-reply@homefix.com>',
@@ -597,7 +849,7 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
       attachments: attachments.length > 0 ? attachments : undefined,
     });
     
-    console.log(`Email de conclusão com fatura enviado para ${request.owner.email}`);
+    console.log(`✅ Email de conclusão COM fatura enviado para ${request.owner.email}`);
   } catch (error) {
     console.error('Erro ao enviar email de conclusão ao cliente:', error);
   }
@@ -605,17 +857,17 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
 
 async function notifyTechniciansAboutRequest(request, ownerId) {
   try {
-    console.log('Notificando técnicos sobre novo pedido:', request.id);
+    console.log('🔔 Notificando técnicos sobre novo pedido:', request.id, 'Categoria:', request.category);
     
     const technicians = await prisma.user.findMany({
       where: { isTechnician: true, email: { not: null } },
       select: { email: true, firstName: true, lastName: true, technicianCategory: true },
     });
     
-    console.log(`Encontrados ${technicians.length} técnicos para notificar`);
+    console.log(`📧 Encontrados ${technicians.length} técnicos para notificar`);
     
     if (technicians.length === 0) {
-      console.log('Nenhum técnico com email encontrado');
+      console.log('⚠️ Nenhum técnico com email encontrado');
       return;
     }
 
@@ -627,12 +879,14 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const requestLink = `${appUrl}/dashboard`;
     const mediaSection = request.mediaUrls && request.mediaUrls.length
-      ? `<p><strong>Anexos:</strong></p><ul>${request.mediaUrls.map((url) => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
+      ? `<p><strong>📎 Anexos:</strong></p><ul>${request.mediaUrls.map((url) => `<li><a href="${url}" style="color: #ff7a00;">${url}</a></li>`).join('')}</ul>`
       : '';
 
     const ownerName = owner 
       ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() || owner.email || 'Cliente'
       : 'Cliente';
+
+    const template = getBaseEmailTemplate();
 
     // Enviar email personalizado para cada técnico
     const emailPromises = technicians.map(async (technician) => {
@@ -642,53 +896,46 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
       const isRelevantCategory = technician.technicianCategory && 
         technician.technicianCategory.toLowerCase() === request.category?.toLowerCase();
       
+      console.log(`  → Técnico: ${technicianName} (${technician.email}) - Especialização: ${technician.technicianCategory || 'Nenhuma'} - Match: ${isRelevantCategory ? 'SIM ✅' : 'NÃO'}`);
+      
       const categoryMessage = isRelevantCategory
-        ? `<p style="background-color: #e7f3ff; padding: 12px; border-radius: 6px; margin: 16px 0;">
-             <strong>✨ Este pedido corresponde à sua especialização (${technician.technicianCategory})!</strong>
-           </p>`
-        : '';
+        ? `<div class="info-box">
+             <p style="margin: 0;"><strong>✨ Este pedido corresponde à sua especialização (${technician.technicianCategory})!</strong></p>
+             <p style="margin: 8px 0 0 0;">Você é especialista nesta categoria.</p>
+           </div>`
+      : '';
 
-      const text = [
+    const text = [
         `Olá ${technicianName},`,
         '',
         'Existe um novo pedido de orçamento disponível no HomeFix que pode ser do seu interesse.',
         '',
-        `Título: ${request.title}`,
-        `Categoria: ${request.category}`,
-        isRelevantCategory ? `(Corresponde à sua especialização: ${technician.technicianCategory})` : '',
+      `Título: ${request.title}`,
+      `Categoria: ${request.category}`,
+        isRelevantCategory ? `✨ (Corresponde à sua especialização: ${technician.technicianCategory})` : '',
         `Cliente: ${ownerName}${owner?.email ? ` (${owner.email})` : ''}`,
         request.scheduledAt ? `Data preferencial: ${new Date(request.scheduledAt).toLocaleString('pt-PT')}` : '',
         '',
-        `Descrição: ${request.description}`,
+      `Descrição: ${request.description}`,
         '',
-        mediaSection ? 'Existem anexos associados ao pedido.' : '',
+      mediaSection ? 'Existem anexos associados ao pedido.' : '',
         '',
         `Pode revisar e responder ao pedido em: ${requestLink}`,
         '',
         'Atenciosamente,',
         'Equipa HomeFix'
-      ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n');
 
-      const html = `
+    const html = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #ff7a00; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-            .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background-color: #ff7a00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
-            .details { background-color: white; padding: 16px; border-radius: 6px; margin: 16px 0; }
-            .footer { margin-top: 24px; font-size: 12px; color: #666; }
-          </style>
+          <style>${template.styles}</style>
         </head>
         <body>
           <div class="container">
-            <div class="header">
-              <h2 style="margin: 0;">HomeFix - Novo Pedido Disponível</h2>
-            </div>
+            ${template.header('HomeFix - Novo Pedido Disponível')}
             <div class="content">
               <p>Olá <strong>${technicianName}</strong>,</p>
               
@@ -697,28 +944,25 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
               ${categoryMessage}
               
               <div class="details">
-                <h3 style="margin-top: 0; color: #ff7a00;">${request.title}</h3>
-                <ul style="list-style: none; padding: 0;">
-                  <li><strong>Categoria:</strong> ${request.category}</li>
+                <h3>${request.title}</h3>
+                <ul>
+        <li><strong>Categoria:</strong> ${request.category}</li>
                   ${owner ? `<li><strong>Cliente:</strong> ${ownerName}${owner.email ? ` (${owner.email})` : ''}</li>` : ''}
                   ${request.scheduledAt ? `<li><strong>Data preferencial:</strong> ${new Date(request.scheduledAt).toLocaleString('pt-PT')}</li>` : ''}
                   ${request.price != null ? `<li><strong>Preço indicado:</strong> EUR ${Number(request.price).toFixed(2)}</li>` : ''}
-                </ul>
+      </ul>
                 
-                <p><strong>Descrição:</strong></p>
-                <p style="background-color: #f5f5f5; padding: 12px; border-radius: 4px;">${request.description || '-'}</p>
+      <p><strong>Descrição:</strong></p>
+                <div class="highlight">${request.description || '-'}</div>
                 
-                ${mediaSection}
+      ${mediaSection}
               </div>
               
               <p style="text-align: center;">
                 <a href="${requestLink}" class="button">Ver Pedido no Dashboard</a>
               </p>
               
-              <div class="footer">
-                <p>Atenciosamente,<br>Equipa HomeFix</p>
-                <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-              </div>
+              ${template.footer()}
             </div>
           </div>
         </body>
@@ -727,17 +971,17 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
 
       try {
         const result = await mailer.sendMail({
-          from: '"HomeFix" <no-reply@homefix.com>',
+      from: '"HomeFix" <no-reply@homefix.com>',
           to: technician.email,
-          subject: `Novo pedido de orçamento: ${request.title}${isRelevantCategory ? ' (Relevante para si)' : ''}`,
-          text,
-          html,
+          subject: `${isRelevantCategory ? '⭐ ' : ''}Novo pedido: ${request.title}${isRelevantCategory ? ' (Relevante para si)' : ''}`,
+      text,
+      html,
         });
         
-        console.log(`Email personalizado enviado para ${technician.email}`, result.messageId);
-        return { success: true, email: technician.email };
+        console.log(`✅ Email enviado para ${technician.email} (${result.messageId})`);
+        return { success: true, email: technician.email, isRelevant: isRelevantCategory };
       } catch (emailError) {
-        console.error(`Erro ao enviar email para ${technician.email}:`, emailError);
+        console.error(`❌ Erro ao enviar email para ${technician.email}:`, emailError);
         return { success: false, email: technician.email, error: emailError.message };
       }
     });
@@ -745,14 +989,15 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     const results = await Promise.all(emailPromises);
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
+    const relevant = results.filter(r => r.success && r.isRelevant).length;
     
-    console.log(`Resumo: ${successful} emails enviados com sucesso, ${failed} falharam`);
+    console.log(`📊 Resumo: ${successful} emails enviados (${relevant} para especialistas da categoria), ${failed} falharam`);
     
     if (failed > 0) {
-      console.error('Emails que falharam:', results.filter(r => !r.success));
+      console.error('❌ Emails que falharam:', results.filter(r => !r.success));
     }
   } catch (error) {
-    console.error('Erro ao enviar email de pedido:', error);
+    console.error('❌ Erro ao enviar email de pedido:', error);
     console.error('Detalhes do erro:', error.message);
     console.error('Stack:', error.stack);
   }
@@ -763,45 +1008,153 @@ async function notifyAcceptance(request) {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const chatLink = `${appUrl}/chat?requestId=${request.id}`;
     const dashboardLink = `${appUrl}/dashboard`;
+    const template = getBaseEmailTemplate('#28a745');
 
+    // Email para o técnico
     if (request.technician?.email) {
       const technicianName = [request.technician.firstName, request.technician.lastName]
         .filter(Boolean)
         .join(' ')
-        .trim();
+        .trim() || 'técnico';
+
+      const textTech = [
+        `Olá ${technicianName},`,
+        '',
+        `Confirmamos que aceitou o pedido "${request.title}" (${request.category}).`,
+        '',
+        'Pode falar com o cliente e acompanhar o trabalho através do painel.',
+        '',
+        `Link para chat: ${chatLink}`,
+        `Link para dashboard: ${dashboardLink}`,
+        '',
+        'Atenciosamente,',
+        'Equipa HomeFix'
+      ].join('\n');
+
+      const htmlTech = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>${template.styles}</style>
+        </head>
+        <body>
+          <div class="container">
+            ${template.header('HomeFix - Pedido Aceite')}
+            <div class="content">
+              <p>Olá <strong>${technicianName}</strong>,</p>
+              
+              <div class="success-box">
+                <p style="margin: 0;"><strong>✅ Pedido aceite com sucesso!</strong></p>
+                <p style="margin: 8px 0 0 0;">Confirmamos que aceitou o seguinte pedido:</p>
+              </div>
+              
+              <div class="details">
+                <h3>${request.title}</h3>
+                <ul>
+                  <li><strong>Categoria:</strong> ${request.category}</li>
+                  ${request.scheduledAt ? `<li><strong>Data preferencial:</strong> ${new Date(request.scheduledAt).toLocaleString('pt-PT')}</li>` : ''}
+                </ul>
+              </div>
+              
+              <p>Pode falar com o cliente e acompanhar o trabalho através do painel.</p>
+              
+              <p style="text-align: center;">
+                <a href="${chatLink}" class="button">Abrir Chat com Cliente</a>
+              </p>
+              
+              <p style="text-align: center;">
+                <a href="${dashboardLink}" style="color: #ff7a00;">Ver Pedidos Atribuídos</a>
+              </p>
+              
+              ${template.footer()}
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
       await mailer.sendMail({
         from: '"HomeFix" <no-reply@homefix.com>',
         to: request.technician.email,
-        subject: `Pedido aceite: ${request.title}`,
-        html: `
-          <p>Olá ${technicianName || 'técnico'},</p>
-          <p>Confirmamos que aceitaste o pedido <strong>${request.title}</strong> (${request.category}).</p>
-          <p>Podes falar com o cliente e acompanhar o trabalho através do painel.</p>
-          <p><a href="${chatLink}">Abrir chat com o cliente</a></p>
-          <p><a href="${dashboardLink}">Ver pedidos atribuídos</a></p>
-        `,
+        subject: `Pedido aceite: ${request.title} - HomeFix`,
+        text: textTech,
+        html: htmlTech,
       });
     }
 
+    // Email para o cliente
     if (request.owner?.email && request.technician?.email) {
-      const ownerName = [request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ').trim();
+      const ownerName = [request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ').trim() || 'cliente';
       const technicianName = [request.technician.firstName, request.technician.lastName]
         .filter(Boolean)
         .join(' ')
-        .trim();
+        .trim() || request.technician.email;
+
+      const textOwner = [
+        `Olá ${ownerName},`,
+        '',
+        `O técnico ${technicianName} aceitou o seu pedido "${request.title}".`,
+        '',
+        'Poderá acompanhar o estado do trabalho e conversar com o técnico através da plataforma.',
+        '',
+        `Link para chat: ${chatLink}`,
+        `Link para dashboard: ${dashboardLink}`,
+        '',
+        'Atenciosamente,',
+        'Equipa HomeFix'
+      ].join('\n');
+
+      const htmlOwner = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>${template.styles}</style>
+        </head>
+        <body>
+          <div class="container">
+            ${template.header('HomeFix - Pedido Aceite')}
+            <div class="content">
+              <p>Olá <strong>${ownerName}</strong>,</p>
+              
+              <div class="success-box">
+                <p style="margin: 0;"><strong>🎉 Ótimas notícias!</strong></p>
+                <p style="margin: 8px 0 0 0;">O seu pedido foi aceite por um técnico.</p>
+              </div>
+              
+              <div class="details">
+                <h3>${request.title}</h3>
+                <ul>
+                  <li><strong>Categoria:</strong> ${request.category}</li>
+                  <li><strong>Técnico:</strong> ${technicianName}</li>
+                  ${request.scheduledAt ? `<li><strong>Data preferencial:</strong> ${new Date(request.scheduledAt).toLocaleString('pt-PT')}</li>` : ''}
+                </ul>
+              </div>
+              
+              <p>Poderá acompanhar o estado do trabalho e conversar com o técnico através da plataforma.</p>
+              
+              <p style="text-align: center;">
+                <a href="${chatLink}" class="button">Abrir Chat com Técnico</a>
+              </p>
+              
+              <p style="text-align: center;">
+                <a href="${dashboardLink}" style="color: #ff7a00;">Ver Meus Pedidos</a>
+              </p>
+              
+              ${template.footer()}
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
       await mailer.sendMail({
         from: '"HomeFix" <no-reply@homefix.com>',
         to: request.owner.email,
-        subject: `O seu pedido foi aceite: ${request.title}`,
-        html: `
-          <p>Olá ${ownerName || 'cliente'},</p>
-          <p>O técnico <strong>${technicianName || request.technician.email}</strong> aceitou o pedido <strong>${
-            request.title
-          }</strong>.</p>
-          <p>Poderá acompanhar o estado do trabalho e conversar com o técnico através da plataforma.</p>
-          <p><a href="${chatLink}">Abrir chat com o técnico</a></p>
-          <p><a href="${dashboardLink}">Ver pedidos</a></p>
-        `,
+        subject: `O seu pedido foi aceite: ${request.title} - HomeFix`,
+        text: textOwner,
+        html: htmlOwner,
       });
     }
   } catch (error) {

@@ -1,7 +1,8 @@
 ﻿const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { getBaseEmailTemplate } = require('../utils/emailTemplates');
+const mailer = require('../config/email');
 
-// Importar Prisma de forma segura
 let prisma;
 try {
   prisma = require('../prismaClient');
@@ -12,17 +13,20 @@ try {
 
 async function register(req, res) {
   try {
-    // Verificar se Prisma está disponível
     if (!prisma) {
       return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
     }
     
-    let { email, password, firstName, lastName, birthDate, isTechnician, technicianCategory } = req.body || {};
+    let { email, password, firstName, lastName, nif, birthDate, isTechnician, technicianCategory } = req.body || {};
     const errors = {};
     if (!firstName || !firstName.trim()) errors.firstName = 'Indique o nome';
     if (!lastName || !lastName.trim()) errors.lastName = 'Indique o apelido';
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Email inválido';
     if (!password || password.length < 6 || !/[^A-Za-z0-9]/.test(password)) errors.password = 'Senha com pelo menos 6 caracteres e 1 carácter especial';
+    
+    if (nif && nif.trim() && !/^\d{9}$/.test(nif.trim())) {
+      errors.nif = 'NIF deve ter 9 dígitos';
+    }
     if (!birthDate) {
       errors.birthDate = 'Indique a data de nascimento';
     } else {
@@ -41,7 +45,6 @@ async function register(req, res) {
       }
     }
     
-    // Validar categoria se for técnico
     if (isTechnician === true && (!technicianCategory || !technicianCategory.trim())) {
       errors.technicianCategory = 'Indique a categoria do técnico';
     }
@@ -61,11 +64,11 @@ async function register(req, res) {
       password: hashedPassword,
       firstName,
       lastName,
+      nif: nif && nif.trim() ? nif.trim() : null,
       birthDate: new Date(birthDate),
       isTechnician: isTechnician === true,
     };
     
-    // Adicionar categoria apenas se for técnico e tiver categoria
     if (isTechnician === true && technicianCategory && technicianCategory.trim()) {
       userData.technicianCategory = technicianCategory.trim();
     }
@@ -73,6 +76,11 @@ async function register(req, res) {
     const user = await prisma.user.create({
       data: userData
     });
+
+    sendWelcomeEmail(user).catch((emailError) => {
+      console.error('Erro ao enviar email de boas-vindas:', emailError);
+    });
+
     return res.status(201).json({ message: 'Conta criada com sucesso', user: { id: user.id, email: user.email } });
   } catch (err) {
     console.error('Register error:', err);
@@ -82,7 +90,6 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
-    // Verificar se Prisma está disponível
     if (!prisma) {
       return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
     }
@@ -134,27 +141,18 @@ async function forgotPassword(req, res) {
       'Equipa HomeFix'
     ].join('\n');
 
+    const template = getBaseEmailTemplate();
+    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #ff7a00; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-          .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .button { display: inline-block; background-color: #ff7a00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
-          .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 16px 0; border-radius: 4px; }
-          .footer { margin-top: 24px; font-size: 12px; color: #666; }
-          .link { word-break: break-all; color: #ff7a00; }
-        </style>
+        <style>${template.styles}</style>
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <h2 style="margin: 0;">HomeFix - Recuperar Palavra-passe</h2>
-          </div>
+          ${template.header('HomeFix - Recuperar Palavra-passe')}
           <div class="content">
             <p>Olá <strong>${userName}</strong>,</p>
             
@@ -165,18 +163,15 @@ async function forgotPassword(req, res) {
             </p>
             
             <p>Ou copie e cole este link no seu navegador:</p>
-            <p class="link">${resetLink}</p>
+            <div class="highlight" style="word-break: break-all;">${resetLink}</div>
             
-            <div class="warning">
+            <div class="warning-box">
               <strong>⚠️ Importante:</strong> Este link expira em <strong>15 minutos</strong> por motivos de segurança.
             </div>
             
             <p>Se não solicitou esta alteração, pode ignorar este email com segurança. A sua palavra-passe permanecerá inalterada.</p>
             
-            <div class="footer">
-              <p>Atenciosamente,<br>Equipa HomeFix</p>
-              <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-            </div>
+            ${template.footer()}
           </div>
         </div>
       </body>
@@ -191,7 +186,7 @@ async function forgotPassword(req, res) {
       html,
     });
     
-    console.log(`Email de recuperação de senha enviado para ${email}`);
+    console.log(`✅ Email de recuperação de senha enviado para ${email}`);
     return res.json({ message: 'Se o email existir, enviaremos instruções' });
   } catch (err) {
     console.error('Forgot error:', err);
@@ -235,26 +230,18 @@ async function resetPassword(req, res) {
       'Equipa HomeFix'
     ].join('\n');
 
+    const template = getBaseEmailTemplate('#28a745');
+    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #28a745; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-          .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .success-box { background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px; margin: 16px 0; border-radius: 4px; }
-          .security-box { background-color: #e7f3ff; border-left: 4px solid #2196F3; padding: 16px; margin: 16px 0; border-radius: 4px; }
-          .footer { margin-top: 24px; font-size: 12px; color: #666; }
-        </style>
+        <style>${template.styles}</style>
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <h2 style="margin: 0;">HomeFix - Palavra-passe Redefinida</h2>
-          </div>
+          ${template.header('HomeFix - Palavra-passe Redefinida')}
           <div class="content">
             <p>Olá <strong>${userName}</strong>,</p>
             
@@ -265,7 +252,7 @@ async function resetPassword(req, res) {
             
             <p>Se não foi você quem fez esta alteração, contacte-nos imediatamente através do nosso suporte.</p>
             
-            <div class="security-box">
+            <div class="info-box">
               <p style="margin: 0;"><strong>🔒 Dicas de segurança:</strong></p>
               <ul style="margin: 8px 0;">
                 <li>Utilize uma palavra-passe forte e única</li>
@@ -275,10 +262,7 @@ async function resetPassword(req, res) {
               </ul>
             </div>
             
-            <div class="footer">
-              <p>Atenciosamente,<br>Equipa HomeFix</p>
-              <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-            </div>
+            ${template.footer()}
           </div>
         </div>
       </body>
@@ -293,7 +277,7 @@ async function resetPassword(req, res) {
         text,
         html,
       });
-      console.log(`Email de confirmação de redefinição de senha enviado para ${user.email}`);
+      console.log(`✅ Email de confirmação de redefinição de senha enviado para ${user.email}`);
     } catch (emailError) {
       console.error('Erro ao enviar email de confirmação:', emailError);
       // Não falhar a redefinição se o email falhar
@@ -306,7 +290,149 @@ async function resetPassword(req, res) {
   }
 }
 
+// Função auxiliar para enviar email de boas-vindas
+async function sendWelcomeEmail(user) {
+  try {
+    console.log(`📧 Enviando email de boas-vindas para ${user.email}...`);
+    
+    const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const loginLink = `${appUrl}/login`;
+    const dashboardLink = `${appUrl}/dashboard`;
+    const userType = user.isTechnician ? 'técnico' : 'cliente';
+    
+    const text = [
+      `Olá ${userName},`,
+      '',
+      'Bem-vindo à HomeFix! 🎉',
+      '',
+      `A sua conta foi criada com sucesso como ${userType}.`,
+      '',
+      'Aqui estão os seus dados de registo:',
+      `Email: ${user.email}`,
+      `Nome: ${userName}`,
+      `Tipo de conta: ${userType.charAt(0).toUpperCase() + userType.slice(1)}`,
+      user.technicianCategory ? `Categoria: ${user.technicianCategory}` : '',
+      '',
+      user.isTechnician 
+        ? 'Como técnico, poderá receber notificações de novos pedidos de serviço e aceitar trabalhos na sua área de especialização.'
+        : 'Como cliente, poderá solicitar serviços de manutenção e acompanhar os seus pedidos através do painel.',
+      '',
+      'Para começar a usar a HomeFix:',
+      `1. Aceda à plataforma: ${loginLink}`,
+      '2. Faça login com o seu email e senha',
+      `3. Explore o painel: ${dashboardLink}`,
+      '',
+      user.isTechnician
+        ? 'Dicas para técnicos:'
+        : 'Dicas para começar:',
+      user.isTechnician
+        ? '• Complete o seu perfil com informações profissionais'
+        : '• Crie o seu primeiro pedido de serviço',
+      user.isTechnician
+        ? '• Mantenha o seu perfil atualizado para receber mais pedidos'
+        : '• Acompanhe o estado dos seus pedidos no dashboard',
+      user.isTechnician
+        ? '• Responda rapidamente aos pedidos dos clientes'
+        : '• Comunique com os técnicos através do chat',
+      '',
+      'Se tiver alguma dúvida ou precisar de ajuda, não hesite em contactar-nos através da aplicação.',
+      '',
+      'Obrigado por se juntar à HomeFix!',
+      '',
+      'Atenciosamente,',
+      'Equipa HomeFix'
+    ].filter(Boolean).join('\n');
+
+    const template = getBaseEmailTemplate('#28a745');
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${template.styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          ${template.header('🎉 Bem-vindo à HomeFix!')}
+          <div class="content">
+            <p>Olá <strong>${userName}</strong>,</p>
+            
+            <div class="success-box">
+              <p style="margin: 0;"><strong>✅ Conta criada com sucesso!</strong></p>
+              <p style="margin: 8px 0 0 0;">Bem-vindo à plataforma HomeFix.</p>
+            </div>
+            
+            <p>A sua conta foi registada com sucesso como <strong>${userType}</strong>.</p>
+            
+            <div class="details">
+              <h3>Dados da Conta</h3>
+              <ul>
+                <li><strong>Email:</strong> ${user.email}</li>
+                <li><strong>Nome:</strong> ${userName}</li>
+                <li><strong>Tipo:</strong> ${userType.charAt(0).toUpperCase() + userType.slice(1)}</li>
+                ${user.technicianCategory ? `<li><strong>Categoria:</strong> ${user.technicianCategory}</li>` : ''}
+              </ul>
+            </div>
+            
+            ${user.isTechnician ? `
+              <div class="info-box">
+                <p style="margin: 0;"><strong>📋 Como técnico, pode:</strong></p>
+                <ul style="margin: 8px 0;">
+                  <li>Receber notificações de novos pedidos</li>
+                  <li>Aceitar trabalhos na sua área</li>
+                  <li>Comunicar diretamente com clientes</li>
+                  <li>Gerir os seus serviços no dashboard</li>
+                </ul>
+              </div>
+            ` : `
+              <div class="info-box">
+                <p style="margin: 0;"><strong>📋 Como cliente, pode:</strong></p>
+                <ul style="margin: 8px 0;">
+                  <li>Criar pedidos de serviço</li>
+                  <li>Acompanhar o estado dos pedidos</li>
+                  <li>Comunicar com técnicos</li>
+                  <li>Avaliar os serviços recebidos</li>
+                </ul>
+              </div>
+            `}
+            
+            <p style="text-align: center;">
+              <a href="${loginLink}" class="button">Fazer Login</a>
+            </p>
+            
+            <p style="text-align: center;">
+              <a href="${dashboardLink}" style="color: #ff7a00;">Aceder ao Dashboard</a>
+            </p>
+            
+            <p>Se tiver alguma dúvida ou precisar de ajuda, não hesite em contactar-nos através da aplicação.</p>
+            
+            ${template.footer()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await mailer.sendMail({
+      from: '"HomeFix" <no-reply@homefix.com>',
+      to: user.email,
+      subject: 'Bem-vindo à HomeFix - Conta criada com sucesso! 🎉',
+      text,
+      html,
+    });
+    
+    console.log(`✅ Email de boas-vindas enviado com sucesso para ${user.email}`);
+  } catch (error) {
+    console.error('Erro ao enviar email de boas-vindas:', error);
+    throw error; // Re-throw para que o catch no register possa logar
+  }
+}
+
 module.exports.forgotPassword = forgotPassword;
 module.exports.resetPassword = resetPassword;
+module.exports.register = register;
+module.exports.login = login;
 
 

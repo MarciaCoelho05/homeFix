@@ -2,9 +2,10 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const ADMIN_HASH = "$2b$10$rOXhWjpatgbnA1NCJ9n.iOFsdJHz7V6V5Lv5dih/VHnthgK5gUju6";
-const TECH_HASH = "$2b$10$evTlL21Xj1lD5bvuKetePeXTFOREtUXu1YVpYRiiiy5Zo3.a2lbGe";
-const CLIENT_HASH = "$2b$10$2DOm3kQv6PwOS3fN38ZdqOyZk3xEpYfgnBxMrW/aAE8.keR.Zsyz.";
+// Senhas: admin123, tecnico123, cliente123
+const ADMIN_HASH = "$2b$10$l.15j6SnBGyqjfl7twS1fuCiuyODtPHrJFVpf8jUBureunYfLo65e";
+const TECH_HASH = "$2b$10$f0SZbv6ZkPNH0aZHr3mCj.D8q//5/lcmsqxvmIMfgP3kShjXfW61C";
+const CLIENT_HASH = "$2b$10$Puf5sSFo5eBFKfHY968QU.Y.kqxfySQaNHVeaZHy7yaMRW6LXkmgu";
 
 async function main() {
   await prisma.user.upsert({

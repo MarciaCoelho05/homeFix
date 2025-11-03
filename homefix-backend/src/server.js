@@ -3,10 +3,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/errorHandler');
 const path = require('path');
+const { getBaseEmailTemplate } = require('./utils/emailTemplates');
 
 dotenv.config();
 
-// Tentar importar o Prisma com tratamento de erro
 let prisma;
 let protect;
 try {
@@ -16,7 +16,6 @@ try {
 } catch (error) {
   console.error('❌ Erro ao carregar Prisma Client:', error);
   console.error('Por favor, execute: cd homefix-backend && npx prisma generate');
-  // Criar um Prisma mock para evitar crash completo
   prisma = {
     user: { findUnique: () => Promise.reject(new Error('Prisma não inicializado')) },
     maintenanceRequest: { findMany: () => Promise.reject(new Error('Prisma não inicializado')) },
@@ -26,11 +25,8 @@ try {
 
 const app = express();
 
-// CORS simplificado e mais permissivo para Vercel
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
-  // Permitir todas as origens do Vercel e localhost
   const allowOrigin = origin && (
     origin.includes('vercel.app') ||
     origin.includes('localhost') ||
@@ -43,7 +39,6 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   
-  // Responder imediatamente a requisições OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
@@ -51,23 +46,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Também usar o middleware cors como backup
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requisições sem origin (mobile apps, Postman, etc)
     if (!origin) return callback(null, true);
-    
-    // Permitir qualquer origin do Vercel ou localhost
     if (origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-    
-    // Por padrão, permitir em desenvolvimento
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
-    
-    callback(null, true); // Permitir todas as origens em produção do Vercel
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -77,7 +65,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Debug middleware for Vercel (placed before routes)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/public')) {
     console.log(`[DEBUG] Request to: ${req.method} ${req.path}`);
@@ -86,7 +73,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// importar rotas existentes
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
@@ -94,8 +80,6 @@ const emailRoutes = require('./routes/emailRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const publicRoutes = require('./routes/publicRoutes');
-
-// registar rotas
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', userRoutes);
@@ -108,16 +92,27 @@ app.use('/api/public', publicRoutes);
 
 console.log('Public routes registered at /api/public');
 
-// profile routes
 app.get('/api/profile', protect, (req, res) => {
   res.json(req.user);
 });
 app.patch('/api/profile', protect, async (req, res) => {
   try {
-    const { firstName, lastName, avatarUrl, birthDate, technicianCategory } = req.body || {};
+    const { firstName, lastName, nif, avatarUrl, birthDate, technicianCategory } = req.body || {};
     const data = {};
     if (typeof firstName === 'string' && firstName.trim()) data.firstName = firstName.trim();
     if (typeof lastName === 'string' && lastName.trim()) data.lastName = lastName.trim();
+    
+    if (nif !== undefined) {
+      if (nif === '' || nif === null) {
+        data.nif = null;
+      } else if (typeof nif === 'string' && nif.trim()) {
+        if (!/^\d{9}$/.test(nif.trim())) {
+          return res.status(400).json({ message: 'NIF deve ter 9 dígitos' });
+        }
+        data.nif = nif.trim();
+      }
+    }
+    
     if (typeof avatarUrl === 'string' && avatarUrl.trim()) data.avatarUrl = avatarUrl.trim();
     if (birthDate) data.birthDate = new Date(birthDate);
     if (req.user.isTechnician === true && typeof technicianCategory === 'string') {
@@ -130,12 +125,72 @@ app.patch('/api/profile', protect, async (req, res) => {
         id: true,
         firstName: true,
         lastName: true,
+        email: true,
+        nif: true,
         avatarUrl: true,
         technicianCategory: true,
       },
     });
+
+    const mailer = require('./config/email');
+    const userName = `${updated.firstName || ''} ${updated.lastName || ''}`.trim() || 'Utilizador';
+    
+    const text = [
+      `Olá ${userName},`,
+      '',
+      'Confirmamos que o seu perfil foi atualizado com sucesso na HomeFix.',
+      '',
+      'Se não foi você quem realizou esta alteração, por favor contacte-nos imediatamente.',
+      '',
+      'Atenciosamente,',
+      'Equipa HomeFix'
+    ].join('\n');
+
+    const template = getBaseEmailTemplate('#007bff');
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${template.styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          ${template.header('Perfil Atualizado')}
+          <div class="content">
+            <p>Olá <strong>${userName}</strong>,</p>
+            
+            <div class="success-box">
+              <p style="margin: 0;"><strong>✅ Perfil atualizado com sucesso!</strong></p>
+            </div>
+            
+            <p>Confirmamos que o seu perfil foi atualizado na HomeFix.</p>
+            
+            <div class="info-box">
+              <p style="margin: 0;"><strong>⚠️ Segurança:</strong></p>
+              <p style="margin: 8px 0 0 0;">Se não foi você quem realizou esta alteração, por favor contacte-nos imediatamente através da aplicação.</p>
+            </div>
+            
+            ${template.footer()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    mailer.sendMail({
+      from: '"HomeFix" <no-reply@homefix.com>',
+      to: updated.email,
+      subject: 'Perfil atualizado - HomeFix',
+      text,
+      html,
+    }).catch((err) => {
+      console.error('Erro ao enviar email de atualização de perfil:', err);
+    });
+
     res.json(updated);
   } catch (e) {
+    console.error('Erro ao atualizar perfil:', e);
     res.status(400).json({ message: 'Não foi possível atualizar o perfil' });
   }
 });
@@ -148,7 +203,6 @@ app.delete('/api/profile', protect, async (req, res) => {
       return res.status(503).json({ message: 'Serviço temporariamente indisponível' });
     }
     
-    // Buscar dados do usuário antes de eliminar para enviar email de confirmação
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { email: true, firstName: true, lastName: true },
@@ -197,25 +251,18 @@ app.delete('/api/profile', protect, async (req, res) => {
         'Equipa HomeFix'
       ].join('\n');
 
+      const template = getBaseEmailTemplate('#6c757d');
+      
       const html = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #6c757d; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-            .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-            .info-box { background-color: #e7f3ff; border-left: 4px solid #2196F3; padding: 16px; margin: 16px 0; border-radius: 4px; }
-            .footer { margin-top: 24px; font-size: 12px; color: #666; }
-          </style>
+          <style>${template.styles}</style>
         </head>
         <body>
           <div class="container">
-            <div class="header">
-              <h2 style="margin: 0;">HomeFix - Conta Eliminada</h2>
-            </div>
+            ${template.header('HomeFix - Conta Eliminada')}
             <div class="content">
               <p>Olá <strong>${userName}</strong>,</p>
               
@@ -236,10 +283,7 @@ app.delete('/api/profile', protect, async (req, res) => {
               
               <p>Obrigado por ter usado os nossos serviços. Esperamos vê-lo novamente no futuro!</p>
               
-              <div class="footer">
-                <p>Atenciosamente,<br>Equipa HomeFix</p>
-                <p style="font-size: 11px; color: #999;">Este é um email automático. Por favor, não responda a este email.</p>
-              </div>
+              ${template.footer()}
             </div>
           </div>
         </body>
@@ -254,10 +298,9 @@ app.delete('/api/profile', protect, async (req, res) => {
           text,
           html,
         });
-        console.log(`Email de confirmação de eliminação enviado para ${user.email}`);
+        console.log(`✅ Email de confirmação de eliminação enviado para ${user.email}`);
       } catch (emailError) {
         console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
-        // Não falhar a eliminação se o email falhar
       }
     }
 
@@ -268,18 +311,14 @@ app.delete('/api/profile', protect, async (req, res) => {
   }
 });
 
-// serve frontend build
 const clientDist = path.resolve(__dirname, '../../homefix-frontend/dist');
 app.use(express.static(clientDist));
 
-// Catch-all route for frontend (must be last, after all API routes)
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
 app.use(errorHandler);
-
-// iniciar o servidor
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
