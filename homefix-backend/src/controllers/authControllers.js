@@ -117,9 +117,20 @@ async function login(req, res) {
       return res.status(500).json({ message: 'Erro de configuração do servidor' });
     }
     
-    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    let user;
+    try {
+      user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    } catch (dbError) {
+      console.error('Erro ao buscar usuário no banco:', dbError);
+      return res.status(500).json({ message: 'Erro ao acessar banco de dados' });
+    }
     
-    if (!user) {
+    if (!user || !user.id) {
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+    
+    if (!user.password) {
+      console.error('Usuário sem senha encontrado:', user.id);
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
@@ -137,7 +148,7 @@ async function login(req, res) {
     
     let token;
     try {
-      token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      token = jwt.sign({ id: user.id, isAdmin: user.isAdmin === true, isTechnician: user.isTechnician === true }, process.env.JWT_SECRET, { expiresIn: '1h' });
     } catch (tokenError) {
       console.error('Erro ao gerar token JWT:', tokenError);
       return res.status(500).json({ message: 'Erro ao gerar token de autenticação' });
@@ -146,17 +157,23 @@ async function login(req, res) {
     const { password: _password, ...userWithoutPassword } = user;
     
     const safeUser = {
-      id: userWithoutPassword.id,
-      email: userWithoutPassword.email,
-      firstName: userWithoutPassword.firstName,
-      lastName: userWithoutPassword.lastName,
-      nif: userWithoutPassword.nif,
-      avatarUrl: userWithoutPassword.avatarUrl,
-      birthDate: userWithoutPassword.birthDate,
+      id: String(userWithoutPassword.id || ''),
+      email: String(userWithoutPassword.email || ''),
+      firstName: String(userWithoutPassword.firstName || ''),
+      lastName: String(userWithoutPassword.lastName || ''),
+      nif: userWithoutPassword.nif ? String(userWithoutPassword.nif) : null,
+      avatarUrl: userWithoutPassword.avatarUrl ? String(userWithoutPassword.avatarUrl) : null,
+      birthDate: userWithoutPassword.birthDate instanceof Date 
+        ? userWithoutPassword.birthDate.toISOString() 
+        : (userWithoutPassword.birthDate ? new Date(userWithoutPassword.birthDate).toISOString() : null),
       isAdmin: userWithoutPassword.isAdmin === true,
       isTechnician: userWithoutPassword.isTechnician === true,
-      createdAt: userWithoutPassword.createdAt,
-      updatedAt: userWithoutPassword.updatedAt,
+      createdAt: userWithoutPassword.createdAt instanceof Date 
+        ? userWithoutPassword.createdAt.toISOString() 
+        : (userWithoutPassword.createdAt ? new Date(userWithoutPassword.createdAt).toISOString() : null),
+      updatedAt: userWithoutPassword.updatedAt instanceof Date 
+        ? userWithoutPassword.updatedAt.toISOString() 
+        : (userWithoutPassword.updatedAt ? new Date(userWithoutPassword.updatedAt).toISOString() : null),
       technicianCategory: []
     };
     
