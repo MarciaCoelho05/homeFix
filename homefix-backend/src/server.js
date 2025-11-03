@@ -1,4 +1,6 @@
-﻿const express = require('express');
+﻿// Wrapper para capturar erros de inicialização
+try {
+const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const errorHandler = require('./middlewares/errorHandler');
@@ -36,6 +38,11 @@ try {
 }
 
 const app = express();
+
+// Rota de diagnóstico simples (antes de qualquer middleware)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Configuração CORS - funciona localmente e no Vercel
 app.use(cors({
@@ -325,4 +332,24 @@ if (require.main === module) {
     console.log(`Servidor a correr na porta ${PORT}`);
   });
 }
+
 module.exports = app;
+
+} catch (initError) {
+  // Se houver erro na inicialização, criar um servidor mínimo que retorna erro
+  console.error('❌ ERRO CRÍTICO na inicialização do servidor:', initError);
+  console.error('Stack:', initError.stack);
+  
+  const express = require('express');
+  const errorApp = express();
+  
+  errorApp.use((req, res) => {
+    res.status(500).json({
+      error: 'Erro na inicialização do servidor',
+      message: initError.message,
+      stack: process.env.NODE_ENV === 'development' ? initError.stack : undefined
+    });
+  });
+  
+  module.exports = errorApp;
+}
