@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm install",
-  "builds": [
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": ".",
+  "rewrites": [
     {
-      "src": "src/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/server.js"
+      "source": "/(.*)",
+      "destination": "/src/server.js"
     }
   ]
 }
