@@ -23,16 +23,17 @@ router.get('/', protect, async (req, res) => {
       where.status = req.query.status.toString();
     }
   } else {
-    const technicianCategory = req.user.technicianCategory;
-    const hasSpecificCategory = technicianCategory && 
-                                technicianCategory.toLowerCase() !== 'outros' && 
-                                technicianCategory.toLowerCase() !== 'other';
+    const technicianCategories = req.user.technicianCategory || [];
+    const hasSpecificCategories = technicianCategories.length > 0 && 
+                                  !technicianCategories.some(cat => 
+                                    cat && (cat.toLowerCase() === 'outros' || cat.toLowerCase() === 'other')
+                                  );
 
     const baseFilter = {
       OR: [
         { technicianId: req.user.id },
-        hasSpecificCategory 
-          ? { technicianId: null, status: 'pendente', category: technicianCategory }
+        hasSpecificCategories 
+          ? { technicianId: null, status: 'pendente', category: { in: technicianCategories } }
           : { technicianId: null, status: 'pendente' },
       ],
     };
@@ -41,8 +42,8 @@ router.get('/', protect, async (req, res) => {
       const status = req.query.status.toString();
       baseFilter.OR = [
         { technicianId: req.user.id, status },
-        hasSpecificCategory 
-          ? { technicianId: null, status, category: technicianCategory }
+        hasSpecificCategories 
+          ? { technicianId: null, status, category: { in: technicianCategories } }
           : { technicianId: null, status },
       ];
     }
@@ -892,15 +893,24 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     const emailPromises = technicians.map(async (technician) => {
       const technicianName = `${technician.firstName || ''} ${technician.lastName || ''}`.trim() || 'Técnico';
       
-      // Verificar se a categoria do técnico corresponde ao pedido
-      const isRelevantCategory = technician.technicianCategory && 
-        technician.technicianCategory.toLowerCase() === request.category?.toLowerCase();
+      const technicianCategories = Array.isArray(technician.technicianCategory) 
+        ? technician.technicianCategory 
+        : technician.technicianCategory ? [technician.technicianCategory] : [];
       
-      console.log(`  → Técnico: ${technicianName} (${technician.email}) - Especialização: ${technician.technicianCategory || 'Nenhuma'} - Match: ${isRelevantCategory ? 'SIM ✅' : 'NÃO'}`);
+      const isRelevantCategory = technicianCategories.length > 0 && 
+        technicianCategories.some(cat => 
+          cat && cat.toLowerCase() === request.category?.toLowerCase()
+        );
+      
+      const matchingCategory = technicianCategories.find(cat => 
+        cat && cat.toLowerCase() === request.category?.toLowerCase()
+      );
+      
+      console.log(`  → Técnico: ${technicianName} (${technician.email}) - Especializações: ${technicianCategories.join(', ') || 'Nenhuma'} - Match: ${isRelevantCategory ? `SIM ✅ (${matchingCategory})` : 'NÃO'}`);
       
       const categoryMessage = isRelevantCategory
         ? `<div class="info-box">
-             <p style="margin: 0;"><strong>✨ Este pedido corresponde à sua especialização (${technician.technicianCategory})!</strong></p>
+             <p style="margin: 0;"><strong>✨ Este pedido corresponde à sua especialização (${matchingCategory})!</strong></p>
              <p style="margin: 8px 0 0 0;">Você é especialista nesta categoria.</p>
            </div>`
       : '';
@@ -912,7 +922,7 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
         '',
       `Título: ${request.title}`,
       `Categoria: ${request.category}`,
-        isRelevantCategory ? `✨ (Corresponde à sua especialização: ${technician.technicianCategory})` : '',
+        isRelevantCategory ? `✨ (Corresponde à sua especialização: ${matchingCategory})` : '',
         `Cliente: ${ownerName}${owner?.email ? ` (${owner.email})` : ''}`,
         request.scheduledAt ? `Data preferencial: ${new Date(request.scheduledAt).toLocaleString('pt-PT')}` : '',
         '',

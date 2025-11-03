@@ -18,7 +18,7 @@ model User {
   birthDate    DateTime
   isAdmin      Boolean  @default(false)
   isTechnician Boolean  @default(false)
-  technicianCategory String?
+  technicianCategory String[] @default([])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -41,10 +41,10 @@ model MaintenanceRequest {
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
-  owner   User   @relation("ClientRequests", fields: [ownerId], references: [id])
+  owner   User   @relation("ClientRequests", fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
-  technician   User?   @relation("TechnicianAssignments", fields: [technicianId], references: [id])
+  technician   User?   @relation("TechnicianAssignments", fields: [technicianId], references: [id], onDelete: SetNull)
   technicianId String?
 
   messages Message[]
@@ -55,8 +55,8 @@ model Message {
   id        String             @id @default(uuid())
   content   String
   attachments String[] @default([])
-  sender    User               @relation(fields: [senderId], references: [id])
-  request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+  sender    User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   senderId  String
   requestId String
   createdAt DateTime           @default(now())
@@ -68,8 +68,8 @@ model Feedback {
   comment   String?
   createdAt DateTime @default(now())
 
-  user      User               @relation(fields: [userId], references: [id])
-  request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   userId    String
   requestId String             @unique
 }

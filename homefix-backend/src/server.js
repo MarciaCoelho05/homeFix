@@ -92,8 +92,14 @@ app.patch('/api/profile', protect, async (req, res) => {
     
     if (typeof avatarUrl === 'string' && avatarUrl.trim()) data.avatarUrl = avatarUrl.trim();
     if (birthDate) data.birthDate = new Date(birthDate);
-    if (req.user.isTechnician === true && typeof technicianCategory === 'string') {
-      data.technicianCategory = technicianCategory.trim();
+    if (req.user.isTechnician === true && technicianCategory !== undefined) {
+      if (Array.isArray(technicianCategory)) {
+        data.technicianCategory = technicianCategory.filter(cat => cat && cat.trim()).map(cat => cat.trim());
+      } else if (technicianCategory === null || technicianCategory === '') {
+        data.technicianCategory = [];
+      } else if (typeof technicianCategory === 'string' && technicianCategory.trim()) {
+        data.technicianCategory = [technicianCategory.trim()];
+      }
     }
     const updated = await prisma.user.update({
       where: { id: req.user.id },

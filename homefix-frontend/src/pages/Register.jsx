@@ -28,8 +28,8 @@ export default function Register() {
     password: "",
     confirmPassword: "",
     birthDate: "",
-    userType: "cliente", // "cliente" ou "tecnico"
-    technicianCategory: "",
+    userType: "cliente",
+    technicianCategory: [],
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -73,8 +73,13 @@ export default function Register() {
       }
     }
 
-    if (data.userType === "tecnico" && !data.technicianCategory?.trim()) {
-      errs.technicianCategory = "Indique a categoria do técnico";
+    if (data.userType === "tecnico") {
+      const categories = Array.isArray(data.technicianCategory) 
+        ? data.technicianCategory 
+        : data.technicianCategory ? [data.technicianCategory] : [];
+      if (categories.length === 0) {
+        errs.technicianCategory = "Selecione pelo menos uma categoria";
+      }
     }
 
     return errs;
@@ -86,9 +91,8 @@ export default function Register() {
     const { name, value } = event.target;
     const next = { ...form, [name]: value };
     
-    // Se mudar de técnico para cliente, limpar a categoria
     if (name === "userType" && value === "cliente") {
-      next.technicianCategory = "";
+      next.technicianCategory = [];
     }
     
     setForm(next);
@@ -110,10 +114,13 @@ export default function Register() {
     try {
       setSubmitting(true);
       const { confirmPassword, userType, technicianCategory, ...basePayload } = form;
+      const categories = Array.isArray(technicianCategory) 
+        ? technicianCategory 
+        : technicianCategory ? [technicianCategory] : [];
       const payload = {
         ...basePayload,
         isTechnician: userType === "tecnico",
-        ...(userType === "tecnico" && technicianCategory ? { technicianCategory } : {}),
+        ...(userType === "tecnico" && categories.length > 0 ? { technicianCategory: categories } : {}),
       };
       await API.post("/auth/register", payload);
       navigate("/login");
@@ -297,23 +304,123 @@ export default function Register() {
 
           {form.userType === "tecnico" && (
             <div className="mt-3">
-              <label className="form-label small text-uppercase">Categoria do técnico</label>
-              <select
-                name="technicianCategory"
-                value={form.technicianCategory}
-                onChange={handleChange}
-                className={`form-select ${fieldErrors.technicianCategory ? "is-invalid" : ""}`}
-              >
-                <option value="">Selecione uma categoria</option>
-                <option value="Canalizacao">Canalização</option>
-                <option value="Eletricidade">Eletricidade</option>
-                <option value="Pintura">Pintura</option>
-                <option value="Remodelacoes">Remodelações</option>
-                <option value="Jardinagem">Jardinagem</option>
-                <option value="Carpintaria">Carpintaria</option>
-              </select>
+              <label className="form-label small text-uppercase">Categorias de especializacao</label>
+              <div className={`border rounded p-3 ${fieldErrors.technicianCategory ? 'border-danger' : ''}`}>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-canalizacao"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Canalizacao')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Canalizacao']
+                        : categories.filter(c => c !== 'Canalizacao');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-canalizacao">Canalização</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-eletricidade"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Eletricidade')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Eletricidade']
+                        : categories.filter(c => c !== 'Eletricidade');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-eletricidade">Eletricidade</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-pintura"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Pintura')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Pintura']
+                        : categories.filter(c => c !== 'Pintura');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-pintura">Pintura</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-remodelacoes"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Remodelacoes')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Remodelacoes']
+                        : categories.filter(c => c !== 'Remodelacoes');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-remodelacoes">Remodelações</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-jardinagem"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Jardinagem')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Jardinagem']
+                        : categories.filter(c => c !== 'Jardinagem');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-jardinagem">Jardinagem</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-carpintaria"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Carpintaria')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Carpintaria']
+                        : categories.filter(c => c !== 'Carpintaria');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-carpintaria">Carpintaria</label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="category-outro"
+                    checked={Array.isArray(form.technicianCategory) && form.technicianCategory.includes('Outro')}
+                    onChange={(e) => {
+                      const categories = Array.isArray(form.technicianCategory) ? form.technicianCategory : [];
+                      const updated = e.target.checked
+                        ? [...categories, 'Outro']
+                        : categories.filter(c => c !== 'Outro');
+                      setForm({ ...form, technicianCategory: updated });
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="category-outro">Outro</label>
+                </div>
+              </div>
               {fieldErrors.technicianCategory && (
-                <div className="invalid-feedback">{fieldErrors.technicianCategory}</div>
+                <div className="invalid-feedback d-block">{fieldErrors.technicianCategory}</div>
               )}
             </div>
           )}

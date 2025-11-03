@@ -34,7 +34,7 @@ const Profile = () => {
     lastName: '',
     nif: '',
     birthDate: '',
-    technicianCategory: '',
+    technicianCategory: [],
   });
   const [avatarUrl, setAvatarUrl] = useState('');
   const [requests, setRequests] = useState([]);
@@ -66,7 +66,9 @@ const Profile = () => {
           lastName: data.lastName || '',
           nif: data.nif || '',
           birthDate: data.birthDate ? data.birthDate.slice(0, 10) : '',
-          technicianCategory: data.technicianCategory || '',
+          technicianCategory: Array.isArray(data.technicianCategory) 
+            ? data.technicianCategory 
+            : data.technicianCategory ? [data.technicianCategory] : [],
         });
         setAvatarUrl(data.avatarUrl || '');
       } catch (err) {
@@ -111,17 +113,37 @@ const Profile = () => {
       }
     }
 
-    if (isTechnician && !(payload.technicianCategory || '').trim()) {
-      errors.technicianCategory = 'Selecione a sua categoria';
+    if (isTechnician) {
+      const categories = Array.isArray(payload.technicianCategory) 
+        ? payload.technicianCategory 
+        : payload.technicianCategory ? [payload.technicianCategory] : [];
+      if (categories.length === 0) {
+        errors.technicianCategory = 'Selecione pelo menos uma categoria';
+      }
     }
 
     return errors;
   };
 
   const handleChange = (event) => {
-    const next = { ...form, [event.target.name]: event.target.value };
+    const { name, value } = event.target;
+    const next = { ...form, [name]: value };
     setForm(next);
     setFieldErrors({});
+    setStatus('');
+  };
+
+  const handleCategoryChange = (category) => {
+    const currentCategories = Array.isArray(form.technicianCategory) 
+      ? form.technicianCategory 
+      : form.technicianCategory ? [form.technicianCategory] : [];
+    
+    const updatedCategories = currentCategories.includes(category)
+      ? currentCategories.filter(cat => cat !== category)
+      : [...currentCategories, category];
+    
+    setForm({ ...form, technicianCategory: updatedCategories });
+    setFieldErrors({ ...fieldErrors, technicianCategory: '' });
     setStatus('');
   };
 
@@ -333,22 +355,30 @@ const Profile = () => {
                 </div>
                 {isTechnician && (
                   <div className="col-12">
-                    <label className="form-label small text-uppercase">Categoria de especializacao</label>
-                    <select
-                      name="technicianCategory"
-                      className={`form-select ${fieldErrors.technicianCategory ? 'is-invalid' : ''}`}
-                      value={form.technicianCategory}
-                      onChange={handleChange}
-                    >
-                      <option value="">Selecione...</option>
-                      {technicianCategories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
+                    <label className="form-label small text-uppercase">Categorias de especializacao</label>
+                    <div className={`border rounded p-3 ${fieldErrors.technicianCategory ? 'border-danger' : ''}`}>
+                      {technicianCategories.map((category) => {
+                        const isSelected = Array.isArray(form.technicianCategory) 
+                          ? form.technicianCategory.includes(category)
+                          : form.technicianCategory === category;
+                        return (
+                          <div key={category} className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`category-${category}`}
+                              checked={isSelected}
+                              onChange={() => handleCategoryChange(category)}
+                            />
+                            <label className="form-check-label" htmlFor={`category-${category}`}>
+                              {category}
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
                     {fieldErrors.technicianCategory && (
-                      <div className="invalid-feedback">{fieldErrors.technicianCategory}</div>
+                      <div className="invalid-feedback d-block">{fieldErrors.technicianCategory}</div>
                     )}
                   </div>
                 )}

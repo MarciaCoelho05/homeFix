@@ -71,8 +71,14 @@ async function register(req, res) {
       isTechnician: isTechnician === true,
     };
     
-    if (isTechnician === true && technicianCategory && technicianCategory.trim()) {
-      userData.technicianCategory = technicianCategory.trim();
+    if (isTechnician === true && technicianCategory) {
+      if (Array.isArray(technicianCategory)) {
+        userData.technicianCategory = technicianCategory.filter(cat => cat && cat.trim()).map(cat => cat.trim());
+      } else if (typeof technicianCategory === 'string' && technicianCategory.trim()) {
+        userData.technicianCategory = [technicianCategory.trim()];
+      } else {
+        userData.technicianCategory = [];
+      }
     }
 
     const user = await prisma.user.create({
