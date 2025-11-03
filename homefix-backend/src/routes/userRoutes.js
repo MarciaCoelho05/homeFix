@@ -5,6 +5,11 @@ const prisma = require('../prismaClient');
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+  console.log(`[userRoutes] ${req.method} ${req.path}`);
+  next();
+});
+
 router.post('/register', register);
 router.post('/login', login);
 router.post('/forgot', forgotPassword);

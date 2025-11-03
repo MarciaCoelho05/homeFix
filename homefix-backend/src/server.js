@@ -50,6 +50,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    console.log(`[SERVER] ${req.method} ${req.path} - Headers:`, {
+      'content-type': req.headers['content-type'],
+      'authorization': req.headers['authorization'] ? 'present' : 'missing'
+    });
+  }
+  next();
+});
+
 
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
