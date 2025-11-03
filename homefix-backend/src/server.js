@@ -70,7 +70,13 @@ app.use('/api/public', publicRoutes);
 
 
 app.get('/api/profile', protect, (req, res) => {
-  res.json(req.user);
+  const user = { ...req.user };
+  if (user.technicianCategory !== undefined) {
+    user.technicianCategory = Array.isArray(user.technicianCategory) 
+      ? user.technicianCategory 
+      : user.technicianCategory ? [user.technicianCategory] : [];
+  }
+  res.json(user);
 });
 app.patch('/api/profile', protect, async (req, res) => {
   try {

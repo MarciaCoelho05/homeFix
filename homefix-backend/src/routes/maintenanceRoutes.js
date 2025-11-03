@@ -23,7 +23,9 @@ router.get('/', protect, async (req, res) => {
       where.status = req.query.status.toString();
     }
   } else {
-    const technicianCategories = req.user.technicianCategory || [];
+    const technicianCategories = Array.isArray(req.user.technicianCategory) 
+      ? req.user.technicianCategory 
+      : req.user.technicianCategory ? [req.user.technicianCategory] : [];
     const hasSpecificCategories = technicianCategories.length > 0 && 
                                   !technicianCategories.some(cat => 
                                     cat && (cat.toLowerCase() === 'outros' || cat.toLowerCase() === 'other')

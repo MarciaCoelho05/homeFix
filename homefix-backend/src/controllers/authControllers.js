@@ -45,8 +45,12 @@ async function register(req, res) {
       }
     }
     
-    if (isTechnician === true && (!technicianCategory || !technicianCategory.trim())) {
-      errors.technicianCategory = 'Indique a categoria do técnico';
+    if (isTechnician === true) {
+      if (!technicianCategory || 
+          (Array.isArray(technicianCategory) && technicianCategory.length === 0) ||
+          (typeof technicianCategory === 'string' && !technicianCategory.trim())) {
+        errors.technicianCategory = 'Selecione pelo menos uma categoria';
+      }
     }
 
     if (Object.keys(errors).length) {
@@ -133,6 +137,11 @@ async function login(req, res) {
     
     const token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const { password: _password, ...safeUser } = user;
+    if (safeUser.technicianCategory !== undefined) {
+      safeUser.technicianCategory = Array.isArray(safeUser.technicianCategory) 
+        ? safeUser.technicianCategory 
+        : safeUser.technicianCategory ? [safeUser.technicianCategory] : [];
+    }
     return res.json({ token, user: safeUser });
   } catch (err) {
     console.error('Login error:', err);
