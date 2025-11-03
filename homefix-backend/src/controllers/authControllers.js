@@ -135,17 +135,43 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
-    const token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    const { password: _password, ...safeUser } = user;
-    if (safeUser.technicianCategory !== undefined) {
-      safeUser.technicianCategory = Array.isArray(safeUser.technicianCategory) 
-        ? safeUser.technicianCategory 
-        : safeUser.technicianCategory ? [safeUser.technicianCategory] : [];
+    let token;
+    try {
+      token = jwt.sign({ id: user.id, isAdmin: user.isAdmin, isTechnician: user.isTechnician }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    } catch (tokenError) {
+      console.error('Erro ao gerar token JWT:', tokenError);
+      return res.status(500).json({ message: 'Erro ao gerar token de autenticação' });
     }
+    
+    const { password: _password, ...safeUser } = user;
+    
+    try {
+      if (safeUser.technicianCategory !== undefined && safeUser.technicianCategory !== null) {
+        if (Array.isArray(safeUser.technicianCategory)) {
+          safeUser.technicianCategory = safeUser.technicianCategory.filter(cat => cat != null && String(cat).trim());
+        } else if (typeof safeUser.technicianCategory === 'string') {
+          safeUser.technicianCategory = safeUser.technicianCategory.trim() ? [safeUser.technicianCategory.trim()] : [];
+        } else {
+          safeUser.technicianCategory = [];
+        }
+      } else {
+        safeUser.technicianCategory = [];
+      }
+    } catch (normalizeError) {
+      console.error('Erro ao normalizar technicianCategory:', normalizeError);
+      safeUser.technicianCategory = [];
+    }
+    
     return res.json({ token, user: safeUser });
   } catch (err) {
     console.error('Login error:', err);
-    return res.status(500).json({ message: 'Erro de autenticação' });
+    console.error('Error stack:', err.stack);
+    console.error('Error details:', {
+      message: err.message,
+      name: err.name,
+      code: err.code
+    });
+    return res.status(500).json({ message: 'Erro de autenticação', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
   }
 }
 

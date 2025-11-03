@@ -70,13 +70,24 @@ app.use('/api/public', publicRoutes);
 
 
 app.get('/api/profile', protect, (req, res) => {
-  const user = { ...req.user };
-  if (user.technicianCategory !== undefined) {
-    user.technicianCategory = Array.isArray(user.technicianCategory) 
-      ? user.technicianCategory 
-      : user.technicianCategory ? [user.technicianCategory] : [];
+  try {
+    const user = { ...req.user };
+    if (user.technicianCategory !== undefined && user.technicianCategory !== null) {
+      if (Array.isArray(user.technicianCategory)) {
+        user.technicianCategory = user.technicianCategory.filter(cat => cat != null && String(cat).trim());
+      } else if (typeof user.technicianCategory === 'string') {
+        user.technicianCategory = user.technicianCategory.trim() ? [user.technicianCategory.trim()] : [];
+      } else {
+        user.technicianCategory = [];
+      }
+    } else {
+      user.technicianCategory = [];
+    }
+    res.json(user);
+  } catch (err) {
+    console.error('Erro ao obter perfil:', err);
+    res.status(500).json({ message: 'Erro ao carregar perfil' });
   }
-  res.json(user);
 });
 app.patch('/api/profile', protect, async (req, res) => {
   try {
