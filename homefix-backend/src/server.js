@@ -312,12 +312,27 @@ if (clientDist && require('fs').existsSync(clientDist)) {
 
 app.use(errorHandler);
 
-// Handler 404 padrão (apenas para rotas não-API)
+// Handler para favicon e outros recursos estáticos comuns (retorna 204 - No Content)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.status(204).end();
+});
+
+// Handler 404 padrão
 app.use((req, res) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'Rota API não encontrada' });
   } else {
-    res.status(404).json({ message: 'Rota não encontrada' });
+    // Para rotas não-API, retornar 404 apenas se não for um recurso estático comum
+    const staticResources = ['/favicon.ico', '/robots.txt', '/sitemap.xml'];
+    if (staticResources.includes(req.path)) {
+      res.status(204).end();
+    } else {
+      res.status(404).json({ message: 'Rota não encontrada' });
+    }
   }
 });
 
