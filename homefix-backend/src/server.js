@@ -472,7 +472,16 @@ process.on('uncaughtException', (error) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 if (require.main === module) {
+  console.log(`[SERVER] Environment PORT: ${process.env.PORT || 'not set'}`);
+  console.log(`[SERVER] Will listen on port: ${PORT}`);
+  
+  if (!process.env.PORT) {
+    console.warn('[SERVER] WARNING: PORT environment variable is not set!');
+    console.warn('[SERVER] Railway should set this automatically.');
+  }
+  
   try {
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor a correr na porta ${PORT}`);
