@@ -376,6 +376,38 @@ const Dashboard = () => {
           <p className="text-muted small mb-0">
             <strong>Registado em:</strong> {formatDate(request.createdAt)}
           </p>
+          {request.mediaUrls && Array.isArray(request.mediaUrls) && request.mediaUrls.length > 0 && (
+            <div className="mt-3 border-top pt-3">
+              <h6 className="fw-semibold mb-2">Anexos ({request.mediaUrls.length})</h6>
+              <div className="d-flex flex-wrap gap-2">
+                {request.mediaUrls.map((url, index) => {
+                  if (!url) return null;
+                  const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/i);
+                  return (
+                    <div key={index} className="position-relative">
+                      {isVideo ? (
+                        <video
+                          src={url}
+                          controls
+                          style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px' }}
+                          className="border"
+                        />
+                      ) : (
+                        <a href={url} target="_blank" rel="noreferrer" className="d-inline-block">
+                          <img
+                            src={url}
+                            alt={`Anexo ${index + 1}`}
+                            style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }}
+                            className="border"
+                          />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {actionButtons.length > 0 && (
             <div className="mt-3 d-flex flex-column flex-sm-row gap-2">{actionButtons}</div>
           )}
