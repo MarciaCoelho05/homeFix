@@ -392,9 +392,33 @@ process.on('uncaughtException', (error) => {
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Servidor a correr na porta ${PORT}`);
-  });
+  try {
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Servidor a correr na porta ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+    
+    // Handle graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received, shutting down gracefully...');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+    
+    process.on('SIGINT', () => {
+      console.log('SIGINT received, shutting down gracefully...');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+  } catch (listenError) {
+    console.error('Erro ao iniciar servidor:', listenError);
+    console.error('Stack:', listenError.stack);
+    process.exit(1);
+  }
 }
 
 module.exports = app;
