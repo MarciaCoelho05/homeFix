@@ -40,48 +40,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// CORS configuration - Allow all origins for now
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // List of allowed origins
-    const allowedOrigins = [
-      'https://homefix-frontend.vercel.app',
-      'https://homefix-frontend-git-main-marciacoelho05s-projects.vercel.app',
-      'https://homefix-frontend-*.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:5174',
-      process.env.FRONTEND_URL,
-      process.env.APP_URL
-    ].filter(Boolean);
-    
-    // Check if origin matches any allowed origin or pattern
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (allowedOrigin && allowedOrigin.includes('*')) {
-        const pattern = allowedOrigin.replace(/\*/g, '.*');
-        return new RegExp(`^${pattern}$`).test(origin);
-      }
-      return origin === allowedOrigin;
-    });
-    
-    // Allow all Vercel preview deployments
-    const isVercelPreview = origin.includes('.vercel.app');
-    
-    // Allow all origins in development or if it's a Vercel domain
-    if (isAllowed || isVercelPreview || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked origin: ${origin}`);
-      callback(null, true); // Allow all for now, but log blocked origins
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
+  preflightContinue: false,
 }));
 app.use(express.json());
 
