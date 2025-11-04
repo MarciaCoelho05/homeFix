@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 echo "🚀 Starting application..."
 
@@ -14,5 +13,7 @@ node prisma/seed.js || echo "⚠️  Seed failed or already completed"
 # Start the application
 echo "✅ Starting server..."
 echo "PORT: ${PORT:-3000}"
-exec node src/server.js
+echo "Starting Node.js server..."
+
+node src/server.js
 
