@@ -1,61 +1,76 @@
 let app;
+let serverLoaded = false;
+
 try {
   console.log('[API Handler] Loading server...');
   app = require('../src/server');
+  serverLoaded = true;
   console.log('[API Handler] Server loaded successfully');
 } catch (error) {
   console.error('[API Handler] Error loading server:', error);
   console.error('[API Handler] Stack:', error.stack);
+  serverLoaded = false;
+  
+  // Criar app de erro
   const express = require('express');
   app = express();
   app.use(express.json());
+  
   app.use((req, res) => {
     console.error('[API Handler] Request received but server failed to load');
     res.status(500).json({
       error: 'Erro ao carregar servidor',
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      path: req.path,
+      method: req.method
     });
   });
 }
 
-module.exports = async (req, res) => {
+module.exports = (req, res) => {
   const startTime = Date.now();
-  console.log(`[API Handler] ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  const method = req.method || 'GET';
+  const path = req.path || req.url || '/';
   
-  let timeout;
+  console.log(`[API Handler] ${method} ${path} - ${new Date().toISOString()}`);
+  console.log(`[API Handler] Server loaded: ${serverLoaded}`);
+  
+  // Verificar se o servidor foi carregado
+  if (!serverLoaded) {
+    console.error('[API Handler] Server not loaded, returning error');
+    return res.status(500).json({
+      error: 'Servidor não inicializado',
+      message: 'O servidor falhou ao carregar. Verifique os logs.'
+    });
+  }
+  
   try {
-    // Adicionar timeout para evitar requisições travadas
-    timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        console.error('[API Handler] Request timeout');
-        res.status(504).json({ error: 'Timeout na requisição' });
+    // Usar o app diretamente - Express lida com req/res automaticamente
+    app(req, res, (err) => {
+      if (err) {
+        console.error('[API Handler] Express error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: 'Erro ao processar requisição',
+            message: err.message
+          });
+        }
       }
-    }, 30000); // 30 segundos
-    
-    await new Promise((resolve, reject) => {
-      const originalEnd = res.end;
-      res.end = function(...args) {
-        if (timeout) clearTimeout(timeout);
-        originalEnd.apply(this, args);
-        resolve();
-      };
-      
-      app(req, res);
     });
     
     const duration = Date.now() - startTime;
-    console.log(`[API Handler] ${req.method} ${req.path} completed in ${duration}ms`);
+    if (duration > 1000) {
+      console.log(`[API Handler] ${method} ${path} took ${duration}ms`);
+    }
   } catch (error) {
-    if (timeout) clearTimeout(timeout);
     console.error('[API Handler] Error handling request:', error);
     console.error('[API Handler] Stack:', error.stack);
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Erro ao processar requisição',
         message: error.message,
-        path: req.path,
-        method: req.method
+        path: path,
+        method: method
       });
     }
   }
