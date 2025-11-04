@@ -10,8 +10,12 @@ COPY package*.json ./
 # Copy Prisma schema and migrations first (needed for postinstall)
 COPY prisma ./prisma/
 
-# Install dependencies (this will run postinstall which needs prisma schema)
-RUN npm ci
+# Temporarily disable postinstall to avoid Prisma generate during build
+# We'll generate it manually after copying all files
+RUN npm ci --ignore-scripts
+
+# Generate Prisma Client manually
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Copy application code
 COPY . .
