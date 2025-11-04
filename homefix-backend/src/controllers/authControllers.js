@@ -300,7 +300,9 @@ async function forgotPassword(req, res) {
       </html>
     `;
     
-    await mailer.sendMail({
+    console.log(`[EMAIL] Tentando enviar email de recuperação para ${email}...`);
+    
+    const emailResult = await mailer.sendMail({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: email,
       subject: 'Recuperar palavra-passe - HomeFix',
@@ -308,7 +310,8 @@ async function forgotPassword(req, res) {
       html,
     });
     
-    console.log(`✅ Email de recuperação de senha enviado para ${email}`);
+    console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
+    console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
     setCorsHeaders();
     return res.json({ message: 'Se o email existir, enviaremos instruções' });
   } catch (err) {

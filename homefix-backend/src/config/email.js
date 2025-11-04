@@ -35,13 +35,16 @@ const transporter = nodemailer.createTransport({
   logger: process.env.NODE_ENV === 'development'
 });
 
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('[EMAIL] ❌ Erro na verificação do servidor SMTP:', error);
-    console.error('[EMAIL] Detalhes:', error.message);
-  } else {
-    console.log('[EMAIL] ✅ Servidor SMTP configurado e pronto');
-  }
-});
+setTimeout(() => {
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error('[EMAIL] ❌ Erro na verificação do servidor SMTP:', error);
+      console.error('[EMAIL] Detalhes:', error.message);
+      console.error('[EMAIL] Stack:', error.stack);
+    } else {
+      console.log('[EMAIL] ✅ Servidor SMTP configurado e pronto');
+    }
+  });
+}, 2000);
 
 module.exports = transporter;
