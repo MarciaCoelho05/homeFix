@@ -15,22 +15,28 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     throw new Error('MAILTRAP_API_TOKEN não está configurado');
   }
 
-  const inboxId = mailtrapInboxId || '0';
-  const url = `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
+  let fromEmail = mailOptions.from || 'no-reply@homefix.com';
+  if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
+    const match = fromEmail.match(/<(.+)>/);
+    if (match) fromEmail = match[1];
+  }
 
   const emailData = {
     from: {
-      email: mailOptions.from || 'no-reply@homefix.com',
+      email: fromEmail,
       name: 'HomeFix'
     },
     to: Array.isArray(mailOptions.to) 
-      ? mailOptions.to.map(email => ({ email }))
+      ? mailOptions.to.map(email => typeof email === 'string' ? { email } : email)
       : [{ email: mailOptions.to }],
     subject: mailOptions.subject || 'Sem assunto',
     text: mailOptions.text || '',
     html: mailOptions.html || mailOptions.text || '',
     category: 'HomeFix'
   };
+
+  const inboxId = mailtrapInboxId || '0';
+  const url = `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
 
   if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
     emailData.attachments = mailOptions.attachments.map(att => ({
