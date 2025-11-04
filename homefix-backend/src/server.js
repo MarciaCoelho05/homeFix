@@ -36,8 +36,6 @@ try {
 
 const app = express();
 
-// CORS - SIMPLE AND DIRECT APPROACH
-// Handle OPTIONS requests FIRST, before anything else
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   console.log(`[CORS] OPTIONS preflight for ${req.path} - Origin: ${origin || 'none'}`);
@@ -55,11 +53,9 @@ app.options('*', (req, res) => {
   return res.status(204).end();
 });
 
-// CORS middleware for all other requests
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Set CORS headers for ALL requests
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
@@ -73,7 +69,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Use cors package as additional backup
 app.use(cors({
   origin: true,
   credentials: true,
@@ -406,7 +401,6 @@ if (require.main === module) {
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
     
-    // Handle graceful shutdown
     process.on('SIGTERM', () => {
       console.log('SIGTERM received, shutting down gracefully...');
       server.close(() => {

@@ -10,7 +10,6 @@ try {
 
 const router = express.Router();
 
-// OPTIONS handler for this router
 router.options('*', (req, res) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -32,7 +31,6 @@ router.get('/requests', async (req, res) => {
   const origin = req.headers.origin;
   console.log(`[PUBLIC /requests] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
-  // Ensure CORS headers are set before sending response
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -74,7 +72,6 @@ router.get('/requests', async (req, res) => {
     });
     console.log(`[PUBLIC /requests] Found ${items.length} items`);
     
-    // Set CORS headers again before sending
     if (origin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -85,7 +82,6 @@ router.get('/requests', async (req, res) => {
     console.error('Error in public routes:', e);
     console.error('Error stack:', e.stack);
     
-    // Set CORS headers even on error
     if (origin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
