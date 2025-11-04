@@ -36,14 +36,16 @@ router.get('/test', (req, res) => {
 });
 
 router.get('/requests', async (req, res) => {
-  console.log('Public route /requests called');
-  console.log('Query params:', req.query);
-  console.log('Full URL:', req.url);
-  console.log('Path:', req.path);
-  console.log('Origin:', req.headers.origin);
+  const origin = req.headers.origin;
+  console.log(`[PUBLIC /requests] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
-  // CORS headers já são adicionados pelo middleware cors() no server.js
-  // Não é necessário adicionar manualmente aqui
+  // Ensure CORS headers are set before sending response
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
   
   if (!prisma || !prisma.maintenanceRequest) {
     console.error('Prisma não está disponível');
@@ -77,11 +79,25 @@ router.get('/requests', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: 30
     });
-    console.log(`Found ${items.length} items`);
+    console.log(`[PUBLIC /requests] Found ${items.length} items`);
+    
+    // Set CORS headers again before sending
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    
     res.json(items);
   } catch (e) {
     console.error('Error in public routes:', e);
     console.error('Error stack:', e.stack);
+    
+    // Set CORS headers even on error
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    
     res.status(500).json({ message: 'Erro ao listar serviços públicos', error: e.message });
   }
 });

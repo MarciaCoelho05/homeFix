@@ -36,36 +36,33 @@ try {
 
 const app = express();
 
-// CORS middleware - MUST be before any routes
+// CORS - MUST be the first middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin}`);
+  console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
-  // Allow all origins
+  // Set CORS headers for ALL requests
   if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    console.log(`[CORS] Set Access-Control-Allow-Origin: ${origin}`);
+    res.header('Access-Control-Allow-Origin', origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    console.log(`[CORS] Set Access-Control-Allow-Origin: *`);
+    res.header('Access-Control-Allow-Origin', '*');
   }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
-  
-  // Handle preflight requests
+  // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Handling OPTIONS preflight for ${req.path}`);
-    return res.status(204).end();
+    console.log(`[CORS] OPTIONS preflight - returning 204`);
+    return res.status(204).send();
   }
   
   next();
 });
 
-// Also use cors middleware as backup
+// Backup CORS middleware
 app.use(cors({
   origin: true,
   credentials: true,
@@ -74,6 +71,20 @@ app.use(cors({
   exposedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
 }));
+
+// Intercept all responses to ensure CORS headers are set
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function(data) {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    return originalSend.call(this, data);
+  };
+  next();
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
