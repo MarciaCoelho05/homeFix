@@ -17,14 +17,16 @@ if (!smtpHost || !smtpUser || !smtpPass) {
 const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
-  secure: smtpPort === 465,
+  secure: smtpPort === 465 || smtpPort === 2525 ? false : smtpPort === 465,
   auth: smtpUser && smtpPass ? {
     user: smtpUser,
     pass: smtpPass,
   } : undefined,
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  debug: process.env.NODE_ENV === 'development',
+  logger: process.env.NODE_ENV === 'development'
 })
 
 transporter.verify(function (error, success) {
