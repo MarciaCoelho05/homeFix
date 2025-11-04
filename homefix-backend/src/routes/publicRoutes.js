@@ -10,6 +10,27 @@ try {
 
 const router = express.Router();
 
+// CORS middleware for this router
+router.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`[PUBLIC ROUTES CORS] ${req.method} ${req.path} - Origin: ${origin}`);
+  
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
+
 router.get('/test', (req, res) => {
   res.json({ message: 'Public routes working!' });
 });
