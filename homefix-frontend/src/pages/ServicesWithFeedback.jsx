@@ -217,10 +217,9 @@ const ServicesWithFeedback = () => {
         if (!service.feedback && !service.comment) return false;
         if (!query) return true;
         const searchableText = [
-          service.title,
-          service.description,
           service.category,
           service.comment,
+          service.author,
         ]
           .filter(Boolean)
           .join(' ')
