@@ -118,7 +118,18 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
         } else {
           const error = new Error(`Mailtrap API error: ${res.statusCode} - ${responseData}`);
           console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
-          console.error('[EMAIL] ❌ Verifique se o token está correto e tem permissões para enviar emails');
+          
+          if (res.statusCode === 401) {
+            console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
+            console.error('[EMAIL] 💡 Verifique no Mailtrap:');
+            console.error('[EMAIL]    1. Settings → API Tokens');
+            console.error('[EMAIL]    2. Confirme que o token está correto e ativo');
+            console.error('[EMAIL]    3. Gere um novo token se necessário');
+            console.error('[EMAIL]    4. Verifique se o token tem permissão "Send emails"');
+            console.error(`[EMAIL]    Token atual: ${token.substring(0, 10)}... (${token.length} chars)`);
+            console.error(`[EMAIL]    Inbox ID: ${inboxId}`);
+          }
+          
           reject(error);
         }
       });
@@ -142,29 +153,44 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 const sendMailViaSMTP = async (mailOptions) => {
   const nodemailer = require('nodemailer');
   const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-  const smtpPort = Number(process.env.SMTP_PORT || 2525);
+  const smtpPorts = process.env.SMTP_PORT 
+    ? [Number(process.env.SMTP_PORT)] 
+    : [587, 2525, 465, 25];
   
-  console.log(`[EMAIL] Tentando SMTP: ${smtpHost}:${smtpPort}`);
+  let lastError = null;
   
-  const smtpTransporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    requireTLS: smtpPort === 587 || smtpPort === 2525,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-      ciphers: 'SSLv3'
-    },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-  });
+  for (const smtpPort of smtpPorts) {
+    console.log(`[EMAIL] Tentando SMTP: ${smtpHost}:${smtpPort}`);
+    
+    try {
+      const smtpTransporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        requireTLS: smtpPort === 587 || smtpPort === 2525 || smtpPort === 25,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000,
+      });
+      
+      const result = await smtpTransporter.sendMail(mailOptions);
+      console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${smtpPort})`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] ❌ Erro SMTP na porta ${smtpPort}:`, error.message);
+      lastError = error;
+      continue;
+    }
+  }
   
-  return await smtpTransporter.sendMail(mailOptions);
+  throw lastError || new Error('Todas as portas SMTP falharam');
 };
 
 const transporter = {
