@@ -1,126 +1,47 @@
-﻿const https = require('https');
+﻿const nodemailer = require('nodemailer');
 
-const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
-const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID;
+const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
+const smtpPort = Number(process.env.SMTP_PORT || 2525);
+const smtpUser = process.env.SMTP_USER;
+const smtpPass = process.env.SMTP_PASS;
 
-if (!mailtrapApiToken) {
-  console.error('[EMAIL] ⚠️  Configuração Mailtrap incompleta!');
-  console.error('[EMAIL] Variável necessária: MAILTRAP_API_TOKEN');
-  console.error('[EMAIL] MAILTRAP_API_TOKEN:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
-  console.error('[EMAIL] MAILTRAP_INBOX_ID:', mailtrapInboxId ? '✅ definido' : '❌ não definido (opcional)');
+if (!smtpHost || !smtpUser || !smtpPass) {
+  console.error('[EMAIL] ⚠️  Configuração SMTP incompleta!');
+  console.error('[EMAIL] Variáveis necessárias: SMTP_HOST, SMTP_USER, SMTP_PASS');
+  console.error('[EMAIL] SMTP_HOST:', smtpHost ? '✅ definido' : '❌ não definido');
+  console.error('[EMAIL] SMTP_USER:', smtpUser ? '✅ definido' : '❌ não definido');
+  console.error('[EMAIL] SMTP_PASS:', smtpPass ? '✅ definido' : '❌ não definido');
+  console.error('[EMAIL] SMTP_PORT:', smtpPort);
+} else {
+  console.log('[EMAIL] Configuração SMTP:');
+  console.log('[EMAIL]   Host:', smtpHost);
+  console.log('[EMAIL]   Port:', smtpPort);
+  console.log('[EMAIL]   User:', smtpUser ? '✅ definido' : '❌ não definido');
+  console.log('[EMAIL]   Pass:', smtpPass ? '✅ definido' : '❌ não definido');
 }
 
-const sendMailViaMailtrapAPI = async (mailOptions) => {
-  if (!mailtrapApiToken) {
-    throw new Error('MAILTRAP_API_TOKEN não está configurado');
-  }
-
-  let fromEmail = mailOptions.from || 'no-reply@homefix.com';
-  if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
-    const match = fromEmail.match(/<(.+)>/);
-    if (match) fromEmail = match[1];
-  }
-
-  const emailData = {
-    from: {
-      email: fromEmail,
-      name: 'HomeFix'
-    },
-    to: Array.isArray(mailOptions.to) 
-      ? mailOptions.to.map(email => typeof email === 'string' ? { email } : email)
-      : [{ email: mailOptions.to }],
-    subject: mailOptions.subject || 'Sem assunto',
-    text: mailOptions.text || '',
-    html: mailOptions.html || mailOptions.text || '',
-    category: 'HomeFix'
-  };
-
-  const inboxId = mailtrapInboxId || '0';
-  const url = `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
-
-  if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
-    emailData.attachments = mailOptions.attachments.map(att => ({
-      filename: att.filename || 'attachment',
-      content: att.content || att.path,
-      type: att.contentType || 'application/octet-stream',
-      disposition: 'attachment'
-    }));
-  }
-
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(emailData);
-    
-    const urlObj = new URL(url);
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname,
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${mailtrapApiToken}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let responseData = '';
-      
-      res.on('data', (chunk) => {
-        responseData += chunk;
-      });
-      
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          const result = JSON.parse(responseData || '{}');
-          console.log(`[EMAIL] ✅ Email enviado via Mailtrap API: ${result.message_ids?.[0] || 'N/A'}`);
-          resolve({
-            messageId: result.message_ids?.[0] || 'mailtrap-' + Date.now(),
-            accepted: emailData.to.map(t => t.email),
-            response: result
-          });
-        } else {
-          const error = new Error(`Mailtrap API error: ${res.statusCode} - ${responseData}`);
-          console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      console.error('[EMAIL] ❌ Erro na requisição Mailtrap API:', error);
-      reject(error);
-    });
-
-    req.write(data);
-    req.end();
-  });
-};
-
-const transporter = {
-  sendMail: async (mailOptions) => {
-    try {
-      return await sendMailViaMailtrapAPI(mailOptions);
-    } catch (error) {
-      console.error('[EMAIL] ❌ Erro ao enviar email:', error);
-      throw error;
-    }
+const transporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: false,
+  auth: {
+    user: smtpUser,
+    pass: smtpPass,
   },
-  verify: (callback) => {
-    if (!mailtrapApiToken) {
-      callback(new Error('MAILTRAP_API_TOKEN não está configurado'));
-      return;
-    }
-    console.log('[EMAIL] ✅ Mailtrap API configurado e pronto');
-    callback(null, true);
-  }
-};
+  tls: {
+    rejectUnauthorized: false
+  },
+  debug: process.env.NODE_ENV === 'development',
+  logger: process.env.NODE_ENV === 'development'
+});
 
-transporter.verify((error, success) => {
+transporter.verify(function (error, success) {
   if (error) {
-    console.error('[EMAIL] ❌ Erro na verificação do Mailtrap API:', error);
+    console.error('[EMAIL] ❌ Erro na verificação do servidor SMTP:', error);
+    console.error('[EMAIL] Detalhes:', error.message);
   } else {
-    console.log('[EMAIL] ✅ Mailtrap API configurado e pronto');
+    console.log('[EMAIL] ✅ Servidor SMTP configurado e pronto');
   }
 });
 
-module.exports = transporter
+module.exports = transporter;
