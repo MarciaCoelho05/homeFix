@@ -13,5 +13,6 @@ node prisma/seed.js || echo "⚠️  Seed failed or already completed"
 
 # Start the application
 echo "✅ Starting server..."
-exec npm start
+echo "PORT: ${PORT:-3000}"
+exec node src/server.js
 
