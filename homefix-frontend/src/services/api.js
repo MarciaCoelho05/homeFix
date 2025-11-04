@@ -3,7 +3,10 @@ import axios from 'axios';
 const getApiUrl = () => {
   // Se VITE_API_URL estiver definida, usar ela (prioridade máxima)
   if (import.meta.env.VITE_API_URL) {
-    let apiUrl = import.meta.env.VITE_API_URL.trim();
+    let apiUrl = String(import.meta.env.VITE_API_URL).trim();
+    
+    // Remover qualquer caractere problemático
+    apiUrl = apiUrl.replace(/^\//, ''); // Remove barra inicial se houver
     
     // Garantir que começa com http:// ou https://
     if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
@@ -16,6 +19,12 @@ const getApiUrl = () => {
     // Adicionar /api se não terminar com /api
     if (!apiUrl.endsWith('/api')) {
       apiUrl = `${apiUrl}/api`;
+    }
+    
+    // Debug em desenvolvimento
+    if (import.meta.env.DEV) {
+      console.log('[API] VITE_API_URL:', import.meta.env.VITE_API_URL);
+      console.log('[API] Final URL:', apiUrl);
     }
     
     return apiUrl;
