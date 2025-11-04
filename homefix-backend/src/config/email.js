@@ -128,25 +128,36 @@ const transporter = {
     } else {
       const nodemailer = require('nodemailer');
       const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-      const smtpPort = Number(process.env.SMTP_PORT || 2525);
+      const smtpPort = Number(process.env.SMTP_PORT || 587);
+      
+      console.log(`[EMAIL] Tentando SMTP: ${smtpHost}:${smtpPort}`);
       
       const smtpTransporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: false,
+        secure: smtpPort === 465,
+        requireTLS: smtpPort === 587,
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
         tls: {
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
         },
         connectionTimeout: 30000,
         greetingTimeout: 30000,
         socketTimeout: 30000,
       });
       
-      return await smtpTransporter.sendMail(mailOptions);
+      try {
+        return await smtpTransporter.sendMail(mailOptions);
+      } catch (smtpError) {
+        console.error('[EMAIL] ❌ Erro SMTP:', smtpError.message);
+        console.error('[EMAIL] ⚠️  Railway pode estar bloqueando conexões SMTP');
+        console.error('[EMAIL] 💡 Recomendação: Use MAILTRAP_API_TOKEN em vez de SMTP');
+        throw smtpError;
+      }
     }
   },
   verify: (callback) => {
