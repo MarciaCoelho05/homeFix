@@ -21,11 +21,8 @@ router.get('/requests', async (req, res) => {
   console.log('Path:', req.path);
   console.log('Origin:', req.headers.origin);
   
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
+  // CORS headers já são adicionados pelo middleware cors() no server.js
+  // Não é necessário adicionar manualmente aqui
   
   if (!prisma || !prisma.maintenanceRequest) {
     console.error('Prisma não está disponível');
