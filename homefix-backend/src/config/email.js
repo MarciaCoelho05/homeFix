@@ -38,17 +38,6 @@ const transporter = nodemailer.createTransport({
   logger: process.env.NODE_ENV === 'development'
 });
 
-setTimeout(() => {
-  transporter.verify(function (error, success) {
-    if (error) {
-      console.error('[EMAIL] ❌ Erro na verificação do servidor SMTP:', error);
-      console.error('[EMAIL] Detalhes:', error.message);
-      console.error('[EMAIL] Código:', error.code);
-      console.warn('[EMAIL] ⚠️  A verificação falhou, mas o transporter ainda pode funcionar ao enviar emails');
-    } else {
-      console.log('[EMAIL] ✅ Servidor SMTP configurado e pronto');
-    }
-  });
-}, 5000);
+console.log('[EMAIL] ✅ Transporter SMTP criado (verificação será feita na primeira tentativa de envio)');
 
 module.exports = transporter;
