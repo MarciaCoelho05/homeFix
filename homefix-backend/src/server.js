@@ -40,11 +40,15 @@ const app = express();
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
+  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin}`);
+  
   // Allow all origins
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+    console.log(`[CORS] Set Access-Control-Allow-Origin: ${origin}`);
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
+    console.log(`[CORS] Set Access-Control-Allow-Origin: *`);
   }
   
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -54,6 +58,7 @@ app.use((req, res, next) => {
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
+    console.log(`[CORS] Handling OPTIONS preflight for ${req.path}`);
     return res.status(204).end();
   }
   
