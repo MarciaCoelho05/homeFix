@@ -36,8 +36,12 @@ try {
 
 const app = express();
 
-const setCorsHeaders = (req, res) => {
+app.use((req, res, next) => {
   const origin = req.headers.origin;
+  const method = req.method;
+  const path = req.path;
+  
+  console.log(`[CORS-FIRST] ${method} ${path} - Origin: ${origin || 'none'} - Host: ${req.headers.host || 'none'}`);
   
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -50,23 +54,15 @@ const setCorsHeaders = (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
-};
-
-const corsMiddleware = (req, res, next) => {
-  const origin = req.headers.origin;
-  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
-  setCorsHeaders(req, res);
-  
-  if (req.method === 'OPTIONS') {
-    console.log(`[CORS] OPTIONS preflight - returning 204`);
+  if (method === 'OPTIONS') {
+    console.log(`[CORS-FIRST] OPTIONS preflight - returning 204`);
     return res.status(204).end();
   }
   
   next();
-};
+});
 
-app.use(corsMiddleware);
 app.use(cors({
   origin: (origin, callback) => {
     console.log(`[CORS-PKG] Origin: ${origin || 'none'}`);
@@ -80,16 +76,60 @@ app.use(cors({
 }));
 
 app.get('/health', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/cors-test', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS-TEST] GET /api/cors-test - Origin: ${origin || 'none'}`);
+  
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.json({ 
+    message: 'CORS test successful',
+    origin: origin || 'none',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use(express.json());
 
 app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = function(data) {
+    const origin = req.headers.origin;
+    if (origin && !this.headersSent) {
+      this.setHeader('Access-Control-Allow-Origin', origin);
+      this.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    return originalJson.call(this, data);
+  };
+  
+  const originalEnd = res.end.bind(res);
+  res.end = function(chunk, encoding) {
+    const origin = req.headers.origin;
+    if (origin && !this.headersSent) {
+      this.setHeader('Access-Control-Allow-Origin', origin);
+      this.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    return originalEnd.call(this, chunk, encoding);
+  };
+  
   if (req.path.startsWith('/api')) {
     console.log(`[SERVER] ${req.method} ${req.path} - Headers:`, {
       'content-type': req.headers['content-type'],
-      'authorization': req.headers['authorization'] ? 'present' : 'missing'
+      'authorization': req.headers['authorization'] ? 'present' : 'missing',
+      'origin': req.headers.origin || 'none'
     });
   }
   next();
