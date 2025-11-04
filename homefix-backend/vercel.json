@@ -2,9 +2,10 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm install",
+  "outputDirectory": ".",
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "@vercel/node"
     }
   },
   "rewrites": [
