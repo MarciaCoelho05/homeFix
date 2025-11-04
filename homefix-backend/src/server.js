@@ -36,13 +36,30 @@ try {
 
 const app = express();
 
-// CORS - MUST be the first middleware - Handle OPTIONS first
+// CORS - SIMPLE AND DIRECT APPROACH
+// Handle OPTIONS requests FIRST, before anything else
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS] OPTIONS preflight for ${req.path} - Origin: ${origin || 'none'}`);
+  
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  return res.status(204).end();
+});
+
+// CORS middleware for all other requests
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
-  
-  // Set CORS headers for ALL requests (including OPTIONS)
+  // Set CORS headers for ALL requests
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
@@ -52,23 +69,11 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
-  
-  // Handle preflight OPTIONS requests IMMEDIATELY
-  if (req.method === 'OPTIONS') {
-    console.log(`[CORS] OPTIONS preflight for ${req.path} - returning 204`);
-    console.log(`[CORS] Headers set:`, {
-      'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
-      'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
-      'Access-Control-Allow-Headers': res.getHeader('Access-Control-Allow-Headers')
-    });
-    return res.status(204).end();
-  }
   
   next();
 });
 
-// Backup CORS middleware
+// Use cors package as additional backup
 app.use(cors({
   origin: true,
   credentials: true,
@@ -77,20 +82,6 @@ app.use(cors({
   exposedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
 }));
-
-// Intercept all responses to ensure CORS headers are set
-app.use((req, res, next) => {
-  const originalSend = res.send;
-  res.send = function(data) {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    return originalSend.call(this, data);
-  };
-  next();
-});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
