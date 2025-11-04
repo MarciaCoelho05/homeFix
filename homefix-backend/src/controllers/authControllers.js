@@ -228,16 +228,26 @@ async function forgotPassword(req, res) {
   };
   
   try {
+    console.log('[FORGOT] Iniciando processo de recuperação de senha');
     const { email } = req.body || {};
+    console.log('[FORGOT] Email recebido:', email || 'não fornecido');
+    
     if (!email) {
+      console.log('[FORGOT] Email não fornecido, retornando erro 400');
       setCorsHeaders();
       return res.status(400).json({ message: 'Indique o email' });
     }
+    
+    console.log('[FORGOT] Buscando usuário no banco de dados...');
     const user = await prisma.user.findUnique({ where: { email } });
+    
     if (!user) {
+      console.log('[FORGOT] Usuário não encontrado, retornando sucesso (segurança)');
       setCorsHeaders();
       return res.status(200).json({ message: 'Se o email existir, enviaremos instruções' });
     }
+    
+    console.log('[FORGOT] Usuário encontrado:', user.email);
     
     const jwt = require('jsonwebtoken');
     const token = jwt.sign({ action: 'reset', id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
