@@ -12,18 +12,23 @@ const router = express.Router();
 
 router.use((req, res, next) => {
   const origin = req.headers.origin;
+  console.log(`[PUBLIC-ROUTES] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
   if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
   
   if (req.method === 'OPTIONS') {
-    return res.status(204).send();
+    console.log(`[PUBLIC-ROUTES] OPTIONS preflight - returning 204`);
+    return res.status(204).end();
   }
   
   next();
@@ -38,14 +43,16 @@ router.get('/requests', async (req, res) => {
   console.log(`[PUBLIC /requests] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
   if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
   if (!prisma || !prisma.maintenanceRequest) {
-    console.error('Prisma não está disponível');
+    console.error('[PUBLIC /requests] Prisma não está disponível');
     return res.status(503).json({ 
       message: 'Serviço temporariamente indisponível',
       error: 'Prisma Client não inicializado'
@@ -80,18 +87,19 @@ router.get('/requests', async (req, res) => {
     console.log(`[PUBLIC /requests] Found ${items.length} items`);
     
     if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
     
+    console.log(`[PUBLIC /requests] Sending response with CORS headers`);
     res.json(items);
   } catch (e) {
-    console.error('Error in public routes:', e);
-    console.error('Error stack:', e.stack);
+    console.error('[PUBLIC /requests] Error:', e);
+    console.error('[PUBLIC /requests] Error stack:', e.stack);
     
     if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
     
     res.status(500).json({ message: 'Erro ao listar serviços públicos', error: e.message });

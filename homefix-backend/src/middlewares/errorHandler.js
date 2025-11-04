@@ -1,15 +1,23 @@
 function errorHandler(err, req, res, next) {
-    // Garantir que CORS está configurado mesmo em erros
     const origin = req.headers.origin;
+    
     if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
     }
     
-    console.error(err.stack);
-    res.status(err.statusCode || 500).json({
-        message: err.message || 'Erro interno do servidor'
-    });
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    console.error('[ERROR]', err.stack || err.message);
+    
+    if (!res.headersSent) {
+        res.status(err.statusCode || 500).json({
+            message: err.message || 'Erro interno do servidor'
+        });
+    }
 }
 
 module.exports = errorHandler;

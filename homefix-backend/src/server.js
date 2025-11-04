@@ -36,26 +36,31 @@ try {
 
 const app = express();
 
-const corsMiddleware = (req, res, next) => {
+const setCorsHeaders = (req, res) => {
   const origin = req.headers.origin;
   
-  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
-  
   if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
   
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Max-Age', '86400');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+};
+
+const corsMiddleware = (req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
+  
+  setCorsHeaders(req, res);
   
   if (req.method === 'OPTIONS') {
     console.log(`[CORS] OPTIONS preflight - returning 204`);
-    return res.status(204).send();
+    return res.status(204).end();
   }
   
   next();
@@ -63,7 +68,10 @@ const corsMiddleware = (req, res, next) => {
 
 app.use(corsMiddleware);
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    console.log(`[CORS-PKG] Origin: ${origin || 'none'}`);
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
@@ -366,6 +374,17 @@ app.get('/robots.txt', (req, res) => {
 });
 
 app.use((req, res) => {
+  const origin = req.headers.origin;
+  
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'Rota API não encontrada' });
   } else {
