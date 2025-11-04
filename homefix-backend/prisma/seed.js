@@ -1,75 +1,95 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
-// Senhas: admin123, tecnico123, cliente123
-const ADMIN_HASH = "$2b$10$l.15j6SnBGyqjfl7twS1fuCiuyODtPHrJFVpf8jUBureunYfLo65e";
-const TECH_HASH = "$2b$10$f0SZbv6ZkPNH0aZHr3mCj.D8q//5/lcmsqxvmIMfgP3kShjXfW61C";
-const CLIENT_HASH = "$2b$10$Puf5sSFo5eBFKfHY968QU.Y.kqxfySQaNHVeaZHy7yaMRW6LXkmgu";
-
 async function main() {
+  // Hash das senhas
+  const adminHash = await bcrypt.hash("admin123", 10);
+  const tecnicoHash = await bcrypt.hash("tecnico123", 10);
+  const clienteHash = await bcrypt.hash("cliente123", 10);
+
+  // Data de nascimento válida (mais de 18 anos)
+  const adminBirthDate = new Date("1990-01-01");
+  const tecnicoBirthDate = new Date("1985-05-15");
+  const clienteBirthDate = new Date("1995-09-20");
+
+  // Criar/atualizar Admin
   await prisma.user.upsert({
     where: { email: "admin@homefix.com" },
     update: {
-      password: ADMIN_HASH,
+      password: adminHash,
       firstName: "Admin",
       lastName: "User",
-      birthDate: new Date("1990-01-01"),
+      birthDate: adminBirthDate,
       isAdmin: true,
       isTechnician: false,
+      technicianCategory: [],
     },
     create: {
       email: "admin@homefix.com",
-      password: ADMIN_HASH,
+      password: adminHash,
       firstName: "Admin",
       lastName: "User",
-      birthDate: new Date("1990-01-01"),
+      birthDate: adminBirthDate,
       isAdmin: true,
+      isTechnician: false,
+      technicianCategory: [],
     },
   });
 
+  // Criar/atualizar Técnico
   await prisma.user.upsert({
     where: { email: "tecnico@homefix.com" },
     update: {
-      password: TECH_HASH,
+      password: tecnicoHash,
       firstName: "Carlos",
       lastName: "Tecnico",
-      birthDate: new Date("1985-05-15"),
+      birthDate: tecnicoBirthDate,
       isAdmin: false,
       isTechnician: true,
-      technicianCategory: "Canalização",
+      technicianCategory: ["Canalização", "Eletricidade"],
     },
     create: {
       email: "tecnico@homefix.com",
-      password: TECH_HASH,
+      password: tecnicoHash,
       firstName: "Carlos",
       lastName: "Tecnico",
-      birthDate: new Date("1985-05-15"),
+      birthDate: tecnicoBirthDate,
+      isAdmin: false,
       isTechnician: true,
-      technicianCategory: "Canalização",
+      technicianCategory: ["Canalização", "Eletricidade"],
     },
   });
 
+  // Criar/atualizar Cliente
   await prisma.user.upsert({
     where: { email: "cliente@homefix.com" },
     update: {
-      password: CLIENT_HASH,
+      password: clienteHash,
       firstName: "Ana",
       lastName: "Cliente",
-      birthDate: new Date("1995-09-20"),
+      birthDate: clienteBirthDate,
       isAdmin: false,
       isTechnician: false,
+      technicianCategory: [],
     },
     create: {
       email: "cliente@homefix.com",
-      password: CLIENT_HASH,
+      password: clienteHash,
       firstName: "Ana",
       lastName: "Cliente",
-      birthDate: new Date("1995-09-20"),
+      birthDate: clienteBirthDate,
+      isAdmin: false,
+      isTechnician: false,
+      technicianCategory: [],
     },
   });
 
-  console.log("Seed concluido: utilizadores base criados.");
+  console.log("✅ Seed concluído: utilizadores pré-definidos criados:");
+  console.log("   - admin@homefix.com / admin123 (Admin)");
+  console.log("   - tecnico@homefix.com / tecnico123 (Técnico)");
+  console.log("   - cliente@homefix.com / cliente123 (Cliente)");
 }
 
 main()

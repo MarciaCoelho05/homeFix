@@ -17,10 +17,11 @@
     "prisma:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "build": "prisma generate --schema=./prisma/schema.prisma",
-    "vercel-build": "prisma generate --schema=./prisma/schema.prisma && prisma migrate deploy --schema=./prisma/schema.prisma",
+    "vercel-build": "prisma generate --schema=./prisma/schema.prisma && prisma migrate deploy --schema=./prisma/schema.prisma && node prisma/seed.js",
     "worker": "node src/worker/emailWorker.js",
     "db:test": "node src/scripts/test-db.js",
-    "db:init": "node src/scripts/init-db.js"
+    "db:init": "node src/scripts/init-db.js",
+    "db:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
