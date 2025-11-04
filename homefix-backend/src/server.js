@@ -75,6 +75,22 @@ app.use(cors({
   optionsSuccessStatus: 204,
 }));
 
+app.get('/', (req, res) => {
+  const origin = req.headers.origin;
+  console.log('[ROOT] Root path requested');
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.json({ 
+    status: 'ok', 
+    message: 'HomeFix API is running',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.get('/health', (req, res) => {
   const origin = req.headers.origin;
   console.log('[HEALTH] Health check requested');
