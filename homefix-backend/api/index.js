@@ -23,9 +23,10 @@ module.exports = async (req, res) => {
   const startTime = Date.now();
   console.log(`[API Handler] ${req.method} ${req.path} - ${new Date().toISOString()}`);
   
+  let timeout;
   try {
     // Adicionar timeout para evitar requisições travadas
-    const timeout = setTimeout(() => {
+    timeout = setTimeout(() => {
       if (!res.headersSent) {
         console.error('[API Handler] Request timeout');
         res.status(504).json({ error: 'Timeout na requisição' });
@@ -35,7 +36,7 @@ module.exports = async (req, res) => {
     await new Promise((resolve, reject) => {
       const originalEnd = res.end;
       res.end = function(...args) {
-        clearTimeout(timeout);
+        if (timeout) clearTimeout(timeout);
         originalEnd.apply(this, args);
         resolve();
       };
@@ -46,7 +47,7 @@ module.exports = async (req, res) => {
     const duration = Date.now() - startTime;
     console.log(`[API Handler] ${req.method} ${req.path} completed in ${duration}ms`);
   } catch (error) {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
     console.error('[API Handler] Error handling request:', error);
     console.error('[API Handler] Stack:', error.stack);
     if (!res.headersSent) {
