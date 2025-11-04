@@ -10,7 +10,7 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci --only=production=false
 
-# Copy Prisma schema
+# Copy Prisma schema and migrations
 COPY prisma ./prisma/
 
 # Generate Prisma Client
@@ -19,13 +19,12 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 # Copy application code
 COPY . .
 
-# Run migrations and seed
-RUN npx prisma migrate deploy --schema=./prisma/schema.prisma || true
-RUN node prisma/seed.js || true
+# Make start script executable
+RUN chmod +x start.sh
 
 # Expose port
 EXPOSE 3000
 
-# Start application
-CMD ["npm", "start"]
+# Start application (migrations and seed will run at startup)
+CMD ["./start.sh"]
 

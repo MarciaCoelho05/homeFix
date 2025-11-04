@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+echo "🚀 Starting application..."
+
+# Run migrations
+echo "📦 Running database migrations..."
+npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "⚠️  Migrations failed or already applied"
+
+# Run seed (idempotent)
+echo "🌱 Seeding database..."
+node prisma/seed.js || echo "⚠️  Seed failed or already completed"
+
+# Start the application
+echo "✅ Starting server..."
+exec npm start
+
