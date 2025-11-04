@@ -215,11 +215,29 @@ async function login(req, res) {
 module.exports = { register, login };
 
 async function forgotPassword(req, res) {
+  const origin = req.headers.origin;
+  const setCorsHeaders = () => {
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  };
+  
   try {
     const { email } = req.body || {};
-    if (!email) return res.status(400).json({ message: 'Indique o email' });
+    if (!email) {
+      setCorsHeaders();
+      return res.status(400).json({ message: 'Indique o email' });
+    }
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(200).json({ message: 'Se o email existir, enviaremos instruções' });
+    if (!user) {
+      setCorsHeaders();
+      return res.status(200).json({ message: 'Se o email existir, enviaremos instruções' });
+    }
     
     const jwt = require('jsonwebtoken');
     const token = jwt.sign({ action: 'reset', id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
@@ -291,9 +309,11 @@ async function forgotPassword(req, res) {
     });
     
     console.log(`✅ Email de recuperação de senha enviado para ${email}`);
+    setCorsHeaders();
     return res.json({ message: 'Se o email existir, enviaremos instruções' });
   } catch (err) {
     console.error('Forgot error:', err);
+    setCorsHeaders();
     return res.status(500).json({ message: 'Erro ao enviar email de recuperação' });
   }
 }
