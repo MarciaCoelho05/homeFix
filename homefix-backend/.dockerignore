@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.DS_Store
+dist
+build
+.vercel
+.vscode
+.idea
+*.log
+.git
+.gitignore
+README.md
+homefix-frontend
+
