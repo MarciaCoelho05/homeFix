@@ -77,11 +77,17 @@ app.use(cors({
 
 app.get('/health', (req, res) => {
   const origin = req.headers.origin;
+  console.log('[HEALTH] Health check requested');
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 app.get('/api/cors-test', (req, res) => {
@@ -438,29 +444,47 @@ app.use((req, res) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('[ERROR] Unhandled Rejection at:', promise);
+  console.error('[ERROR] Reason:', reason);
+  console.error('[ERROR] Stack:', reason?.stack);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  console.error('[ERROR] Uncaught Exception:', error);
+  console.error('[ERROR] Stack:', error.stack);
+  process.exit(1);
 });
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   try {
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Servidor a correr na porta ${PORT}`);
+      console.log(`✅ Servidor a correr na porta ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`[SERVER] Listening on 0.0.0.0:${PORT}`);
       console.log(`[SERVER] CORS middleware installed - ready to accept requests`);
+      console.log(`[SERVER] Health check: http://0.0.0.0:${PORT}/health`);
     });
     
     server.on('error', (err) => {
-      console.error('[SERVER] Error:', err);
+      console.error('[SERVER] Server error:', err);
+      console.error('[SERVER] Error code:', err.code);
+      console.error('[SERVER] Error message:', err.message);
+      if (err.code === 'EADDRINUSE') {
+        console.error(`[SERVER] Port ${PORT} is already in use`);
+      }
     });
     
     server.on('request', (req, res) => {
       console.log(`[SERVER-REQUEST] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
+    });
+    
+    server.on('connection', (socket) => {
+      console.log(`[SERVER] New connection from ${socket.remoteAddress}`);
+    });
+    
+    server.on('close', () => {
+      console.log('[SERVER] Server closed');
     });
     
     process.on('SIGTERM', () => {
