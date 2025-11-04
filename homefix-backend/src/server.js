@@ -59,17 +59,22 @@ app.use(cors({
     
     // Check if origin matches any allowed origin or pattern
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (allowedOrigin.includes('*')) {
-        const pattern = allowedOrigin.replace('*', '.*');
+      if (allowedOrigin && allowedOrigin.includes('*')) {
+        const pattern = allowedOrigin.replace(/\*/g, '.*');
         return new RegExp(`^${pattern}$`).test(origin);
       }
       return origin === allowedOrigin;
     });
     
-    if (isAllowed || process.env.NODE_ENV !== 'production') {
+    // Allow all Vercel preview deployments
+    const isVercelPreview = origin.includes('.vercel.app');
+    
+    // Allow all origins in development or if it's a Vercel domain
+    if (isAllowed || isVercelPreview || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all in production for now
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(null, true); // Allow all for now, but log blocked origins
     }
   },
   credentials: true,
