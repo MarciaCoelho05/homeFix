@@ -451,6 +451,16 @@ if (require.main === module) {
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor a correr na porta ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`[SERVER] Listening on 0.0.0.0:${PORT}`);
+      console.log(`[SERVER] CORS middleware installed - ready to accept requests`);
+    });
+    
+    server.on('error', (err) => {
+      console.error('[SERVER] Error:', err);
+    });
+    
+    server.on('request', (req, res) => {
+      console.log(`[SERVER-REQUEST] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
     });
     
     process.on('SIGTERM', () => {
