@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm ci || npm install",
+  "installCommand": "npm install",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
   "rewrites": [

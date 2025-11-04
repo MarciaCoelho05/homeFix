@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
+  // Se VITE_API_URL estiver definida, usar ela
   if (import.meta.env.VITE_API_URL) {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl.endsWith('/api') && !apiUrl.endsWith('/api/')) {
@@ -9,14 +10,25 @@ const getApiUrl = () => {
     return apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
   }
   
+  // Em produção, detectar automaticamente o backend
   if (import.meta.env.PROD && typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
+    // Se for Vercel, substituir homefix-frontend por homefix-backend
+    if (hostname.includes('homefix-frontend')) {
       const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
       return `https://${backendUrl}/api`;
     }
+    // Se for outro domínio Vercel, tentar padrão similar
+    if (hostname.includes('vercel.app')) {
+      const parts = hostname.split('.');
+      if (parts.length >= 3 && parts[0].includes('homefix-frontend')) {
+        const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
+        return `https://${backendUrl}/api`;
+      }
+    }
   }
   
+  // Em desenvolvimento, usar proxy do Vite
   return '/api';
 };
 
