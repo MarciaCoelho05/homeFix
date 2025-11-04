@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
-  // Se VITE_API_URL estiver definida, usar ela
+  // Se VITE_API_URL estiver definida, usar ela (prioridade máxima)
   if (import.meta.env.VITE_API_URL) {
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = import.meta.env.VITE_API_URL.trim();
     if (!apiUrl.endsWith('/api') && !apiUrl.endsWith('/api/')) {
       return apiUrl.endsWith('/') ? `${apiUrl}api` : `${apiUrl}/api`;
     }
@@ -13,18 +13,22 @@ const getApiUrl = () => {
   // Em produção, detectar automaticamente o backend
   if (import.meta.env.PROD && typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    // Se for Vercel, substituir homefix-frontend por homefix-backend
-    if (hostname.includes('homefix-frontend')) {
-      const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
-      return `https://${backendUrl}/api`;
-    }
-    // Se for outro domínio Vercel, tentar padrão similar
-    if (hostname.includes('vercel.app')) {
-      const parts = hostname.split('.');
-      if (parts.length >= 3 && parts[0].includes('homefix-frontend')) {
+    
+    // Se for Vercel, tentar substituir homefix-frontend por homefix-backend
+    if (hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
+      // Tentar padrão Vercel primeiro
+      if (hostname.includes('homefix-frontend')) {
         const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
         return `https://${backendUrl}/api`;
       }
+      // Se não encontrar, pode ser que o backend esteja no Railway
+      // Nesse caso, VITE_API_URL deve ser configurada no Vercel
+      console.warn('Backend não encontrado automaticamente. Configure VITE_API_URL no Vercel.');
+    }
+    
+    // Se for Railway ou outro domínio, VITE_API_URL deve estar configurada
+    if (hostname.includes('railway.app') || hostname.includes('railway.internal')) {
+      console.warn('Backend no Railway detectado. Configure VITE_API_URL no Vercel.');
     }
   }
   
