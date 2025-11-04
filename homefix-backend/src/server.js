@@ -41,7 +41,37 @@ app.get('/health', (req, res) => {
 });
 
 app.use(cors({
-  origin: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'https://homefix-frontend.vercel.app',
+      'https://homefix-frontend-git-main-marciacoelho05s-projects.vercel.app',
+      'https://homefix-frontend-*.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5174',
+      process.env.FRONTEND_URL,
+      process.env.APP_URL
+    ].filter(Boolean);
+    
+    // Check if origin matches any allowed origin or pattern
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin.includes('*')) {
+        const pattern = allowedOrigin.replace('*', '.*');
+        return new RegExp(`^${pattern}$`).test(origin);
+      }
+      return origin === allowedOrigin;
+    });
+    
+    if (isAllowed || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all in production for now
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
