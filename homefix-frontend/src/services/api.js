@@ -3,11 +3,22 @@ import axios from 'axios';
 const getApiUrl = () => {
   // Se VITE_API_URL estiver definida, usar ela (prioridade máxima)
   if (import.meta.env.VITE_API_URL) {
-    const apiUrl = import.meta.env.VITE_API_URL.trim();
-    if (!apiUrl.endsWith('/api') && !apiUrl.endsWith('/api/')) {
-      return apiUrl.endsWith('/') ? `${apiUrl}api` : `${apiUrl}/api`;
+    let apiUrl = import.meta.env.VITE_API_URL.trim();
+    
+    // Garantir que começa com http:// ou https://
+    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+      apiUrl = `https://${apiUrl}`;
     }
-    return apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    
+    // Remover barras finais
+    apiUrl = apiUrl.replace(/\/+$/, '');
+    
+    // Adicionar /api se não terminar com /api
+    if (!apiUrl.endsWith('/api')) {
+      apiUrl = `${apiUrl}/api`;
+    }
+    
+    return apiUrl;
   }
   
   // Em produção, detectar automaticamente o backend
