@@ -36,42 +36,32 @@ try {
 
 const app = express();
 
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    const origin = req.headers.origin;
-    console.log(`[CORS] OPTIONS preflight for ${req.path} - Origin: ${origin || 'none'}`);
-    
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    
-    return res.status(204).end();
-  }
-  next();
-});
-
-app.use((req, res, next) => {
+const corsMiddleware = (req, res, next) => {
   const origin = req.headers.origin;
   
+  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
+  
   if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Origin', origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', '*');
   }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    console.log(`[CORS] OPTIONS preflight - returning 204`);
+    return res.status(204).send();
+  }
   
   next();
-});
+};
 
+app.use(corsMiddleware);
 app.use(cors({
   origin: true,
   credentials: true,
