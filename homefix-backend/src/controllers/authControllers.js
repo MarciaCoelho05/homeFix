@@ -312,22 +312,39 @@ async function forgotPassword(req, res) {
     
     console.log(`[EMAIL] Tentando enviar email de recuperação para ${email}...`);
     
-    const emailResult = await mailer.sendMail({
-      from: '"HomeFix" <no-reply@homefix.com>',
-      to: email,
-      subject: 'Recuperar palavra-passe - HomeFix',
-      text,
-      html,
-    });
-    
-    console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
-    console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
-    setCorsHeaders();
-    return res.json({ message: 'Se o email existir, enviaremos instruções' });
+    try {
+      const emailResult = await mailer.sendMail({
+        from: '"HomeFix" <no-reply@homefix.com>',
+        to: email,
+        subject: 'Recuperar palavra-passe - HomeFix',
+        text,
+        html,
+      });
+      
+      console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
+      console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
+      setCorsHeaders();
+      return res.json({ message: 'Se o email existir, enviaremos instruções' });
+    } catch (emailError) {
+      console.error('[FORGOT] Erro ao enviar email:', emailError.message);
+      console.error('[FORGOT] Stack:', emailError.stack);
+      
+      setCorsHeaders();
+      
+      if (emailError.message && emailError.message.includes('Falha na API')) {
+        console.error('[FORGOT] ⚠️  API e SMTP falharam. Verifique as configurações de email no Railway.');
+        return res.status(500).json({ 
+          message: 'Erro ao enviar email. Por favor, tente novamente mais tarde ou contacte o suporte.' 
+        });
+      }
+      
+      return res.status(500).json({ message: 'Erro ao enviar email de recuperação' });
+    }
   } catch (err) {
-    console.error('Forgot error:', err);
+    console.error('[FORGOT] Erro geral:', err);
+    console.error('[FORGOT] Stack:', err.stack);
     setCorsHeaders();
-    return res.status(500).json({ message: 'Erro ao enviar email de recuperação' });
+    return res.status(500).json({ message: 'Erro ao processar pedido de recuperação de senha' });
   }
 }
 
