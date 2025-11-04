@@ -12,8 +12,13 @@ node prisma/seed.js || echo "⚠️  Seed failed or already completed"
 
 # Start the application
 echo "✅ Starting server..."
-echo "PORT: ${PORT:-3000}"
-echo "Starting Node.js server..."
+echo "PORT environment variable: ${PORT:-not set}"
+echo "Starting Node.js server on port: ${PORT:-3000}"
+
+if [ -z "$PORT" ]; then
+  echo "⚠️  WARNING: PORT environment variable is not set!"
+  echo "⚠️  Railway should set this automatically. Using default port 3000."
+fi
 
 node src/server.js
 
