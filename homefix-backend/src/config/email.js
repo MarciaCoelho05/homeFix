@@ -6,12 +6,14 @@ const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 
 if (mailtrapApiToken) {
-  console.log('[EMAIL] ✅ Usando Mailtrap API');
+  console.log('[EMAIL] ✅ Usando Mailtrap API (recomendado para Railway)');
   console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
 } else if (smtpUser && smtpPass) {
-  console.log('[EMAIL] ⚠️  Usando SMTP (pode ter problemas de timeout no Railway)');
-  console.log('[EMAIL]   Considere usar MAILTRAP_API_TOKEN para melhor compatibilidade');
+  console.log('[EMAIL] ⚠️  Usando SMTP (Railway pode bloquear conexões SMTP)');
+  console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
+  console.log('[EMAIL]   SMTP Host:', process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io');
+  console.log('[EMAIL]   SMTP Port:', process.env.SMTP_PORT || '2525');
 } else {
   console.error('[EMAIL] ❌ Configuração incompleta!');
   console.error('[EMAIL] Configure MAILTRAP_API_TOKEN (recomendado) ou SMTP_USER/SMTP_PASS');
@@ -137,7 +139,7 @@ const transporter = {
         port: smtpPort,
         secure: smtpPort === 465,
         requireTLS: smtpPort === 587,
-        auth: {
+  auth: {
           user: smtpUser,
           pass: smtpPass,
         },
