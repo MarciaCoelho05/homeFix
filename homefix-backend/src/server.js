@@ -36,27 +36,33 @@ try {
 
 const app = express();
 
-// CORS - MUST be the first middleware
+// CORS - MUST be the first middleware - Handle OPTIONS first
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
   console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${origin || 'none'}`);
   
-  // Set CORS headers for ALL requests
+  // Set CORS headers for ALL requests (including OPTIONS)
   if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
   
-  // Handle preflight OPTIONS requests
+  // Handle preflight OPTIONS requests IMMEDIATELY
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] OPTIONS preflight - returning 204`);
-    return res.status(204).send();
+    console.log(`[CORS] OPTIONS preflight for ${req.path} - returning 204`);
+    console.log(`[CORS] Headers set:`, {
+      'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
+      'Access-Control-Allow-Headers': res.getHeader('Access-Control-Allow-Headers')
+    });
+    return res.status(204).end();
   }
   
   next();
