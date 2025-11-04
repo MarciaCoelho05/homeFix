@@ -435,10 +435,8 @@ const ServicesWithFeedback = () => {
                 <div className="col-12 col-md-6 col-lg-4" key={service.id}>
                   <div className="service-card h-100 p-3 rounded-3">
                     <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h2 className="h6 fw-semibold m-0">{service.title}</h2>
                       <span className="badge bg-success-subtle text-success fw-semibold">Concluido</span>
                     </div>
-                    <p className="text-muted small mb-3">{service.description}</p>
                     <div className="bg-light rounded-2 p-2 mb-3">
                       <p className="small mb-1 text-dark">
                         <strong>{service.author}:</strong> "{service.comment}"
