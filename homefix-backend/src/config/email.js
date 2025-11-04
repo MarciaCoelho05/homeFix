@@ -31,6 +31,9 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   },
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
   debug: process.env.NODE_ENV === 'development',
   logger: process.env.NODE_ENV === 'development'
 });
@@ -40,11 +43,12 @@ setTimeout(() => {
     if (error) {
       console.error('[EMAIL] ❌ Erro na verificação do servidor SMTP:', error);
       console.error('[EMAIL] Detalhes:', error.message);
-      console.error('[EMAIL] Stack:', error.stack);
+      console.error('[EMAIL] Código:', error.code);
+      console.warn('[EMAIL] ⚠️  A verificação falhou, mas o transporter ainda pode funcionar ao enviar emails');
     } else {
       console.log('[EMAIL] ✅ Servidor SMTP configurado e pronto');
     }
   });
-}, 2000);
+}, 5000);
 
 module.exports = transporter;

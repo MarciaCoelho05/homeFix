@@ -312,18 +312,30 @@ async function forgotPassword(req, res) {
     
     console.log(`[EMAIL] Tentando enviar email de recuperação para ${email}...`);
     
-    const emailResult = await mailer.sendMail({
-      from: '"HomeFix" <no-reply@homefix.com>',
-      to: email,
-      subject: 'Recuperar palavra-passe - HomeFix',
-      text,
-      html,
-    });
-    
-    console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
-    console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
-    setCorsHeaders();
-    return res.json({ message: 'Se o email existir, enviaremos instruções' });
+    try {
+      const emailResult = await Promise.race([
+        mailer.sendMail({
+          from: '"HomeFix" <no-reply@homefix.com>',
+          to: email,
+          subject: 'Recuperar palavra-passe - HomeFix',
+          text,
+          html,
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout ao enviar email')), 30000)
+        )
+      ]);
+      
+      console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
+      console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
+      setCorsHeaders();
+      return res.json({ message: 'Se o email existir, enviaremos instruções' });
+    } catch (emailError) {
+      console.error('[EMAIL] ❌ Erro ao enviar email:', emailError);
+      console.error('[EMAIL] Erro detalhado:', emailError.message);
+      console.error('[EMAIL] Código:', emailError.code);
+      throw emailError;
+    }
   } catch (err) {
     console.error('Forgot error:', err);
     setCorsHeaders();
