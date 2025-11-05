@@ -22,7 +22,8 @@
     "db:test": "node src/scripts/test-db.js",
     "db:init": "node src/scripts/init-db.js",
     "db:seed": "node prisma/seed.js",
-    "db:restore": "node src/scripts/restore-db.js"
+    "db:restore": "node src/scripts/restore-db.js",
+    "db:tables": "node src/scripts/list-tables.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
@@ -32,11 +33,11 @@
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "get-stream": "^8.0.1",
+    "googleapis": "^164.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.6",
     "pdfkit": "^0.14.0",
     "pg": "^8.16.3",
     "prisma": "^6.16.2"

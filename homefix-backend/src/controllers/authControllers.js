@@ -327,34 +327,35 @@ async function forgotPassword(req, res) {
     
     console.log(`[EMAIL] Tentando enviar email de recuperação para ${email}...`);
     
+    // Tentar enviar email, mas não falhar se houver erro (por questões de segurança)
     try {
-      const emailResult = await mailer.sendMail({
-        from: '"HomeFix" <no-reply@homefix.com>',
-        to: email,
-        subject: 'Recuperar palavra-passe - HomeFix',
-        text,
-        html,
-      });
+      const emailResult = await Promise.race([
+        mailer.sendMail({
+          from: '"HomeFix" <no-reply@homefix.com>',
+          to: email,
+          subject: 'Recuperar palavra-passe - HomeFix',
+          text,
+          html,
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Email timeout')), 10000)
+        )
+      ]);
       
       console.log(`[EMAIL] ✅ Email de recuperação de senha enviado para ${email}`);
       console.log(`[EMAIL] Resultado:`, emailResult?.messageId || 'N/A');
-      setCorsHeaders();
-      return res.json({ message: 'Se o email existir, enviaremos instruções' });
     } catch (emailError) {
       console.error('[FORGOT] Erro ao enviar email:', emailError.message);
-      console.error('[FORGOT] Stack:', emailError.stack);
-      
-      setCorsHeaders();
-      
-      if (emailError.message && emailError.message.includes('Falha na API')) {
-        console.error('[FORGOT] ⚠️  API e SMTP falharam. Verifique as configurações de email no Railway.');
-        return res.status(500).json({ 
-          message: 'Erro ao enviar email. Por favor, tente novamente mais tarde ou contacte o suporte.' 
-        });
+      if (emailError.stack) {
+        console.error('[FORGOT] Stack:', emailError.stack);
       }
-      
-      return res.status(500).json({ message: 'Erro ao enviar email de recuperação' });
+      // Não falhar a requisição por causa do email - por questões de segurança
+      console.warn('[FORGOT] ⚠️  Email não foi enviado, mas retornando sucesso por segurança');
     }
+    
+    // Sempre retornar sucesso (por questões de segurança)
+    setCorsHeaders();
+    return res.json({ message: 'Se o email existir, enviaremos instruções' });
   } catch (err) {
     console.error('[FORGOT] Erro geral:', err);
     console.error('[FORGOT] Stack:', err.stack);
