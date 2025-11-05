@@ -296,6 +296,18 @@ const transporter = {
       } catch (apiError) {
         console.error('[EMAIL] ❌ Erro ao enviar email via API:', apiError.message);
         
+        // Se for erro 401 (token inválido), tentar fallback para SMTP se disponível
+        if (apiError.message.includes('401') || apiError.message.includes('Unauthorized')) {
+          console.error('[EMAIL] ⚠️  Token Mailtrap inválido ou sem permissões');
+          console.error('[EMAIL] 💡 CORREÇÃO NECESSÁRIA:');
+          console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
+          console.error('[EMAIL]    2. Clique no seu token para editar');
+          console.error('[EMAIL]    3. Na secção "Permissions", encontre "API/SMTP"');
+          console.error('[EMAIL]    4. Marque a checkbox "Admin" ou "Viewer" para API/SMTP');
+          console.error('[EMAIL]    5. Guarde as alterações');
+          console.error('[EMAIL]    6. Ou configure SMTP como fallback (veja abaixo)');
+        }
+        
         if (smtpUser && smtpPass) {
           console.log('[EMAIL] 🔄 Tentando fallback para SMTP...');
           try {
@@ -309,6 +321,7 @@ const transporter = {
           }
         } else {
           console.error('[EMAIL] ❌ SMTP não configurado para fallback');
+          console.error('[EMAIL] 💡 Configure SMTP_USER e SMTP_PASS no Railway para fallback automático');
           throw apiError;
         }
       }
