@@ -95,9 +95,21 @@ function getOAuth2Client() {
 function createEmailMessage(mailOptions) {
   const from = mailOptions.from || `"HomeFix" <${GOOGLE_SENDER_EMAIL}>`;
   const to = mailOptions.to;
+  const originalTo = mailOptions.originalTo || to;
   const subject = mailOptions.subject || '';
-  const text = mailOptions.text || '';
-  const html = mailOptions.html || '';
+  let text = mailOptions.text || '';
+  let html = mailOptions.html || '';
+
+  // Adicionar nota sobre redirecionamento se o destinatário foi alterado
+  if (originalTo && originalTo !== to) {
+    const redirectNote = `\n\n---\n⚠️ NOTA: Este email foi originalmente destinado a: ${originalTo}\nTodos os emails são redirecionados para ${to} para fins de monitorização.\n---\n`;
+    text = text + redirectNote;
+    
+    if (html) {
+      const htmlNote = `<div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;"><strong>⚠️ NOTA:</strong> Este email foi originalmente destinado a: <strong>${originalTo}</strong><br>Todos os emails são redirecionados para <strong>${to}</strong> para fins de monitorização.</div>`;
+      html = html.replace('</body>', htmlNote + '</body>');
+    }
+  }
 
   // Criar o cabeçalho do email
   let message = [
@@ -183,7 +195,8 @@ const emailTransporter = {
 
       const rawMessage = createEmailMessage({
         ...mailOptions,
-        from: mailOptions.from || `"HomeFix" <${GOOGLE_SENDER_EMAIL}>`
+        from: mailOptions.from || `"HomeFix" <${GOOGLE_SENDER_EMAIL}>`,
+        originalTo: originalTo
       });
 
       console.log(`[EMAIL] Mensagem criada, tamanho: ${rawMessage.length} caracteres`);
