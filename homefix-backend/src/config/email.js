@@ -2,13 +2,17 @@
 
 const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
 const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '0';
+const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sending'; // 'sending' ou 'sandbox'
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 
 if (mailtrapApiToken) {
   console.log('[EMAIL] ✅ Usando Mailtrap API (recomendado para Railway)');
   console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
-  console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
+  console.log('[EMAIL]   API Type:', mailtrapApiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)');
+  if (mailtrapApiType === 'sandbox') {
+    console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
+  }
 } else if (smtpUser && smtpPass) {
   console.log('[EMAIL] ✅ Usando SMTP');
   const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
@@ -85,8 +89,14 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     }));
   }
 
-  const url = `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
+  // Determinar qual API usar: sending (envio real) ou sandbox (teste)
+  const apiType = mailtrapApiType || 'sending';
+  const url = apiType === 'sandbox'
+    ? `https://sandbox.api.mailtrap.io/api/send/${inboxId}`
+    : `https://send.api.mailtrap.io/api/send`;
+  
   console.log(`[EMAIL] URL: ${url}`);
+  console.log(`[EMAIL] API Type: ${apiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)'}`);
 
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(emailData);

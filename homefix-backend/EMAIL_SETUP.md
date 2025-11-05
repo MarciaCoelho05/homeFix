@@ -19,10 +19,7 @@
 3. **Configure as variáveis de ambiente:**
 
 ```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=homefix593@gmail.com
-SMTP_PASS=qjbi rvfr riqg gmdq
+
 ```
 
 ⚠️ **IMPORTANTE:** 
@@ -44,10 +41,40 @@ SMTP_PASS=3f97e5a12f28f9
 
 ---
 
-## Opção 3: Mailtrap API (Recomendado para Railway)
+## Opção 3: Mailtrap API (Recomendado para Railway/Produção)
+
+### API de Envio Real (Sending API)
+
+Para enviar emails reais usando Mailtrap Sending API:
 
 ```env
 MAILTRAP_API_TOKEN=seu-token-aqui
+MAILTRAP_API_TYPE=sending
+```
+
+**Como obter o token:**
+1. Aceda ao [Mailtrap](https://mailtrap.io/)
+2. Vá para **Settings → API Tokens**
+3. Gere um novo token com permissão "Send emails"
+4. Copie o token completo (o token completo, não apenas os últimos caracteres)
+
+**Exemplo de configuração:**
+```env
+MAILTRAP_API_TOKEN=432ade3337ee129cd3c724bd4b042e93
+MAILTRAP_API_TYPE=sending
+```
+
+⚠️ **IMPORTANTE:** Use o token completo fornecido pelo Mailtrap. O token mostrado na interface pode estar parcialmente oculto (ex: `****2e93`), mas você precisa do token completo.
+
+**Nota:** A API de envio real não precisa de `MAILTRAP_INBOX_ID`
+
+### API Sandbox (Para testes)
+
+Para testar emails sem enviar realmente:
+
+```env
+MAILTRAP_API_TOKEN=seu-token-aqui
+MAILTRAP_API_TYPE=sandbox
 MAILTRAP_INBOX_ID=0
 ```
 
