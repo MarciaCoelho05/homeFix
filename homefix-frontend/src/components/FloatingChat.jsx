@@ -10,23 +10,58 @@ const FloatingChat = () => {
   const [supportRequestId, setSupportRequestId] = useState(null);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
-  const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  
+  // Ler valores do localStorage diretamente no render
+  const [role, setRole] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const checkToken = localStorage.getItem('token');
-      const checkRole = localStorage.getItem('role');
-      const shouldRender = checkRole !== 'admin';
-      console.log('[FloatingChat] Render check:', { 
-        hasToken: !!checkToken, 
-        role: checkRole, 
-        userId: localStorage.getItem('userId'),
-        shouldRender: shouldRender
+      const currentRole = localStorage.getItem('role');
+      const currentUserId = localStorage.getItem('userId');
+      const currentToken = localStorage.getItem('token');
+      
+      setRole(currentRole);
+      setUserId(currentUserId);
+      setToken(currentToken);
+      
+      console.log('[FloatingChat] State updated:', { 
+        role: currentRole, 
+        userId: currentUserId, 
+        token: !!currentToken 
       });
     }
-  }, [token, role, userId]);
+  }, []);
+
+  // Atualizar estado quando localStorage mudar
+  useEffect(() => {
+    const updateState = () => {
+      if (typeof window !== 'undefined') {
+        const currentRole = localStorage.getItem('role');
+        const currentUserId = localStorage.getItem('userId');
+        const currentToken = localStorage.getItem('token');
+        
+        setRole(currentRole);
+        setUserId(currentUserId);
+        setToken(currentToken);
+      }
+    };
+
+    updateState();
+    
+    // Listener para mudanças no storage
+    const handleStorageChange = () => updateState();
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Polling para detectar mudanças (fallback)
+    const interval = setInterval(updateState, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,7 +125,7 @@ const FloatingChat = () => {
   }, []);
 
   useEffect(() => {
-    if (isOpen && isAuthenticated && (role === 'technician' || role === 'user')) {
+    if (isOpen && isAuthenticated && token && (role === 'technician' || role === 'user')) {
       let intervalId = null;
       
       const loadChat = async () => {
@@ -117,7 +152,7 @@ const FloatingChat = () => {
       setMessages([]);
       setSupportRequestId(null);
     }
-  }, [isOpen, isAuthenticated, role, getOrCreateSupportRequest, fetchMessages]);
+  }, [isOpen, isAuthenticated, token, role, getOrCreateSupportRequest, fetchMessages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -141,25 +176,17 @@ const FloatingChat = () => {
   };
 
   // Renderizar para todos, exceto admins
-  // Se role é null (não autenticado), também deve renderizar
   const isAdmin = role === 'admin';
-  
-  console.log('[FloatingChat] Debug - role:', role, 'isAdmin:', isAdmin, 'token:', !!token);
-  console.log('[FloatingChat] Window check:', typeof window !== 'undefined');
-  console.log('[FloatingChat] LocalStorage check:', typeof window !== 'undefined' ? 'available' : 'unavailable');
+  const isAuthenticated = !!token;
+
+  // Debug
+  useEffect(() => {
+    console.log('[FloatingChat] Render check:', { role, isAdmin, isAuthenticated, shouldRender: !isAdmin });
+  }, [role, isAdmin, isAuthenticated]);
   
   if (isAdmin) {
-    console.log('[FloatingChat] ❌ Admin user, not rendering. Role:', role);
     return null;
   }
-
-  const isAuthenticated = !!token;
-  const isClientOrTechnician = isAuthenticated && (role === 'technician' || role === 'user');
-
-  console.log('[FloatingChat] ✅ WILL RENDER - Token:', isAuthenticated, 'Role:', role || 'null (not authenticated)', 'isAdmin:', isAdmin);
-  
-  // Garantir que o componente está sendo renderizado
-  console.log('[FloatingChat] ✅ Component is rendering button NOW');
 
   return (
     <>
