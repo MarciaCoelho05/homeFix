@@ -163,7 +163,15 @@ const emailTransporter = {
         const detailedError = error.response?.data?.error?.message || error.message;
         throw new Error(`Permissão negada (403). Verifique se a Gmail API está habilitada e o escopo 'gmail.send' foi concedido. Detalhes: ${detailedError}`);
       } else if (error.response?.status === 400) {
-        const detailedError = error.response?.data?.error?.message || error.message;
+        const errorData = error.response?.data;
+        const errorCode = errorData?.error;
+        
+        // Erro específico: invalid_grant
+        if (errorCode === 'invalid_grant') {
+          throw new Error(`Refresh Token inválido (invalid_grant). O GOOGLE_REFRESH_TOKEN precisa ser obtido novamente no OAuth Playground. Siga as instruções em GET_REFRESH_TOKEN.md`);
+        }
+        
+        const detailedError = errorData?.error_description || errorData?.error || error.message;
         throw new Error(`Requisição inválida (400). Verifique o formato da mensagem. Detalhes: ${detailedError}`);
       } else if (error.response?.status === 429) {
         throw new Error('Limite de taxa excedido (429). Aguarde alguns minutos antes de tentar novamente.');
