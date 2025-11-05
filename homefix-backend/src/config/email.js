@@ -33,6 +33,7 @@ function validateEmail(email) {
     'homefix.pt',
     'example.com',
     'test.com',
+    'teste.com',
     'localhost',
     'invalid.com',
   ];
@@ -183,6 +184,27 @@ const emailTransporter = {
       });
 
       console.log(`[EMAIL] ✅ Email enviado com sucesso. MessageId: ${response.data.id}`);
+      console.log(`[EMAIL] 📬 Destinatário: ${mailOptions.to}`);
+      console.log(`[EMAIL] 📧 Remetente: ${GOOGLE_SENDER_EMAIL}`);
+      console.log(`[EMAIL] 📋 Assunto: ${mailOptions.subject}`);
+      console.log(`[EMAIL] ⚠️ IMPORTANTE: Verifique a pasta de SPAM do destinatário se o email não aparecer na caixa de entrada`);
+      
+      // Verificar se o email foi realmente enviado consultando o Gmail
+      try {
+        const messageDetails = await gmail.users.messages.get({
+          userId: 'me',
+          id: response.data.id,
+          format: 'metadata',
+          metadataHeaders: ['From', 'To', 'Subject', 'Date']
+        });
+        console.log(`[EMAIL] 📨 Detalhes do email enviado:`, {
+          threadId: messageDetails.data.threadId,
+          labelIds: messageDetails.data.labelIds,
+          sizeEstimate: messageDetails.data.sizeEstimate
+        });
+      } catch (detailError) {
+        console.warn(`[EMAIL] ⚠️ Não foi possível obter detalhes do email:`, detailError.message);
+      }
       
       return {
         messageId: response.data.id,
