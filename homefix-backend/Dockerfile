@@ -12,7 +12,7 @@ COPY prisma ./prisma/
 
 # Temporarily disable postinstall to avoid Prisma generate during build
 # We'll generate it manually after copying all files
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --legacy-peer-deps
 
 # Generate Prisma Client manually
 RUN npx prisma generate --schema=./prisma/schema.prisma
