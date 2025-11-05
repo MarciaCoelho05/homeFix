@@ -205,10 +205,10 @@ const Layout = ({ children }) => {
       <main className="container py-4">
         {children}
       </main>
-            <Footer />
-            {isAuthenticated && <FloatingChat />}
-          </>
-        );
-      };
-      
-      export default Layout;
+      <Footer />
+      {isAuthenticated && <FloatingChat />}
+    </>
+  );
+};
+
+export default Layout;

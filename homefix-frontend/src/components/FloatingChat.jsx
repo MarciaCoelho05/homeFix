@@ -14,6 +14,19 @@ const FloatingChat = () => {
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkToken = localStorage.getItem('token');
+      const checkRole = localStorage.getItem('role');
+      console.log('[FloatingChat] Render check:', { 
+        hasToken: !!checkToken, 
+        role: checkRole, 
+        userId: localStorage.getItem('userId'),
+        shouldRender: !!checkToken && checkRole !== 'admin'
+      });
+    }
+  }, [token, role, userId]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -122,9 +135,18 @@ const FloatingChat = () => {
     }
   };
 
-  if (!token || role === 'admin') {
+  const shouldRender = token && role !== 'admin';
+  
+  if (!shouldRender) {
+    if (!token) {
+      console.log('[FloatingChat] No token, not rendering');
+    } else if (role === 'admin') {
+      console.log('[FloatingChat] Admin user, not rendering');
+    }
     return null;
   }
+
+  console.log('[FloatingChat] Rendering chat button - Token:', !!token, 'Role:', role);
 
   return (
     <>
@@ -142,7 +164,7 @@ const FloatingChat = () => {
           border: 'none',
           boxShadow: '0 4px 12px rgba(255, 122, 0, 0.4)',
           cursor: 'pointer',
-          zIndex: 1000,
+          zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -177,7 +199,7 @@ const FloatingChat = () => {
             backgroundColor: 'white',
             borderRadius: '16px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            zIndex: 1001,
+            zIndex: 10000,
             display: 'flex',
             flexDirection: 'column',
             border: '1px solid #e5e7eb',
@@ -394,7 +416,7 @@ const FloatingChat = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 1000,
+            zIndex: 9998,
             backgroundColor: 'transparent',
           }}
         />
