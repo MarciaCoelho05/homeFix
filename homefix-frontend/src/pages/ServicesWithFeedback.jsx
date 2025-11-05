@@ -214,6 +214,16 @@ const ServicesWithFeedback = () => {
         };
       })
       .filter((service) => {
+        // Excluir feedback específico: "Reparação de fuga" com descrição "Fuga no lavatório da cozinha"
+        const title = (service.title || '').toLowerCase().trim();
+        const description = (service.description || '').toLowerCase().trim();
+        if (
+          (title.includes('reparação de fuga') || title === 'reparação de fuga') &&
+          (description.includes('fuga no lavatório da cozinha') || description === 'fuga no lavatório da cozinha')
+        ) {
+          return false;
+        }
+        
         if (!service.feedback && !service.comment) return false;
         if (!query) return true;
         const searchableText = [
