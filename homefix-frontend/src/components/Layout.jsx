@@ -206,7 +206,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <Footer />
-      {isAuthenticated && <FloatingChat />}
+      <FloatingChat />
     </>
   );
 };

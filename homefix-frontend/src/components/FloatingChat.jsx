@@ -89,7 +89,7 @@ const FloatingChat = () => {
   }, []);
 
   useEffect(() => {
-    if (isOpen && token && role !== 'admin') {
+    if (isOpen && isAuthenticated && isClientOrTechnician) {
       let intervalId = null;
       
       const loadChat = async () => {
@@ -111,8 +111,12 @@ const FloatingChat = () => {
           clearInterval(intervalId);
         }
       };
+    } else if (isOpen && !isAuthenticated) {
+      // Para usuários não autenticados, limpar mensagens
+      setMessages([]);
+      setSupportRequestId(null);
     }
-  }, [isOpen, token, role, getOrCreateSupportRequest, fetchMessages]);
+  }, [isOpen, isAuthenticated, isClientOrTechnician, getOrCreateSupportRequest, fetchMessages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -135,18 +139,18 @@ const FloatingChat = () => {
     }
   };
 
-  const shouldRender = token && role !== 'admin';
+  // Renderizar para todos, exceto admins
+  const shouldRender = role !== 'admin';
   
   if (!shouldRender) {
-    if (!token) {
-      console.log('[FloatingChat] No token, not rendering');
-    } else if (role === 'admin') {
-      console.log('[FloatingChat] Admin user, not rendering');
-    }
+    console.log('[FloatingChat] Admin user, not rendering');
     return null;
   }
 
-  console.log('[FloatingChat] Rendering chat button - Token:', !!token, 'Role:', role);
+  const isAuthenticated = !!token;
+  const isClientOrTechnician = isAuthenticated && (role === null || role === 'technician' || role === 'user');
+
+  console.log('[FloatingChat] Rendering chat button - Token:', isAuthenticated, 'Role:', role);
 
   return (
     <>
@@ -219,7 +223,7 @@ const FloatingChat = () => {
             <div>
               <h6 style={{ margin: 0, fontWeight: 600, fontSize: '16px' }}>Suporte</h6>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.9 }}>
-                Fale com o administrador
+                {isAuthenticated ? 'Fale com o administrador' : 'Faça login para falar com o suporte'}
               </p>
             </div>
             <button
@@ -252,7 +256,49 @@ const FloatingChat = () => {
               gap: '12px',
             }}
           >
-            {loading && messages.length === 0 ? (
+            {!isAuthenticated ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
+                <p style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+                  Acesso ao suporte
+                </p>
+                <p style={{ fontSize: '14px', marginBottom: '20px', lineHeight: '1.6' }}>
+                  Para usar o chat de suporte, é necessário fazer login na plataforma.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <a
+                    href="/login"
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#ff7a00',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Fazer Login
+                  </a>
+                  <a
+                    href="/register"
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: 'transparent',
+                      color: '#ff7a00',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      textAlign: 'center',
+                      border: '2px solid #ff7a00',
+                    }}
+                  >
+                    Criar Conta
+                  </a>
+                </div>
+              </div>
+            ) : loading && messages.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
                 A carregar...
               </div>
@@ -361,49 +407,51 @@ const FloatingChat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <form
-            onSubmit={handleSend}
-            style={{
-              padding: '16px',
-              borderTop: '1px solid #e5e7eb',
-              display: 'flex',
-              gap: '8px',
-            }}
-          >
-            <input
-              type="text"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Digite sua mensagem..."
+          {isAuthenticated && (
+            <form
+              onSubmit={handleSend}
               style={{
-                flex: 1,
-                padding: '10px 14px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-              }}
-              disabled={!supportRequestId || sending}
-            />
-            <button
-              type="submit"
-              disabled={!supportRequestId || !content.trim() || sending}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#ff7a00',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: sending ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                fontSize: '14px',
-                opacity: (!supportRequestId || !content.trim() || sending) ? 0.5 : 1,
-                transition: 'opacity 0.2s',
+                padding: '16px',
+                borderTop: '1px solid #e5e7eb',
+                display: 'flex',
+                gap: '8px',
               }}
             >
-              {sending ? '...' : 'Enviar'}
-            </button>
-          </form>
+              <input
+                type="text"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Digite sua mensagem..."
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+                disabled={!supportRequestId || sending}
+              />
+              <button
+                type="submit"
+                disabled={!supportRequestId || !content.trim() || sending}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#ff7a00',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: sending ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  opacity: (!supportRequestId || !content.trim() || sending) ? 0.5 : 1,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {sending ? '...' : 'Enviar'}
+              </button>
+            </form>
+          )}
         </div>
       )}
 
