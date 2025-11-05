@@ -21,14 +21,15 @@
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=seu-email@gmail.com
-SMTP_PASS=xxxx xxxx xxxx xxxx
+SMTP_USER=homefix593@gmail.com
+SMTP_PASS=qjbi rvfr riqg gmdq
 ```
 
 ⚠️ **IMPORTANTE:** 
 - Use o **email completo** como `SMTP_USER`
 - Use a **App Password** gerada (não a sua senha normal do Gmail)
-- A App Password tem 16 caracteres, pode ter espaços (remova-os ao configurar)
+- A App Password pode ter espaços - pode deixar com espaços ou remover, ambos funcionam
+- Nome do token: "homefix" (configurado no Google Account)
 
 ---
 
