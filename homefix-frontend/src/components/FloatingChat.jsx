@@ -170,7 +170,7 @@ const FloatingChat = () => {
           border: 'none',
           boxShadow: '0 4px 12px rgba(255, 122, 0, 0.4)',
           cursor: 'pointer',
-          zIndex: 9999,
+          zIndex: 99999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -180,6 +180,8 @@ const FloatingChat = () => {
           fontFamily: 'Arial, sans-serif',
           margin: 0,
           padding: 0,
+          visibility: 'visible',
+          opacity: 1,
         }}
         onMouseEnter={(e) => {
           e.target.style.transform = 'scale(1.1)';
