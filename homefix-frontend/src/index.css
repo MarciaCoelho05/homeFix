@@ -438,3 +438,15 @@ img {
   color: #111827;
   font-weight: 500;
 }
+
+/* Floating Chat Button - Garantir visibilidade */
+.floating-chat-button {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}

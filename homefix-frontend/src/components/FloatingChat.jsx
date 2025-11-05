@@ -163,6 +163,7 @@ const FloatingChat = () => {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        className="floating-chat-button"
         style={{
           position: 'fixed',
           bottom: '20px',
@@ -176,7 +177,7 @@ const FloatingChat = () => {
           boxShadow: '0 4px 12px rgba(255, 122, 0, 0.4)',
           cursor: 'pointer',
           zIndex: 99999,
-          display: 'flex',
+          display: 'flex !important',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '18px',
@@ -185,8 +186,9 @@ const FloatingChat = () => {
           fontFamily: 'Arial, sans-serif',
           margin: 0,
           padding: 0,
-          visibility: 'visible',
-          opacity: 1,
+          visibility: 'visible !important',
+          opacity: '1 !important',
+          pointerEvents: 'auto',
         }}
         onMouseEnter={(e) => {
           e.target.style.transform = 'scale(1.1)';
