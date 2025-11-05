@@ -267,9 +267,9 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="row g-4 justify-content-center">
-        <div className="col-12 col-lg-8 col-xl-6">
-          <div className="card border-0 shadow-sm h-100">
+      <div className="d-flex justify-content-center">
+        <div className="w-100" style={{ maxWidth: '600px' }}>
+          <div className="card border-0 shadow-sm">
             <div className="card-body p-4 p-md-5">
               <div className="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4 mb-4">
                 <img
@@ -402,7 +402,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-
       </div>
     </Layout>
   );
