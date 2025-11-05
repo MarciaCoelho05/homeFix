@@ -36,7 +36,6 @@ try {
 
 const app = express();
 
-// Middleware CORS - DEVE SER O PRIMEIRO MIDDLEWARE para garantir que headers CORS sejam sempre enviados
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const method = req.method;
@@ -44,8 +43,6 @@ app.use((req, res, next) => {
   
   console.log(`[CORS] ${method} ${path} - Origin: ${origin || 'none'} - Host: ${req.headers.host || 'none'}`);
   
-  // Configurar headers CORS para TODAS as requisições (incluindo erros)
-  // Permitir origin específico ou qualquer origin
   const allowedOrigins = [
     'https://homefix-frontend.vercel.app',
     'http://localhost:3000',
@@ -69,7 +66,6 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
   
-  // Tratar requisições OPTIONS (preflight) imediatamente - ANTES de qualquer outro processamento
   if (method === 'OPTIONS') {
     console.log(`[CORS] OPTIONS preflight - returning 204 for ${path}`);
     return res.status(204).end();
@@ -450,7 +446,6 @@ app.use((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
-  // Tratar OPTIONS mesmo nas rotas 404
   if (req.method === 'OPTIONS') {
     console.log(`[404-HANDLER] OPTIONS preflight - returning 204 for ${req.path}`);
     return res.status(204).end();

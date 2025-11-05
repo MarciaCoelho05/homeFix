@@ -388,16 +388,12 @@ const Dashboard = () => {
           <p className="text-muted small mb-0">
             <strong>Registado em:</strong> {formatDate(request.createdAt)}
           </p>
-          {/* Mostrar fotos apenas se: técnico aceitou E tem a categoria correspondente OU admin OU dono */}
           {(() => {
             const showMedia = (() => {
-              // Admin sempre vê
               if (role === 'admin') return true;
               
-              // Dono sempre vê
               if (isOwner) return true;
               
-              // Para técnico: só mostra se aceitou E tem a categoria correspondente
               if (role === 'technician' && isAssignedTech) {
                 const userCategories = Array.isArray(userProfile?.technicianCategory) 
                   ? userProfile.technicianCategory 

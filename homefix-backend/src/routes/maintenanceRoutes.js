@@ -8,11 +8,6 @@ const { getBaseEmailTemplate } = require('../utils/emailTemplates');
 
 const router = express.Router();
 
-/**
- * Helper para enviar email com validação prévia
- * @param {object} mailOptions - Opções do email
- * @returns {Promise} - Promise que resolve quando o email é enviado ou rejeitado
- */
 async function sendEmailSafe(mailOptions) {
   if (!mailOptions || !mailOptions.to) {
     console.warn('[EMAIL-SAFE] Email não fornecido');
@@ -22,7 +17,7 @@ async function sendEmailSafe(mailOptions) {
   const validation = validateEmail(mailOptions.to);
   if (!validation.valid) {
     console.warn(`[EMAIL-SAFE] ⚠️ Email bloqueado: ${mailOptions.to} - Razão: ${validation.reason}`);
-    return Promise.resolve(); // Não rejeitar, apenas não enviar
+    return Promise.resolve();
   }
   
   try {

@@ -10,11 +10,6 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const GOOGLE_SENDER_EMAIL = process.env.GOOGLE_SENDER_EMAIL || 'no-reply@homefix.com';
 
-/**
- * Valida se um email é válido e não está bloqueado
- * @param {string} email - Email a validar
- * @returns {object} - { valid: boolean, reason?: string }
- */
 function validateEmail(email) {
   if (!email || typeof email !== 'string') {
     return { valid: false, reason: 'Email não fornecido ou inválido' };
@@ -22,13 +17,11 @@ function validateEmail(email) {
   
   const toEmail = email.toLowerCase().trim();
   
-  // Validar formato básico
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(toEmail)) {
     return { valid: false, reason: 'Formato de email inválido' };
   }
   
-  // Extrair domínio
   const domain = toEmail.split('@')[1];
   if (!domain) {
     return { valid: false, reason: 'Domínio inválido' };
@@ -48,7 +41,6 @@ function validateEmail(email) {
     return { valid: false, reason: `Domínio bloqueado: ${domain}` };
   }
   
-  // Bloquear mailer-daemon e similares
   if (
     toEmail.includes('mailer-daemon') ||
     toEmail.includes('mailer_daemon') ||
@@ -62,7 +54,6 @@ function validateEmail(email) {
     return { valid: false, reason: 'Endereço bloqueado (mailer-daemon)' };
   }
   
-  // Validar extensão do domínio
   const domainParts = domain.split('.');
   if (domainParts.length < 2 || domainParts[domainParts.length - 1].length < 2) {
     return { valid: false, reason: 'Domínio inválido' };
@@ -81,9 +72,6 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
   console.error('[EMAIL] - GOOGLE_SENDER_EMAIL (opcional)');
 }
 
-/**
- * Obtém um cliente OAuth2 configurado
- */
 function getOAuth2Client() {
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
     throw new Error('Credenciais do Google não configuradas');
@@ -92,7 +80,7 @@ function getOAuth2Client() {
   const oauth2Client = new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    'https://developers.google.com/oauthplayground' // Redirect URI (pode ser qualquer uma para refresh token)
+    'https://developers.google.com/oauthplayground'
   );
 
   oauth2Client.setCredentials({
@@ -102,9 +90,6 @@ function getOAuth2Client() {
   return oauth2Client;
 }
 
-/**
- * Cria a mensagem de email no formato RFC 2822
- */
 function createEmailMessage(mailOptions) {
   const from = mailOptions.from || `"HomeFix" <${GOOGLE_SENDER_EMAIL}>`;
   const to = mailOptions.to;
@@ -148,10 +133,9 @@ function createEmailMessage(mailOptions) {
     message.push(text);
   }
 
-  const messageString = message.join('\r\n');
+        const messageString = message.join('\r\n');
 
-  // Codificar em base64url (RFC 4648)
-  return Buffer.from(messageString)
+        return Buffer.from(messageString)
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -159,10 +143,7 @@ function createEmailMessage(mailOptions) {
 }
 
 const emailTransporter = {
-  /**
-   * Envia um email usando a Gmail API
-   */
-  sendMail: async (mailOptions) => {
+        sendMail: async (mailOptions) => {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
       throw new Error('Credenciais do Google não configuradas. Configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET e GOOGLE_REFRESH_TOKEN no Railway.');
     }
@@ -171,7 +152,6 @@ const emailTransporter = {
       throw new Error('Campo "to" é obrigatório');
     }
 
-    // Validação rigorosa de email para evitar bouncebacks
     const validation = validateEmail(mailOptions.to);
     if (!validation.valid) {
       console.warn(`[EMAIL] ⚠️ Email bloqueado: ${mailOptions.to} - Razão: ${validation.reason}`);
@@ -188,7 +168,6 @@ const emailTransporter = {
       const oauth2Client = getOAuth2Client();
       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-      // Criar a mensagem
       const rawMessage = createEmailMessage({
         ...mailOptions,
         from: mailOptions.from || `"HomeFix" <${GOOGLE_SENDER_EMAIL}>`
@@ -196,7 +175,6 @@ const emailTransporter = {
 
       console.log(`[EMAIL] Mensagem criada, tamanho: ${rawMessage.length} caracteres`);
 
-      // Enviar o email
       const response = await gmail.users.messages.send({
         userId: 'me',
         requestBody: {
@@ -223,7 +201,6 @@ const emailTransporter = {
         console.error('[EMAIL] Dados do erro:', JSON.stringify(error.response.data, null, 2));
       }
 
-      // Erros comuns da Gmail API
       if (error.response?.status === 401) {
         const detailedError = error.response?.data?.error?.message || error.message;
         throw new Error(`Token de autenticação inválido ou expirado (401). Verifique o GOOGLE_REFRESH_TOKEN. Detalhes: ${detailedError}`);
@@ -234,7 +211,6 @@ const emailTransporter = {
         const errorData = error.response?.data;
         const errorCode = errorData?.error;
         
-        // Erro específico: invalid_grant
         if (errorCode === 'invalid_grant') {
           throw new Error(`Refresh Token inválido (invalid_grant). O GOOGLE_REFRESH_TOKEN precisa ser obtido novamente no OAuth Playground. Siga as instruções em GET_REFRESH_TOKEN.md`);
         }
@@ -249,10 +225,7 @@ const emailTransporter = {
   }
   },
 
-  /**
-   * Verifica se a conexão com a Gmail API está funcionando
-   */
-  verify: async (callback) => {
+        verify: async (callback) => {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
       const error = new Error('Credenciais do Google não configuradas');
       if (callback) {
@@ -267,7 +240,6 @@ const emailTransporter = {
       const oauth2Client = getOAuth2Client();
       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-      // Verificar perfil do usuário (teste simples)
       await gmail.users.getProfile({ userId: 'me' });
       
       console.log('[EMAIL] ✅ Gmail API configurada e pronta');

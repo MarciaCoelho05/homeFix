@@ -1,27 +1,26 @@
-import { useState } from 'react'
-import Navbar from '../components/Navbar'
-import API from '../services/api'
+import { useState } from 'react';
+import Layout from '../components/Layout';
+import api from '../services/api';
 
 export default function Schedule() {
-  const [datetime, setDatetime] = useState("")
-  const [status, setStatus] = useState("")
-  const [requestId] = useState("ID_DO_PEDIDO") // substituir conforme necessario
+  const [datetime, setDatetime] = useState('');
+  const [status, setStatus] = useState('');
+  const [requestId] = useState('ID_DO_PEDIDO');
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      await API.post(`/maintenance-requests/${requestId}/schedule`, { datetime })
-      setStatus("Agendamento enviado com sucesso!")
-      setDatetime("")
+      await api.post(`/maintenance-requests/${requestId}/schedule`, { datetime });
+      setStatus('Agendamento enviado com sucesso!');
+      setDatetime('');
     } catch (err) {
-      console.error("Erro ao agendar:", err)
-      setStatus("Erro ao enviar agendamento.")
+      console.error('Erro ao agendar:', err);
+      setStatus('Erro ao enviar agendamento.');
     }
-  }
+  };
 
   return (
-    <>
-      <Navbar />
+    <Layout>
       <div className="p-6 max-w-lg mx-auto bg-white rounded shadow">
         <h2 className="fs-4 font-bold mb-3">Agendar Manutencao</h2>
         {status && <p className="fs-6 text-blue-500 mb-2">{status}</p>}
@@ -31,7 +30,7 @@ export default function Schedule() {
             <input
               type="datetime-local"
               value={datetime}
-              onChange={e => setDatetime(e.target.value)}
+              onChange={(e) => setDatetime(e.target.value)}
               required
               className="mt-1 block w-full p-2 border rounded"
             />
@@ -41,6 +40,6 @@ export default function Schedule() {
           </button>
         </form>
       </div>
-    </>
-  )
+    </Layout>
+  );
 }
