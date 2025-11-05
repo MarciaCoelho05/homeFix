@@ -176,6 +176,8 @@ const FloatingChat = () => {
           fontWeight: 'bold',
           transition: 'all 0.3s ease',
           fontFamily: 'Arial, sans-serif',
+          margin: 0,
+          padding: 0,
         }}
         onMouseEnter={(e) => {
           e.target.style.transform = 'scale(1.1)';
