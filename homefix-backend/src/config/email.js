@@ -4,10 +4,10 @@ const path = require('path');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN || '0f887a6977f46822e15a3980bf7a24f3';
-const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '2369461';
-const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sending';
-const mailtrapDomain = process.env.MAILTRAP_DOMAIN || 'demomailtrap.co';
+const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
+const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID;
+const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sandbox';
+const mailtrapDomain = process.env.MAILTRAP_DOMAIN;
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 
@@ -74,13 +74,22 @@ if (mailtrapApiToken && mailtrapApiToken.trim()) {
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
   const token = String(mailtrapApiToken || '').trim();
-  const inboxId = String(mailtrapInboxId || '2369461').trim();
+  const inboxId = mailtrapInboxId ? String(mailtrapInboxId).trim() : null;
 
   if (!token || token.length < 10) {
     throw new Error('MAILTRAP_API_TOKEN não está configurado ou é inválido');
   }
 
   const apiType = mailtrapApiType || 'sandbox';
+  
+  if (apiType === 'sandbox' && !inboxId) {
+    throw new Error('MAILTRAP_INBOX_ID é obrigatório para Sandbox API');
+  }
+  
+  if (apiType === 'sending' && !mailtrapDomain) {
+    throw new Error('MAILTRAP_DOMAIN é obrigatório para Sending API');
+  }
+
   console.log(`[EMAIL] Enviando email via Mailtrap API (${apiType})`);
   console.log(`[EMAIL] Token (primeiros 10): ${token.substring(0, 10)}... (${token.length} chars)`);
   
@@ -90,9 +99,11 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 
   let fromEmail = mailOptions.from;
   if (!fromEmail) {
-    fromEmail = apiType === 'sending' 
-      ? `no-reply@${mailtrapDomain}`
-      : 'no-reply@homefix.com';
+    if (apiType === 'sending' && mailtrapDomain) {
+      fromEmail = `no-reply@${mailtrapDomain}`;
+    } else {
+      fromEmail = 'no-reply@homefix.com';
+    }
   }
   
   if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
