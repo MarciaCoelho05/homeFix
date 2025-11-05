@@ -206,7 +206,10 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <Footer />
-      <FloatingChat />
+      {(() => {
+        console.log('[Layout] Rendering FloatingChat component');
+        return <FloatingChat />;
+      })()}
     </>
   );
 };

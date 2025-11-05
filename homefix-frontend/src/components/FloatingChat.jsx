@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 
 const FloatingChat = () => {
+  console.log('[FloatingChat] 🚀 Component FUNCTION CALLED');
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState('');
@@ -15,6 +17,8 @@ const FloatingChat = () => {
   const [role, setRole] = useState(null);
   const [userId, setUserId] = useState(null);
   const [token, setToken] = useState(null);
+  
+  console.log('[FloatingChat] 📊 Initial state:', { role, token: !!token, userId: !!userId });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
