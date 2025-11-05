@@ -20,6 +20,7 @@ const Dashboard = () => {
 
   const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+  const [userProfile, setUserProfile] = useState(null);
 
   const fetchRequests = useCallback(
     async (silent = false) => {
@@ -46,7 +47,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    
+    // Buscar perfil do usuário para obter technicianCategory
+    if (role === 'technician' || role === 'admin') {
+      api.get('/profile')
+        .then(res => {
+          setUserProfile(res.data);
+        })
+        .catch(err => {
+          console.error('Erro ao carregar perfil:', err);
+        });
+    }
+  }, [fetchRequests, role]);
 
   const assignedRequests = useMemo(() => {
     if (role === 'technician') {
@@ -376,11 +388,32 @@ const Dashboard = () => {
           <p className="text-muted small mb-0">
             <strong>Registado em:</strong> {formatDate(request.createdAt)}
           </p>
-          {request.mediaUrls && Array.isArray(request.mediaUrls) && request.mediaUrls.length > 0 && (
-            <div className="mt-3 border-top pt-3">
-              <h6 className="fw-semibold mb-2">Anexos ({request.mediaUrls.length})</h6>
-              <div className="d-flex flex-wrap gap-2">
-                {request.mediaUrls.map((url, index) => {
+          {/* Mostrar fotos apenas se: técnico aceitou E tem a categoria correspondente OU admin OU dono */}
+          {(() => {
+            const showMedia = (() => {
+              // Admin sempre vê
+              if (role === 'admin') return true;
+              
+              // Dono sempre vê
+              if (isOwner) return true;
+              
+              // Para técnico: só mostra se aceitou E tem a categoria correspondente
+              if (role === 'technician' && isAssignedTech) {
+                const userCategories = Array.isArray(userProfile?.technicianCategory) 
+                  ? userProfile.technicianCategory 
+                  : [];
+                const requestCategory = request.category || '';
+                return userCategories.includes(requestCategory);
+              }
+              
+              return false;
+            })();
+            
+            return showMedia && request.mediaUrls && Array.isArray(request.mediaUrls) && request.mediaUrls.length > 0 ? (
+              <div className="mt-3 border-top pt-3">
+                <h6 className="fw-semibold mb-2">Anexos ({request.mediaUrls.length})</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {request.mediaUrls.map((url, index) => {
                   if (!url) return null;
                   const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/i);
                   return (
@@ -405,9 +438,10 @@ const Dashboard = () => {
                     </div>
                   );
                 })}
+                </div>
               </div>
-            </div>
-          )}
+            ) : null;
+          })()}
           {actionButtons.length > 0 && (
             <div className="mt-3 d-flex flex-column flex-sm-row gap-2">{actionButtons}</div>
           )}

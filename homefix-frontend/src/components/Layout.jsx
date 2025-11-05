@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Footer from './Footer';
+import SupportButton from './SupportButton';
 import api from '../services/api';
 import { useSearch } from '../contexts/SearchContext';
 
@@ -205,6 +206,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <Footer />
+      {isAuthenticated && <SupportButton />}
     </>
   );
 };

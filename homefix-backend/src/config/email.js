@@ -110,6 +110,21 @@ const emailTransporter = {
       throw new Error('Campo "to" é obrigatório');
     }
 
+    // Não enviar emails para endereços do Mail Delivery Subsystem (mailer-daemon)
+    const toEmail = String(mailOptions.to).toLowerCase().trim();
+    if (
+      toEmail.includes('mailer-daemon') ||
+      toEmail.includes('mailer_daemon') ||
+      toEmail.includes('noreply') ||
+      toEmail.includes('no-reply') ||
+      toEmail.includes('postmaster') ||
+      toEmail.includes('abuse') ||
+      toEmail.includes('mail-delivery')
+    ) {
+      console.warn(`[EMAIL] ⚠️ Tentativa de enviar email para endereço bloqueado: ${mailOptions.to}`);
+      throw new Error('Não é possível enviar emails para este endereço (mailer-daemon bloqueado)');
+    }
+
     try {
       console.log(`[EMAIL] Tentando enviar email para ${mailOptions.to} via Gmail API`);
       console.log(`[EMAIL] Configuração: Client ID: ${GOOGLE_CLIENT_ID ? '✅ Configurado' : '❌ Não configurado'}`);
