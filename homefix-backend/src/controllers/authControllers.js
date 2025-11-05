@@ -108,43 +108,58 @@ async function login(req, res) {
     
     let { email, password } = req.body || {};
     
+    console.log('[LOGIN] Iniciando processo de login');
+    console.log('[LOGIN] Email recebido:', email ? email.substring(0, 10) + '...' : 'não fornecido');
+    console.log('[LOGIN] Password recebido:', password ? 'sim (' + password.length + ' chars)' : 'não fornecido');
+    
     if (!email || !password) {
+      console.log('[LOGIN] Email ou senha não fornecidos');
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
     
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET não está configurado');
+      console.error('[LOGIN] JWT_SECRET não está configurado');
       return res.status(500).json({ message: 'Erro de configuração do servidor' });
     }
     
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('[LOGIN] Email normalizado:', normalizedEmail);
+    
     let user;
     try {
-      user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+      user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+      console.log('[LOGIN] Usuário encontrado:', user ? `sim (id: ${user.id})` : 'não');
     } catch (dbError) {
-      console.error('Erro ao buscar usuário no banco:', dbError);
+      console.error('[LOGIN] Erro ao buscar usuário no banco:', dbError);
       return res.status(500).json({ message: 'Erro ao acessar banco de dados' });
     }
     
     if (!user || !user.id) {
+      console.log('[LOGIN] Usuário não encontrado ou sem ID');
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
     if (!user.password) {
-      console.error('Usuário sem senha encontrado:', user.id);
+      console.error('[LOGIN] Usuário sem senha encontrado:', user.id);
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
+    console.log('[LOGIN] Comparando senha...');
     let passwordMatch = false;
     try {
       passwordMatch = await bcrypt.compare(password, user.password);
+      console.log('[LOGIN] Senha corresponde:', passwordMatch ? 'sim' : 'não');
     } catch (compareError) {
-      console.error('Erro ao comparar senha:', compareError);
+      console.error('[LOGIN] Erro ao comparar senha:', compareError);
       return res.status(500).json({ message: 'Erro ao validar senha' });
     }
     
     if (!passwordMatch) {
+      console.log('[LOGIN] Senha incorreta para usuário:', normalizedEmail);
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
+    
+    console.log('[LOGIN] Autenticação bem-sucedida, gerando token...');
     
     let token;
     try {
