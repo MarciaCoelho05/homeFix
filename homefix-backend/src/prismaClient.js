@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 
-// Singleton pattern para evitar múltiplas instâncias no serverless (Vercel)
 const globalForPrisma = globalThis;
 
 let prismaClient;
@@ -19,7 +18,6 @@ try {
   throw error;
 }
 
-// Cleanup on process termination
 if (typeof process !== 'undefined') {
   process.on('beforeExit', async () => {
     try {

@@ -11,7 +11,6 @@ try {
   console.error('[API Handler] Stack:', error.stack);
   serverLoaded = false;
   
-  // Criar app de erro
   const express = require('express');
   app = express();
   app.use(express.json());
@@ -35,7 +34,6 @@ module.exports = (req, res) => {
   console.log(`[API Handler] ${method} ${path} - ${new Date().toISOString()}`);
   console.log(`[API Handler] Server loaded: ${serverLoaded}`);
   
-  // Verificar se o servidor foi carregado
   if (!serverLoaded) {
     console.error('[API Handler] Server not loaded, returning error');
     return res.status(500).json({
@@ -45,7 +43,6 @@ module.exports = (req, res) => {
   }
   
   try {
-    // Usar o app diretamente - Express lida com req/res automaticamente
     app(req, res, (err) => {
       if (err) {
         console.error('[API Handler] Express error:', err);

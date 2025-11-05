@@ -403,7 +403,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Removido: seção de pedidos de serviço */}
       </div>
     </Layout>
   );

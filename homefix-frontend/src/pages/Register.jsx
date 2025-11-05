@@ -42,7 +42,6 @@ export default function Register() {
     if (!data.firstName?.trim()) errs.firstName = "Indique o nome";
     if (!data.lastName?.trim()) errs.lastName = "Indique o apelido";
     
-    // Validar NIF (opcional mas se fornecido deve ter 9 dígitos)
     if (data.nif && data.nif.trim() && !/^\d{9}$/.test(data.nif.trim())) {
       errs.nif = "NIF deve ter 9 dígitos";
     }

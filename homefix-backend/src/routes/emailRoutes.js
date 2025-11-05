@@ -4,7 +4,6 @@ const mailer = require('../config/email');
 
 const router = express.Router();
 
-// POST /api/email/test -> envia email de teste
 router.post('/test', protect, async (req, res) => {
   const { to, subject = 'Teste HomeFix', text = 'Email de teste HomeFix', html } = req.body || {};
   if (!to) return res.status(400).json({ message: "Campo 'to' é obrigatório" });

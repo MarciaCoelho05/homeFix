@@ -7,7 +7,6 @@ const { getBaseEmailTemplate } = require('../utils/emailTemplates');
 
 const router = express.Router();
 
-// Obter todos os pedidos (administrador ou técnico)
 router.get('/', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
   const isTechnician = req.user.isTechnician === true;
@@ -65,7 +64,6 @@ router.get('/', protect, async (req, res) => {
   res.json(requests);
 });
 
-// Obter os meus pedidos (cliente)
 router.get('/mine', protect, async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -98,7 +96,6 @@ router.get('/mine', protect, async (req, res) => {
   }
 });
 
-// Criar novo pedido
 router.post('/', protect, async (req, res) => {
   const { title, description, category, price, scheduledAt, status, mediaUrls } = req.body;
   const errors = {};
@@ -135,12 +132,10 @@ router.post('/', protect, async (req, res) => {
   });
   res.status(201).json(request);
   
-  // Notificar técnicos sobre o novo pedido
   notifyTechniciansAboutRequest(request, req.user.id).catch((err) => {
     console.error('Erro ao notificar técnicos:', err);
   });
   
-  // Enviar email de confirmação ao cliente (usar request.owner que vem do include)
   if (request.owner && request.owner.email) {
     notifyClientAboutRequestCreated(request, request.owner).catch((err) => {
       console.error('Erro ao enviar email de confirmação ao cliente:', err);
@@ -148,7 +143,6 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
-// Obter por ID
 router.get('/:id', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
@@ -209,7 +203,6 @@ router.get('/:id/invoice', protect, async (req, res) => {
   res.send(buffer);
 });
 
-// Atualizar
 router.put('/:id', protect, async (req, res) => {
   const { title, description, category, price, status, techId, technicianId, scheduledAt, mediaUrls } = req.body;
   const existing = await prisma.maintenanceRequest.findUnique({
@@ -256,7 +249,6 @@ router.put('/:id', protect, async (req, res) => {
   res.json(updated);
 });
 
-// Eliminar
 router.delete('/:id', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
   const request = await prisma.maintenanceRequest.findUnique({
@@ -519,13 +511,11 @@ router.post('/:id/complete', protect, async (req, res) => {
     fileName,
   });
   
-  // Enviar email de conclusão com fatura ao cliente
   notifyClientAboutRequestCompleted(updated, invoiceBase64, fileName).catch((err) => {
     console.error('Erro ao enviar email de conclusão ao cliente:', err);
   });
 });
 
-// Adicionar/atualizar preço do serviço (apenas para técnico atribuído)
 router.patch('/:id/price', protect, async (req, res) => {
   try {
     const { price } = req.body;
@@ -571,7 +561,6 @@ router.patch('/:id/price', protect, async (req, res) => {
   }
 });
 
-// Criar feedback (apenas para cliente que criou o pedido)
 router.post('/:id/feedback', protect, async (req, res) => {
   try {
     const { rating, comment } = req.body;
@@ -608,7 +597,6 @@ router.post('/:id/feedback', protect, async (req, res) => {
     
     let feedback;
     if (existingFeedback) {
-      // Atualizar feedback existente
       feedback = await prisma.feedback.update({
         where: { id: existingFeedback.id },
         data: {
@@ -620,7 +608,6 @@ router.post('/:id/feedback', protect, async (req, res) => {
         },
       });
     } else {
-      // Criar novo feedback
       feedback = await prisma.feedback.create({
         data: {
           rating: Number(rating),
@@ -891,7 +878,6 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
 
     const template = getBaseEmailTemplate();
 
-    // Enviar email personalizado para cada técnico
     const emailPromises = technicians.map(async (technician) => {
       const technicianName = `${technician.firstName || ''} ${technician.lastName || ''}`.trim() || 'Técnico';
       
@@ -1022,7 +1008,6 @@ async function notifyAcceptance(request) {
     const dashboardLink = `${appUrl}/dashboard`;
     const template = getBaseEmailTemplate('#28a745');
 
-    // Email para o técnico
     if (request.technician?.email) {
       const technicianName = [request.technician.firstName, request.technician.lastName]
         .filter(Boolean)
@@ -1095,7 +1080,6 @@ async function notifyAcceptance(request) {
       });
     }
 
-    // Email para o cliente
     if (request.owner?.email && request.technician?.email) {
       const ownerName = [request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ').trim() || 'cliente';
       const technicianName = [request.technician.firstName, request.technician.lastName]
