@@ -267,8 +267,8 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="row g-4">
-        <div className="col-12 col-lg-5">
+      <div className="row g-4 justify-content-center">
+        <div className="col-12 col-lg-8 col-xl-6">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4 p-md-5">
               <div className="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4 mb-4">
