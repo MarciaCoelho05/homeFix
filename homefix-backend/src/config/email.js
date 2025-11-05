@@ -118,27 +118,35 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
   
   console.log(`[EMAIL] URL: ${url}`);
   console.log(`[EMAIL] API Type: ${apiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)'}`);
+  console.log(`[EMAIL] Token (primeiros 15 chars): ${token.substring(0, 15)}...`);
+  console.log(`[EMAIL] Inbox ID: ${inboxId}`);
 
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(emailData);
     
     const urlObj = new URL(url);
-    const authHeader = `Bearer ${token}`;
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Content-Length': Buffer.byteLength(data)
+    };
+    
+    if (apiType === 'sandbox') {
+      headers['Api-Token'] = token;
+    } else {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     
     const options = {
       hostname: urlObj.hostname,
       path: urlObj.pathname,
       method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Content-Length': Buffer.byteLength(data)
-      },
+      headers: headers,
       timeout: 30000
     };
 
-    console.log(`[EMAIL] Headers: Authorization=${authHeader.substring(0, 20)}... (${authHeader.length} chars)`);
+    console.log(`[EMAIL] Headers: ${apiType === 'sandbox' ? 'Api-Token' : 'Authorization'}=${token.substring(0, 15)}...`);
     console.log(`[EMAIL] Payload preview:`, JSON.stringify(emailData).substring(0, 100) + '...');
 
     const req = https.request(options, (res) => {
