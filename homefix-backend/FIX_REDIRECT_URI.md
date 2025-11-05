@@ -23,13 +23,18 @@ Acesso bloqueado: o pedido da app Homefiz é inválido
    ```
    198584272005-en44j0cgf5984viaftamehcn38jvckn7.apps.googleusercontent.com
    ```
+   (ou procure por "Web Client - HomeFix (Vercel)")
 4. Clique no **ícone de lápis (✏️)** ou no **nome da credencial** para editar
 
 ### Passo 3: Adicionar o Redirect URI Autorizado
 
 1. Na página de edição, você verá uma seção **"Authorized redirect URIs"**
-2. Clique no botão **"+ ADD URI"** ou **"Add URI"**
-3. Adicione exatamente este URI:
+   - Você provavelmente já verá: `https://homefix-frontend.vercel.app/api/auth/callback`
+   - Isso está correto para o Vercel, mas precisamos adicionar mais um URI para o OAuth Playground
+
+2. Clique no botão **"+ ADD URI"** ou **"Add URI"** (pode ter que clicar mais de uma vez se houver vários campos)
+
+3. Adicione exatamente este URI (sem apagar o existente):
    ```
    https://developers.google.com/oauthplayground
    ```
@@ -38,6 +43,9 @@ Acesso bloqueado: o pedido da app Homefiz é inválido
    - Não adicione barra no final (`/`)
    - Não adicione espaços
    - Deve começar com `https://`
+   - Você deve ter DOIS URIs agora:
+     - `https://homefix-frontend.vercel.app/api/auth/callback` (já existente)
+     - `https://developers.google.com/oauthplayground` (novo)
 
 4. Clique em **"SAVE"** ou **"Salvar"** para salvar as alterações
 
@@ -60,8 +68,11 @@ Após adicionar o redirect URI, a lista de URIs autorizados deve mostrar:
 
 ```
 Authorized redirect URIs:
+✓ https://homefix-frontend.vercel.app/api/auth/callback
 ✓ https://developers.google.com/oauthplayground
 ```
+
+Ambos os URIs devem estar presentes.
 
 ## ❌ Erros Comuns
 

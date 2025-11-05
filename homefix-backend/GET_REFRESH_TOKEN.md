@@ -26,7 +26,7 @@ Se você está vendo o erro `invalid_grant`, significa que o `GOOGLE_REFRESH_TOK
        ```
      - **OAuth Client secret**: 
        ```
-       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
+       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
        ```
    - Clique em **"Close"** para salvar
 
@@ -83,7 +83,7 @@ Após obter o Refresh Token, configure no Railway:
 
 ```
 GOOGLE_CLIENT_ID=198584272005-en44j0cgf5984viaftamehcn38jvckn7.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_SECRET=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
 GOOGLE_REFRESH_TOKEN=cole_o_refresh_token_completo_aqui
 GOOGLE_SENDER_EMAIL=homefix593@gmail.com
 ```
