@@ -13,16 +13,37 @@ async function processEmails() {
   });
 
   for (const email of pendingEmails){
-    await tranporter.sendMail({
-      to: email.toEmail,
-      subject: email.subject,
-      text: email.body
-  });
+    try {
+      // Validar email antes de enviar
+      const toEmail = String(email.toEmail || '').toLowerCase().trim();
+      const domain = toEmail.split('@')[1];
+      
+      // Bloquear domínios fictícios
+      const blockedDomains = ['homefix.com', 'homefix.pt', 'example.com', 'test.com', 'localhost', 'invalid.com'];
+      if (blockedDomains.some(blocked => domain === blocked || domain?.endsWith('.' + blocked))) {
+        console.warn(`[EMAIL-WORKER] ⚠️ Ignorando email para domínio bloqueado: ${email.toEmail}`);
+        // Marcar como enviado para não tentar novamente
+        await prisma.scheduleEmail.update({
+          where: { id: email.id},
+          data: { sentAt: new Date() }
+        });
+        continue;
+      }
+      
+      await tranporter.sendMail({
+        to: email.toEmail,
+        subject: email.subject,
+        text: email.body
+      });
 
-  await prisma.scheduleEmail.update({
-    where: { id: email.id},
-    data: { sendAt: new Date() }
-  })
+      await prisma.scheduleEmail.update({
+        where: { id: email.id},
+        data: { sentAt: new Date() }
+      });
+    } catch (err) {
+      console.error(`[EMAIL-WORKER] Erro ao enviar email ${email.id}:`, err.message);
+      // Não marcar como enviado se houver erro
+    }
   }
 
   console.log("✅${pendingEmails.length} e-mails enviados")

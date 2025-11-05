@@ -2,10 +2,36 @@
 const prisma = require('../prismaClient');
 const { protect } = require('../middlewares/authMiddleware');
 const mailer = require('../config/email');
+const { validateEmail } = require('../config/email');
 const { generateInvoicePDF } = require('../utils/pdf');
 const { getBaseEmailTemplate } = require('../utils/emailTemplates');
 
 const router = express.Router();
+
+/**
+ * Helper para enviar email com validação prévia
+ * @param {object} mailOptions - Opções do email
+ * @returns {Promise} - Promise que resolve quando o email é enviado ou rejeitado
+ */
+async function sendEmailSafe(mailOptions) {
+  if (!mailOptions || !mailOptions.to) {
+    console.warn('[EMAIL-SAFE] Email não fornecido');
+    return Promise.resolve();
+  }
+  
+  const validation = validateEmail(mailOptions.to);
+  if (!validation.valid) {
+    console.warn(`[EMAIL-SAFE] ⚠️ Email bloqueado: ${mailOptions.to} - Razão: ${validation.reason}`);
+    return Promise.resolve(); // Não rejeitar, apenas não enviar
+  }
+  
+  try {
+    return await mailer.sendMail(mailOptions);
+  } catch (err) {
+    console.error(`[EMAIL-SAFE] Erro ao enviar email para ${mailOptions.to}:`, err.message);
+    throw err; // Re-throw para que o caller possa tratar
+  }
+}
 
 router.get('/', protect, async (req, res) => {
   const isAdmin = req.user.isAdmin === true;
@@ -327,14 +353,14 @@ router.delete('/:id', protect, async (req, res) => {
       </html>
     `;
 
-    mailer.sendMail({
+    sendEmailSafe({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: request.owner.email,
       subject: 'Pedido eliminado - HomeFix',
       text,
       html,
     }).catch((err) => {
-      console.error('Erro ao enviar email de eliminação de pedido:', err);
+      console.error('Erro ao enviar email de eliminação de pedido:', err.message);
     });
   }
 
@@ -387,14 +413,14 @@ router.delete('/:id', protect, async (req, res) => {
       </html>
     `;
 
-    mailer.sendMail({
+    sendEmailSafe({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: request.technician.email,
       subject: 'Pedido eliminado - HomeFix',
       text,
       html,
     }).catch((err) => {
-      console.error('Erro ao enviar email de eliminação de pedido ao técnico:', err);
+      console.error('Erro ao enviar email de eliminação de pedido ao técnico:', err.message);
     });
   }
 
@@ -714,7 +740,7 @@ async function notifyClientAboutRequestCreated(request, owner) {
       </html>
     `;
 
-    await mailer.sendMail({
+    await sendEmailSafe({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: owner.email,
       subject: `Pedido confirmado: ${request.title} - HomeFix`,
@@ -830,7 +856,7 @@ async function notifyClientAboutRequestCompleted(request, invoiceBase64, fileNam
 
     console.log(`📤 Enviando email com ${attachments.length} anexo(s) para ${request.owner.email}...`);
 
-    await mailer.sendMail({
+    await sendEmailSafe({
       from: '"HomeFix" <no-reply@homefix.com>',
       to: request.owner.email,
       subject: `Serviço concluído: ${request.title} - HomeFix`,
@@ -968,7 +994,7 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
       `;
 
       try {
-        const result = await mailer.sendMail({
+        const result = await sendEmailSafe({
       from: '"HomeFix" <no-reply@homefix.com>',
           to: technician.email,
           subject: `${isRelevantCategory ? '⭐ ' : ''}Novo pedido: ${request.title}${isRelevantCategory ? ' (Relevante para si)' : ''}`,
@@ -1071,7 +1097,7 @@ async function notifyAcceptance(request) {
         </html>
       `;
 
-      await mailer.sendMail({
+      await sendEmailSafe({
         from: '"HomeFix" <no-reply@homefix.com>',
         to: request.technician.email,
         subject: `Pedido aceite: ${request.title} - HomeFix`,
@@ -1145,7 +1171,7 @@ async function notifyAcceptance(request) {
         </html>
       `;
 
-      await mailer.sendMail({
+      await sendEmailSafe({
         from: '"HomeFix" <no-reply@homefix.com>',
         to: request.owner.email,
         subject: `O seu pedido foi aceite: ${request.title} - HomeFix`,

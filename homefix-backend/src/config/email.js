@@ -10,6 +10,67 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const GOOGLE_SENDER_EMAIL = process.env.GOOGLE_SENDER_EMAIL || 'no-reply@homefix.com';
 
+/**
+ * Valida se um email é válido e não está bloqueado
+ * @param {string} email - Email a validar
+ * @returns {object} - { valid: boolean, reason?: string }
+ */
+function validateEmail(email) {
+  if (!email || typeof email !== 'string') {
+    return { valid: false, reason: 'Email não fornecido ou inválido' };
+  }
+  
+  const toEmail = email.toLowerCase().trim();
+  
+  // Validar formato básico
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(toEmail)) {
+    return { valid: false, reason: 'Formato de email inválido' };
+  }
+  
+  // Extrair domínio
+  const domain = toEmail.split('@')[1];
+  if (!domain) {
+    return { valid: false, reason: 'Domínio inválido' };
+  }
+  
+  // Bloquear domínios fictícios
+  const blockedDomains = [
+    'homefix.com',
+    'homefix.pt',
+    'example.com',
+    'test.com',
+    'localhost',
+    'invalid.com',
+  ];
+  
+  if (blockedDomains.some(blocked => domain === blocked || domain.endsWith('.' + blocked))) {
+    return { valid: false, reason: `Domínio bloqueado: ${domain}` };
+  }
+  
+  // Bloquear mailer-daemon e similares
+  if (
+    toEmail.includes('mailer-daemon') ||
+    toEmail.includes('mailer_daemon') ||
+    toEmail.includes('noreply') ||
+    toEmail.includes('no-reply') ||
+    toEmail.includes('postmaster') ||
+    toEmail.includes('abuse') ||
+    toEmail.includes('mail-delivery') ||
+    domain.includes('mailer-daemon')
+  ) {
+    return { valid: false, reason: 'Endereço bloqueado (mailer-daemon)' };
+  }
+  
+  // Validar extensão do domínio
+  const domainParts = domain.split('.');
+  if (domainParts.length < 2 || domainParts[domainParts.length - 1].length < 2) {
+    return { valid: false, reason: 'Domínio inválido' };
+  }
+  
+  return { valid: true };
+}
+
 // Verificar se as credenciais estão configuradas
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
   console.error('[EMAIL] ⚠️  Credenciais do Google não configuradas');
@@ -80,7 +141,7 @@ function createEmailMessage(mailOptions) {
     message.push('Content-Type: text/html; charset=utf-8');
     message.push('');
     message.push(html);
-  } else {
+} else {
     // Apenas texto
     message.push('Content-Type: text/plain; charset=utf-8');
     message.push('');
@@ -110,19 +171,11 @@ const emailTransporter = {
       throw new Error('Campo "to" é obrigatório');
     }
 
-    // Não enviar emails para endereços do Mail Delivery Subsystem (mailer-daemon)
-    const toEmail = String(mailOptions.to).toLowerCase().trim();
-    if (
-      toEmail.includes('mailer-daemon') ||
-      toEmail.includes('mailer_daemon') ||
-      toEmail.includes('noreply') ||
-      toEmail.includes('no-reply') ||
-      toEmail.includes('postmaster') ||
-      toEmail.includes('abuse') ||
-      toEmail.includes('mail-delivery')
-    ) {
-      console.warn(`[EMAIL] ⚠️ Tentativa de enviar email para endereço bloqueado: ${mailOptions.to}`);
-      throw new Error('Não é possível enviar emails para este endereço (mailer-daemon bloqueado)');
+    // Validação rigorosa de email para evitar bouncebacks
+    const validation = validateEmail(mailOptions.to);
+    if (!validation.valid) {
+      console.warn(`[EMAIL] ⚠️ Email bloqueado: ${mailOptions.to} - Razão: ${validation.reason}`);
+      throw new Error(`Email inválido ou bloqueado: ${validation.reason}`);
     }
 
     try {
@@ -237,3 +290,4 @@ const emailTransporter = {
 };
 
 module.exports = emailTransporter;
+module.exports.validateEmail = validateEmail;
