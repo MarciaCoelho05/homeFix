@@ -145,19 +145,21 @@ const FloatingChat = () => {
   const isAdmin = role === 'admin';
   
   console.log('[FloatingChat] Debug - role:', role, 'isAdmin:', isAdmin, 'token:', !!token);
+  console.log('[FloatingChat] Window check:', typeof window !== 'undefined');
+  console.log('[FloatingChat] LocalStorage check:', typeof window !== 'undefined' ? 'available' : 'unavailable');
   
   if (isAdmin) {
-    console.log('[FloatingChat] Admin user, not rendering. Role:', role);
+    console.log('[FloatingChat] ❌ Admin user, not rendering. Role:', role);
     return null;
   }
 
   const isAuthenticated = !!token;
   const isClientOrTechnician = isAuthenticated && (role === 'technician' || role === 'user');
 
-  console.log('[FloatingChat] ✅ Rendering chat button - Token:', isAuthenticated, 'Role:', role || 'null (not authenticated)');
+  console.log('[FloatingChat] ✅ WILL RENDER - Token:', isAuthenticated, 'Role:', role || 'null (not authenticated)', 'isAdmin:', isAdmin);
   
   // Garantir que o componente está sendo renderizado
-  console.log('[FloatingChat] Component will render button now');
+  console.log('[FloatingChat] ✅ Component is rendering button NOW');
 
   return (
     <>
@@ -177,7 +179,7 @@ const FloatingChat = () => {
           boxShadow: '0 4px 12px rgba(255, 122, 0, 0.4)',
           cursor: 'pointer',
           zIndex: 99999,
-          display: 'flex !important',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '18px',
@@ -186,8 +188,8 @@ const FloatingChat = () => {
           fontFamily: 'Arial, sans-serif',
           margin: 0,
           padding: 0,
-          visibility: 'visible !important',
-          opacity: '1 !important',
+          visibility: 'visible',
+          opacity: 1,
           pointerEvents: 'auto',
         }}
         onMouseEnter={(e) => {
