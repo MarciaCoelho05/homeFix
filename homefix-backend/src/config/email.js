@@ -11,14 +11,6 @@ const mailtrapDomain = process.env.MAILTRAP_DOMAIN;
 
 const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
 
-if (mailtrapApiToken && mailtrapApiToken.trim()) {
-  console.log('[EMAIL] ✅ Usando Mailtrap API');
-  console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
-  console.log('[EMAIL]   API Type:', mailtrapApiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)');
-  if (mailtrapApiType === 'sandbox') {
-    console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
-  }
-}
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
   const token = String(mailtrapApiToken || '').trim();
@@ -38,12 +30,6 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     throw new Error('MAILTRAP_DOMAIN é obrigatório para Sending API');
   }
 
-  console.log(`[EMAIL] Enviando email via Mailtrap API (${apiType})`);
-  console.log(`[EMAIL] Token (primeiros 10): ${token.substring(0, 10)}... (${token.length} chars)`);
-  
-  if (apiType === 'sandbox') {
-    console.log(`[EMAIL] Inbox ID: ${inboxId}`);
-  }
 
   let fromEmail = mailOptions.from;
   if (!fromEmail) {
@@ -85,9 +71,6 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     ? `https://sandbox.api.mailtrap.io/api/send/${inboxId}`
     : `https://send.api.mailtrap.io/api/send`;
   
-  console.log(`[EMAIL] URL: ${url}`);
-  console.log(`[EMAIL] Enviando para: ${toEmails.join(', ')}`);
-
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(emailData);
     const urlObj = new URL(url);
@@ -97,17 +80,6 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
       'Accept': 'application/json',
       'Api-Token': token
     };
-    
-    console.log(`[EMAIL] Usando header Api-Token (${apiType === 'sandbox' ? 'Sandbox' : 'Sending'} API)`);
-    console.log(`[EMAIL] Header Api-Token: ${token.substring(0, 10)}...${token.substring(token.length - 5)}`);
-    console.log(`[EMAIL] Headers completos:`, JSON.stringify(Object.keys(headers)));
-    console.log(`[EMAIL] Payload email:`, JSON.stringify({
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject,
-      text_length: emailData.text?.length || 0,
-      html_length: emailData.html?.length || 0
-    }));
     
     const options = {
       hostname: urlObj.hostname,
@@ -125,20 +97,15 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
       });
       
       res.on('end', () => {
-        console.log(`[EMAIL] Resposta da API: Status ${res.statusCode}`);
-        
         if (res.statusCode >= 200 && res.statusCode < 300) {
           try {
             const result = JSON.parse(responseData || '{}');
-            console.log(`[EMAIL] ✅ Email enviado via Mailtrap API`);
-            console.log(`[EMAIL] Message ID: ${result.message_ids?.[0] || 'N/A'}`);
             resolve({
               messageId: result.message_ids?.[0] || 'mailtrap-' + Date.now(),
               accepted: toEmails,
               response: result
             });
           } catch (parseError) {
-            console.log(`[EMAIL] ✅ Email enviado via Mailtrap API (resposta não-JSON)`);
             resolve({
               messageId: 'mailtrap-' + Date.now(),
               accepted: toEmails
@@ -186,14 +153,11 @@ const transporter = {
   },
   verify: (callback) => {
     if (mailtrapApiToken && mailtrapApiToken.trim()) {
-      console.log('[EMAIL] ✅ Mailtrap API configurado e pronto');
       callback(null, true);
     } else {
       callback(new Error('MAILTRAP_API_TOKEN não está configurado'));
     }
   }
 };
-
-console.log('[EMAIL] ✅ Transporter criado');
 
 module.exports = transporter;
