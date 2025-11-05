@@ -271,14 +271,14 @@ const Profile = () => {
         <div className="w-100" style={{ maxWidth: '600px' }}>
           <div className="card border-0 shadow-sm">
             <div className="card-body p-4 p-md-5">
-              <div className="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4 mb-4">
+              <div className="d-flex flex-column align-items-center gap-4 mb-4">
                 <img
                   src={avatarUrl || avatarFallback}
                   alt="Avatar"
                   className="rounded-circle border"
                   style={{ width: 104, height: 104, objectFit: 'cover' }}
                 />
-                <div className="text-center text-md-start">
+                <div className="text-center">
                   <h1 className="h4 fw-semibold mb-1">O seu perfil</h1>
                   <p className="text-muted small mb-3">
                     Atualize os seus dados pessoais e mantenha a seguranca da conta.
@@ -382,7 +382,7 @@ const Profile = () => {
                     )}
                   </div>
                 )}
-                <div className="col-12">
+                <div className="col-12 d-flex justify-content-center">
                   <button type="submit" className="btn btn-primary px-4">
                     Guardar alteracoes
                   </button>
@@ -391,14 +391,16 @@ const Profile = () => {
 
               <hr className="my-4" />
 
-              <button
-                type="button"
-                className="btn btn-outline-danger"
-                onClick={handleDeleteAccount}
-                disabled={deletingAccount}
-              >
-                {deletingAccount ? 'A eliminar conta...' : 'Eliminar conta'}
-              </button>
+              <div className="d-flex justify-content-center">
+                <button
+                  type="button"
+                  className="btn btn-outline-danger"
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount}
+                >
+                  {deletingAccount ? 'A eliminar conta...' : 'Eliminar conta'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
