@@ -25,9 +25,17 @@ Este projeto usa a Gmail API para envio de emails. Siga os passos abaixo para co
 4. Configure o tipo de aplicação:
    - Tipo: **Web application**
    - Nome: HomeFix Email Sender
-   - Authorized redirect URIs: `https://developers.google.com/oauthplayground`
+   - **Authorized redirect URIs**: Clique em **"+ ADD URI"** e adicione:
+     ```
+     https://developers.google.com/oauthplayground
+     ```
+     ⚠️ **IMPORTANTE**: Copie exatamente como está, sem barra no final
 5. Clique em **Create**
 6. **Copie o Client ID e Client Secret** - você precisará deles
+
+**⚠️ Se você já criou as credenciais e está vendo erro `redirect_uri_mismatch`:**
+- Veja o guia detalhado em `FIX_REDIRECT_URI.md`
+- Ou edite as credenciais existentes e adicione o redirect URI acima
 
 ## Passo 4: Obter o Refresh Token
 
@@ -62,7 +70,8 @@ Após configurar as variáveis, o sistema tentará usar a Gmail API automaticame
 
 ## Troubleshooting
 
-- **Erro 401**: Refresh token inválido ou expirado. Obtenha um novo refresh token.
+- **Erro `redirect_uri_mismatch`**: O redirect URI não está configurado no Google Cloud Console. Veja `FIX_REDIRECT_URI.md` para instruções detalhadas.
+- **Erro 401 / `invalid_grant`**: Refresh token inválido ou expirado. Obtenha um novo refresh token seguindo `GET_REFRESH_TOKEN.md`.
 - **Erro 403**: Permissões insuficientes. Verifique se o escopo `gmail.send` foi concedido.
 - **Erro 429**: Limite de taxa excedido. Aguarde alguns minutos antes de tentar novamente.
 
