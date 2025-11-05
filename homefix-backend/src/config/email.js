@@ -8,39 +8,15 @@ const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
 const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID;
 const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sandbox';
 const mailtrapDomain = process.env.MAILTRAP_DOMAIN;
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
 
 const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
 
 if (mailtrapApiToken && mailtrapApiToken.trim()) {
-  console.log('[EMAIL] ✅ Usando Mailtrap API (recomendado para Railway)');
+  console.log('[EMAIL] ✅ Usando Mailtrap API');
   console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   API Type:', mailtrapApiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)');
   if (mailtrapApiType === 'sandbox') {
     console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
-  }
-} else if (smtpUser && smtpPass) {
-  console.log('[EMAIL] ⚠️  Usando SMTP');
-  const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-  const smtpPort = process.env.SMTP_PORT || (smtpHost.includes('gmail.com') ? '587' : '2525');
-  console.log('[EMAIL]   SMTP Host:', smtpHost);
-  console.log('[EMAIL]   SMTP Port:', smtpPort);
-  console.log('[EMAIL]   SMTP User:', smtpUser ? '✅ definido' : '❌ não definido');
-  console.log('[EMAIL]   SMTP Pass:', smtpPass ? '✅ definido' : '❌ não definido');
-  
-  
-  if (smtpHost.includes('gmail.com')) {
-    console.log('[EMAIL] ⚠️  Gmail detectado: Use App Password (não a senha normal)');
-    console.log('[EMAIL] 💡 Como obter App Password:');
-    console.log('[EMAIL]     1. Google Account → Segurança');
-    console.log('[EMAIL]     2. Ative Verificação em 2 etapas');
-    console.log('[EMAIL]     3. Senhas de app → Gere uma nova senha');
-  }
-  
-  if (process.env.NODE_ENV === 'production' && !isRailway) {
-    console.log('[EMAIL] ⚠️  Em produção, Railway pode bloquear conexões SMTP');
-    console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
   }
 }
 
@@ -189,138 +165,13 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
   });
 };
 
-const sendMailViaSMTP = async (mailOptions) => {
-  const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : null;
-  
-  console.log(`[EMAIL] Configurando SMTP: ${smtpHost}`);
-  console.log(`[EMAIL] SMTP_USER: ${smtpUser ? '✅ definido' : '❌ não definido'}`);
-  console.log(`[EMAIL] SMTP_PASS: ${smtpPass ? '✅ definido' : '❌ não definido'}`);
-  
-  if (!smtpUser || !smtpPass) {
-    throw new Error('SMTP_USER e SMTP_PASS são obrigatórios para envio via SMTP');
-  }
-  
-  const isGmail = smtpHost.includes('gmail.com');
-  const isMailtrap = smtpHost.includes('mailtrap.io');
-  
-  let finalPort = smtpPort;
-  let isSecure = false;
-  let useStartTLS = false;
-  let tlsConfig = {};
-  
-  if (isGmail) {
-    finalPort = smtpPort || 587;
-    isSecure = finalPort === 465;
-    useStartTLS = finalPort === 587;
-    tlsConfig = {
-      rejectUnauthorized: true,
-    };
-    console.log(`[EMAIL] 📧 Configuração Gmail detectada`);
-    console.log(`[EMAIL] ⚠️  IMPORTANTE: Use App Password do Gmail, não a senha normal!`);
-    console.log(`[EMAIL] 💡 Como obter: Google Account → Segurança → Verificação em 2 etapas → Senhas de app`);
-  } else if (isMailtrap) {
-    finalPort = smtpPort || 2525;
-    isSecure = false;
-    useStartTLS = true;
-    tlsConfig = {
-      rejectUnauthorized: false,
-    };
-    console.log(`[EMAIL] 📧 Configuração Mailtrap detectada`);
-  } else {
-    finalPort = smtpPort || 587;
-    isSecure = finalPort === 465;
-    useStartTLS = finalPort === 587 || finalPort === 25;
-    tlsConfig = {
-      rejectUnauthorized: false,
-    };
-    console.log(`[EMAIL] 📧 Configuração SMTP genérica`);
-  }
-  
-  console.log(`[EMAIL] Porta: ${finalPort}, secure=${isSecure}, requireTLS=${useStartTLS}`);
-  
-  try {
-    const smtpTransporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: finalPort,
-      secure: isSecure,
-      requireTLS: useStartTLS,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-      tls: tlsConfig,
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-      debug: process.env.NODE_ENV === 'development',
-      logger: process.env.NODE_ENV === 'development',
-    });
-    
-    console.log(`[EMAIL] Verificando conexão SMTP...`);
-    await smtpTransporter.verify();
-    console.log(`[EMAIL] ✅ Conexão SMTP verificada com sucesso`);
-    
-    console.log(`[EMAIL] Enviando email para: ${mailOptions.to}`);
-    const result = await smtpTransporter.sendMail(mailOptions);
-    console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${finalPort})`);
-    console.log(`[EMAIL] Message ID: ${result.messageId || 'N/A'}`);
-    return result;
-  } catch (error) {
-    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
-    
-    if (error.code === 'EAUTH') {
-      if (isGmail) {
-        throw new Error('Erro de autenticação Gmail. Verifique se está a usar App Password (não a senha normal). Para obter: Google Account → Segurança → Verificação em 2 etapas → Senhas de app');
-      } else {
-        throw new Error('Erro de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.');
-      }
-    } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-      let errorMsg = `Não foi possível conectar ao servidor SMTP ${smtpHost}:${finalPort}. Verifique a conexão de rede e as configurações.`;
-      
-      if (isRailway) {
-        errorMsg += '\n\n⚠️ Railway bloqueia conexões SMTP. Use MAILTRAP_API_TOKEN em vez de SMTP.';
-      }
-      
-      throw new Error(errorMsg);
-    } else if (error.code === 'ECONNRESET') {
-      throw new Error('Conexão SMTP foi resetada. Tente novamente.');
-    } else if (error.code === 'EENVELOPE') {
-      throw new Error('Erro no envelope do email. Verifique os endereços de destinatário.');
-    }
-    
-    throw error;
-  }
-};
-
 const transporter = {
   sendMail: async (mailOptions) => {
     if (mailtrapApiToken && mailtrapApiToken.trim()) {
-      try {
-        return await sendMailViaMailtrapAPI(mailOptions);
-      } catch (apiError) {
-        if (smtpUser && smtpPass) {
-          console.log('[EMAIL] 🔄 Tentando fallback para SMTP...');
-          try {
-            const result = await sendMailViaSMTP(mailOptions);
-            console.log('[EMAIL] ✅ Email enviado via SMTP (fallback)');
-            return result;
-          } catch (smtpError) {
-            throw new Error(`Falha na API (${apiError.message}) e no SMTP (${smtpError.message})`);
-          }
-        } else {
-          throw apiError;
-        }
-      }
-    } else if (smtpUser && smtpPass) {
-      try {
-        return await sendMailViaSMTP(mailOptions);
-      } catch (smtpError) {
-        throw smtpError;
-      }
+      return await sendMailViaMailtrapAPI(mailOptions);
     } else {
       const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
-      let errorMsg = 'Nenhuma configuração de email disponível (API ou SMTP)';
+      let errorMsg = 'MAILTRAP_API_TOKEN não está configurado';
       
       if (isRailway) {
         errorMsg += '\n\n💡 Configure MAILTRAP_API_TOKEN no Railway:';
@@ -337,11 +188,8 @@ const transporter = {
     if (mailtrapApiToken && mailtrapApiToken.trim()) {
       console.log('[EMAIL] ✅ Mailtrap API configurado e pronto');
       callback(null, true);
-    } else if (smtpUser && smtpPass) {
-      console.log('[EMAIL] ⚠️  SMTP configurado (pode ter problemas de timeout)');
-      callback(null, true);
     } else {
-      callback(new Error('Nenhuma configuração de email encontrada'));
+      callback(new Error('MAILTRAP_API_TOKEN não está configurado'));
     }
   }
 };
