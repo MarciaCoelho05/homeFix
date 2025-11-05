@@ -142,24 +142,22 @@ const FloatingChat = () => {
 
   // Renderizar para todos, exceto admins
   // Se role é null (não autenticado), também deve renderizar
-  const shouldRender = role !== 'admin';
+  const isAdmin = role === 'admin';
   
-  console.log('[FloatingChat] Debug - role:', role, 'shouldRender:', shouldRender, 'token:', !!token);
+  console.log('[FloatingChat] Debug - role:', role, 'isAdmin:', isAdmin, 'token:', !!token);
   
-  if (!shouldRender) {
+  if (isAdmin) {
     console.log('[FloatingChat] Admin user, not rendering. Role:', role);
     return null;
   }
 
   const isAuthenticated = !!token;
-  const isClientOrTechnician = isAuthenticated && (role === 'technician' || role === 'user' || role === null);
+  const isClientOrTechnician = isAuthenticated && (role === 'technician' || role === 'user');
 
-  console.log('[FloatingChat] ✅ Rendering chat button - Token:', isAuthenticated, 'Role:', role, 'ShouldRender:', shouldRender);
+  console.log('[FloatingChat] ✅ Rendering chat button - Token:', isAuthenticated, 'Role:', role || 'null (not authenticated)');
   
-  // Forçar renderização para debug
-  if (typeof window !== 'undefined') {
-    console.log('[FloatingChat] Component mounted, button should be visible');
-  }
+  // Garantir que o componente está sendo renderizado
+  console.log('[FloatingChat] Component will render button now');
 
   return (
     <>
