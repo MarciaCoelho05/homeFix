@@ -6,5 +6,7 @@ prisma/migrations/
 prisma/dev.db
 dist/
 build/
+uploads/
+*.log
 c
 .vercel
