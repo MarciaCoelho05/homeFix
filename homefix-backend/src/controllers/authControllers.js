@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const { getBaseEmailTemplate } = require('../utils/emailTemplates');
 const mailer = require('../config/email');
+const { validateEmail } = require('../config/email');
 
 let prisma;
 try {
@@ -584,6 +585,12 @@ async function sendWelcomeEmail(user) {
       </body>
       </html>
     `;
+
+    const validation = validateEmail(user.email);
+    if (!validation.valid) {
+      console.warn(`[WELCOME-EMAIL] ⚠️ Email bloqueado: ${user.email} - Razão: ${validation.reason}`);
+      return;
+    }
 
     await mailer.sendMail({
       from: '"HomeFix" <no-reply@homefix.com>',

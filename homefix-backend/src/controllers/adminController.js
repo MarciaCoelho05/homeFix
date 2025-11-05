@@ -82,6 +82,7 @@ async function deleteUser(req, res) {
     if (user && user.email) {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
       const mailer = require('../config/email');
+      const { validateEmail } = require('../config/email');
       
       const text = [
         `Olá ${userName},`,
@@ -144,14 +145,19 @@ async function deleteUser(req, res) {
       `;
 
       try {
-        await mailer.sendMail({
-          from: '"HomeFix" <no-reply@homefix.com>',
-          to: user.email,
-          subject: 'Conta eliminada - HomeFix',
-          text,
-          html,
-        });
-        console.log(`Email de confirmação de eliminação (admin) enviado para ${user.email}`);
+        const validation = validateEmail(user.email);
+        if (!validation.valid) {
+          console.warn(`[DELETE-USER-ADMIN] ⚠️ Email bloqueado: ${user.email} - Razão: ${validation.reason}`);
+        } else {
+          await mailer.sendMail({
+            from: '"HomeFix" <no-reply@homefix.com>',
+            to: user.email,
+            subject: 'Conta eliminada - HomeFix',
+            text,
+            html,
+          });
+          console.log(`✅ Email de confirmação de eliminação (admin) enviado para ${user.email}`);
+        }
       } catch (emailError) {
         console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
         // Não falhar a eliminação se o email falhar

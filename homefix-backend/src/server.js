@@ -339,6 +339,7 @@ app.delete('/api/profile', protect, async (req, res) => {
     if (user && user.email) {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
       const mailer = require('./config/email');
+      const { validateEmail } = require('./config/email');
       
       const text = [
         `Olá ${userName},`,
@@ -395,14 +396,19 @@ app.delete('/api/profile', protect, async (req, res) => {
       `;
 
       try {
-        await mailer.sendMail({
-          from: '"HomeFix" <no-reply@homefix.com>',
-          to: user.email,
-          subject: 'Conta eliminada - HomeFix',
-          text,
-          html,
-        });
-        console.log(`Email de confirmacao de eliminacao enviado para ${user.email}`);
+        const validation = validateEmail(user.email);
+        if (!validation.valid) {
+          console.warn(`[DELETE-ACCOUNT] ⚠️ Email bloqueado: ${user.email} - Razão: ${validation.reason}`);
+        } else {
+          await mailer.sendMail({
+            from: '"HomeFix" <no-reply@homefix.com>',
+            to: user.email,
+            subject: 'Conta eliminada - HomeFix',
+            text,
+            html,
+          });
+          console.log(`✅ Email de confirmação de eliminação enviado para ${user.email}`);
+        }
       } catch (emailError) {
         console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
       }
