@@ -118,7 +118,8 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
   
   console.log(`[EMAIL] URL: ${url}`);
   console.log(`[EMAIL] API Type: ${apiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)'}`);
-  console.log(`[EMAIL] Token (primeiros 15 chars): ${token.substring(0, 15)}...`);
+  console.log(`[EMAIL] Token completo (para debug): ${token}`);
+  console.log(`[EMAIL] Token length: ${token.length} caracteres`);
   console.log(`[EMAIL] Inbox ID: ${inboxId}`);
 
   return new Promise((resolve, reject) => {
@@ -134,8 +135,10 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     
     if (apiType === 'sandbox') {
       headers['Api-Token'] = token;
+      console.log(`[EMAIL] Usando header Api-Token para Sandbox API`);
     } else {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log(`[EMAIL] Usando header Authorization para Sending API`);
     }
     
     const options = {
@@ -146,7 +149,8 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
       timeout: 30000
     };
 
-    console.log(`[EMAIL] Headers: ${apiType === 'sandbox' ? 'Api-Token' : 'Authorization'}=${token.substring(0, 15)}...`);
+    console.log(`[EMAIL] Header de autenticação: ${apiType === 'sandbox' ? 'Api-Token' : 'Authorization'}`);
+    console.log(`[EMAIL] Token completo: ${token}`);
     console.log(`[EMAIL] Payload preview:`, JSON.stringify(emailData).substring(0, 100) + '...');
 
     const req = https.request(options, (res) => {
@@ -182,13 +186,15 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
           
           if (res.statusCode === 401) {
             console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
-            console.error('[EMAIL] 💡 Verifique no Mailtrap:');
-            console.error('[EMAIL]    1. Settings → API Tokens');
-            console.error('[EMAIL]    2. Confirme que o token está correto e ativo');
-            console.error('[EMAIL]    3. Gere um novo token se necessário');
-            console.error('[EMAIL]    4. Verifique se o token tem permissão "Send emails"');
-            console.error(`[EMAIL]    Token atual: ${token.substring(0, 10)}... (${token.length} chars)`);
+            console.error('[EMAIL] 💡 Para Sandbox API, o token deve vir das configurações do inbox:');
+            console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
+            console.error('[EMAIL]    2. Vá para o seu Sandbox inbox');
+            console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
+            console.error('[EMAIL]    4. Copie o "Inbox Token" (não o API Token geral)');
+            console.error('[EMAIL]    5. Configure no Railway: MAILTRAP_API_TOKEN=<inbox_token>');
+            console.error(`[EMAIL]    Token atual: ${token} (${token.length} chars)`);
             console.error(`[EMAIL]    Inbox ID: ${inboxId}`);
+            console.error(`[EMAIL]    Endpoint: ${url}`);
           }
           
           reject(error);
