@@ -10,13 +10,23 @@ if (mailtrapApiToken) {
   console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
 } else if (smtpUser && smtpPass) {
-  console.log('[EMAIL] ⚠️  Usando SMTP (Railway pode bloquear conexões SMTP)');
-  console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
+  console.log('[EMAIL] ✅ Usando SMTP');
   console.log('[EMAIL]   SMTP Host:', process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io');
   console.log('[EMAIL]   SMTP Port:', process.env.SMTP_PORT || '2525');
+  console.log('[EMAIL]   SMTP User:', smtpUser ? '✅ definido' : '❌ não definido');
+  console.log('[EMAIL]   SMTP Pass:', smtpPass ? '✅ definido' : '❌ não definido');
+  if (process.env.NODE_ENV === 'production') {
+    console.log('[EMAIL] ⚠️  Em produção, Railway pode bloquear conexões SMTP');
+    console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
+  }
 } else {
   console.error('[EMAIL] ❌ Configuração incompleta!');
   console.error('[EMAIL] Configure MAILTRAP_API_TOKEN (recomendado) ou SMTP_USER/SMTP_PASS');
+  console.error('[EMAIL] Variáveis necessárias para SMTP:');
+  console.error('[EMAIL]   - SMTP_HOST (opcional, padrão: sandbox.smtp.mailtrap.io)');
+  console.error('[EMAIL]   - SMTP_PORT (opcional, padrão: 2525)');
+  console.error('[EMAIL]   - SMTP_USER (obrigatório)');
+  console.error('[EMAIL]   - SMTP_PASS (obrigatório)');
 }
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
@@ -153,44 +163,67 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 const sendMailViaSMTP = async (mailOptions) => {
   const nodemailer = require('nodemailer');
   const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-  const smtpPorts = process.env.SMTP_PORT 
-    ? [Number(process.env.SMTP_PORT)] 
-    : [587, 2525, 465, 25];
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 2525;
   
-  let lastError = null;
+  console.log(`[EMAIL] Configurando SMTP: ${smtpHost}:${smtpPort}`);
+  console.log(`[EMAIL] SMTP_USER: ${smtpUser ? '✅ definido' : '❌ não definido'}`);
+  console.log(`[EMAIL] SMTP_PASS: ${smtpPass ? '✅ definido' : '❌ não definido'}`);
   
-  for (const smtpPort of smtpPorts) {
-    console.log(`[EMAIL] Tentando SMTP: ${smtpHost}:${smtpPort}`);
-    
-    try {
-      const smtpTransporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        requireTLS: smtpPort === 587 || smtpPort === 2525 || smtpPort === 25,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-        connectionTimeout: 20000,
-        greetingTimeout: 20000,
-        socketTimeout: 20000,
-      });
-      
-      const result = await smtpTransporter.sendMail(mailOptions);
-      console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${smtpPort})`);
-      return result;
-    } catch (error) {
-      console.error(`[EMAIL] ❌ Erro SMTP na porta ${smtpPort}:`, error.message);
-      lastError = error;
-      continue;
-    }
+  if (!smtpUser || !smtpPass) {
+    throw new Error('SMTP_USER e SMTP_PASS são obrigatórios para envio via SMTP');
   }
   
-  throw lastError || new Error('Todas as portas SMTP falharam');
+  // Para Mailtrap sandbox, porta 2525 usa STARTTLS
+  const isSecure = smtpPort === 465;
+  const useStartTLS = smtpPort === 587 || smtpPort === 2525 || smtpPort === 25;
+  
+  console.log(`[EMAIL] Configuração: secure=${isSecure}, requireTLS=${useStartTLS}`);
+  
+  try {
+    const smtpTransporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: isSecure, // true para SSL/TLS (porta 465), false para STARTTLS
+      requireTLS: useStartTLS, // true para portas que usam STARTTLS
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false, // Aceita certificados auto-assinados (útil para sandbox)
+      },
+      connectionTimeout: 30000, // 30 segundos
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+      debug: process.env.NODE_ENV === 'development', // Ativa debug em desenvolvimento
+      logger: process.env.NODE_ENV === 'development', // Loga em desenvolvimento
+    });
+    
+    // Verificar conexão antes de enviar
+    console.log(`[EMAIL] Verificando conexão SMTP...`);
+    await smtpTransporter.verify();
+    console.log(`[EMAIL] ✅ Conexão SMTP verificada com sucesso`);
+    
+    console.log(`[EMAIL] Enviando email para: ${mailOptions.to}`);
+    const result = await smtpTransporter.sendMail(mailOptions);
+    console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${smtpPort})`);
+    console.log(`[EMAIL] Message ID: ${result.messageId || 'N/A'}`);
+    return result;
+  } catch (error) {
+    console.error(`[EMAIL] ❌ Erro SMTP na porta ${smtpPort}:`, error.message);
+    console.error(`[EMAIL] Erro completo:`, error);
+    
+    // Mensagens de erro mais específicas
+    if (error.code === 'EAUTH') {
+      throw new Error('Erro de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.');
+    } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+      throw new Error(`Não foi possível conectar ao servidor SMTP ${smtpHost}:${smtpPort}. Verifique a conexão de rede e as configurações.`);
+    } else if (error.code === 'ECONNRESET') {
+      throw new Error('Conexão SMTP foi resetada. Tente novamente.');
+    }
+    
+    throw error;
+  }
 };
 
 const transporter = {
