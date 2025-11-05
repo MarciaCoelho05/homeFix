@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = [
+  "npm ci --legacy-peer-deps",
+  "npx prisma generate --schema=./prisma/schema.prisma"
+]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "./start.sh"
+
