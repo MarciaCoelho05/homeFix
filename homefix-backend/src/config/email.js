@@ -12,7 +12,7 @@ const smtpPass = process.env.SMTP_PASS;
 
 const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
 
-if (mailtrapApiToken) {
+if (mailtrapApiToken && mailtrapApiToken.trim()) {
   console.log('[EMAIL] ✅ Usando Mailtrap API (recomendado para Railway)');
   console.log('[EMAIL]   API Token:', mailtrapApiToken ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   API Type:', mailtrapApiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)');
@@ -72,15 +72,11 @@ if (mailtrapApiToken) {
 }
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
-  if (!mailtrapApiToken) {
-    throw new Error('MAILTRAP_API_TOKEN não está configurado');
-  }
-
-  const token = String(mailtrapApiToken).trim();
-  const inboxId = String(mailtrapInboxId).trim();
+  const token = String(mailtrapApiToken || '').trim();
+  const inboxId = String(mailtrapInboxId || '2369461').trim();
 
   if (!token || token.length < 10) {
-    throw new Error('MAILTRAP_API_TOKEN inválido ou muito curto');
+    throw new Error('MAILTRAP_API_TOKEN não está configurado ou é inválido');
   }
 
   console.log(`[EMAIL] Enviando email via Mailtrap API`);
@@ -328,7 +324,7 @@ const sendMailViaSMTP = async (mailOptions) => {
 
 const transporter = {
   sendMail: async (mailOptions) => {
-    if (mailtrapApiToken) {
+    if (mailtrapApiToken && mailtrapApiToken.trim()) {
       try {
         return await sendMailViaMailtrapAPI(mailOptions);
       } catch (apiError) {
@@ -406,7 +402,7 @@ const transporter = {
     }
   },
   verify: (callback) => {
-    if (mailtrapApiToken) {
+    if (mailtrapApiToken && mailtrapApiToken.trim()) {
       console.log('[EMAIL] ✅ Mailtrap API configurado e pronto');
       callback(null, true);
     } else if (smtpUser && smtpPass) {
