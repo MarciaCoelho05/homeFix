@@ -11,10 +11,21 @@ if (mailtrapApiToken) {
   console.log('[EMAIL]   Inbox ID:', mailtrapInboxId);
 } else if (smtpUser && smtpPass) {
   console.log('[EMAIL] ✅ Usando SMTP');
-  console.log('[EMAIL]   SMTP Host:', process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io');
-  console.log('[EMAIL]   SMTP Port:', process.env.SMTP_PORT || '2525');
+  const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
+  const smtpPort = process.env.SMTP_PORT || (smtpHost.includes('gmail.com') ? '587' : '2525');
+  console.log('[EMAIL]   SMTP Host:', smtpHost);
+  console.log('[EMAIL]   SMTP Port:', smtpPort);
   console.log('[EMAIL]   SMTP User:', smtpUser ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   SMTP Pass:', smtpPass ? '✅ definido' : '❌ não definido');
+  
+  if (smtpHost.includes('gmail.com')) {
+    console.log('[EMAIL] ⚠️  Gmail detectado: Use App Password (não a senha normal)');
+    console.log('[EMAIL] 💡 Como obter App Password:');
+    console.log('[EMAIL]     1. Google Account → Segurança');
+    console.log('[EMAIL]     2. Ative Verificação em 2 etapas');
+    console.log('[EMAIL]     3. Senhas de app → Gere uma nova senha');
+  }
+  
   if (process.env.NODE_ENV === 'production') {
     console.log('[EMAIL] ⚠️  Em produção, Railway pode bloquear conexões SMTP');
     console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
@@ -24,9 +35,10 @@ if (mailtrapApiToken) {
   console.error('[EMAIL] Configure MAILTRAP_API_TOKEN (recomendado) ou SMTP_USER/SMTP_PASS');
   console.error('[EMAIL] Variáveis necessárias para SMTP:');
   console.error('[EMAIL]   - SMTP_HOST (opcional, padrão: sandbox.smtp.mailtrap.io)');
-  console.error('[EMAIL]   - SMTP_PORT (opcional, padrão: 2525)');
-  console.error('[EMAIL]   - SMTP_USER (obrigatório)');
-  console.error('[EMAIL]   - SMTP_PASS (obrigatório)');
+  console.error('[EMAIL]     Exemplos: smtp.gmail.com, sandbox.smtp.mailtrap.io');
+  console.error('[EMAIL]   - SMTP_PORT (opcional, padrão: 587 para Gmail, 2525 para Mailtrap)');
+  console.error('[EMAIL]   - SMTP_USER (obrigatório - email completo para Gmail)');
+  console.error('[EMAIL]   - SMTP_PASS (obrigatório - App Password para Gmail)');
 }
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
@@ -163,9 +175,9 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 const sendMailViaSMTP = async (mailOptions) => {
   const nodemailer = require('nodemailer');
   const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
-  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 2525;
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : null;
   
-  console.log(`[EMAIL] Configurando SMTP: ${smtpHost}:${smtpPort}`);
+  console.log(`[EMAIL] Configurando SMTP: ${smtpHost}`);
   console.log(`[EMAIL] SMTP_USER: ${smtpUser ? '✅ definido' : '❌ não definido'}`);
   console.log(`[EMAIL] SMTP_PASS: ${smtpPass ? '✅ definido' : '❌ não definido'}`);
   
@@ -173,25 +185,59 @@ const sendMailViaSMTP = async (mailOptions) => {
     throw new Error('SMTP_USER e SMTP_PASS são obrigatórios para envio via SMTP');
   }
   
-  // Para Mailtrap sandbox, porta 2525 usa STARTTLS
-  const isSecure = smtpPort === 465;
-  const useStartTLS = smtpPort === 587 || smtpPort === 2525 || smtpPort === 25;
+  // Detectar provedor e configurar automaticamente
+  const isGmail = smtpHost.includes('gmail.com');
+  const isMailtrap = smtpHost.includes('mailtrap.io');
   
-  console.log(`[EMAIL] Configuração: secure=${isSecure}, requireTLS=${useStartTLS}`);
+  let finalPort = smtpPort;
+  let isSecure = false;
+  let useStartTLS = false;
+  let tlsConfig = {};
+  
+  if (isGmail) {
+    // Configuração para Gmail
+    finalPort = smtpPort || 587; // Porta padrão do Gmail (STARTTLS)
+    isSecure = finalPort === 465; // Porta 465 usa SSL direto
+    useStartTLS = finalPort === 587; // Porta 587 usa STARTTLS
+    tlsConfig = {
+      rejectUnauthorized: true, // Gmail requer certificados válidos
+    };
+    console.log(`[EMAIL] 📧 Configuração Gmail detectada`);
+    console.log(`[EMAIL] ⚠️  IMPORTANTE: Use App Password do Gmail, não a senha normal!`);
+    console.log(`[EMAIL] 💡 Como obter: Google Account → Segurança → Verificação em 2 etapas → Senhas de app`);
+  } else if (isMailtrap) {
+    // Configuração para Mailtrap
+    finalPort = smtpPort || 2525;
+    isSecure = false;
+    useStartTLS = true;
+    tlsConfig = {
+      rejectUnauthorized: false, // Mailtrap sandbox aceita certificados auto-assinados
+    };
+    console.log(`[EMAIL] 📧 Configuração Mailtrap detectada`);
+  } else {
+    // Configuração genérica - tenta detectar pela porta
+    finalPort = smtpPort || 587;
+    isSecure = finalPort === 465;
+    useStartTLS = finalPort === 587 || finalPort === 25;
+    tlsConfig = {
+      rejectUnauthorized: false, // Aceita certificados auto-assinados por padrão
+    };
+    console.log(`[EMAIL] 📧 Configuração SMTP genérica`);
+  }
+  
+  console.log(`[EMAIL] Porta: ${finalPort}, secure=${isSecure}, requireTLS=${useStartTLS}`);
   
   try {
     const smtpTransporter = nodemailer.createTransport({
       host: smtpHost,
-      port: smtpPort,
+      port: finalPort,
       secure: isSecure, // true para SSL/TLS (porta 465), false para STARTTLS
       requireTLS: useStartTLS, // true para portas que usam STARTTLS
       auth: {
         user: smtpUser,
         pass: smtpPass,
       },
-      tls: {
-        rejectUnauthorized: false, // Aceita certificados auto-assinados (útil para sandbox)
-      },
+      tls: tlsConfig,
       connectionTimeout: 30000, // 30 segundos
       greetingTimeout: 30000,
       socketTimeout: 30000,
@@ -206,20 +252,26 @@ const sendMailViaSMTP = async (mailOptions) => {
     
     console.log(`[EMAIL] Enviando email para: ${mailOptions.to}`);
     const result = await smtpTransporter.sendMail(mailOptions);
-    console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${smtpPort})`);
+    console.log(`[EMAIL] ✅ Email enviado via SMTP (porta ${finalPort})`);
     console.log(`[EMAIL] Message ID: ${result.messageId || 'N/A'}`);
     return result;
   } catch (error) {
-    console.error(`[EMAIL] ❌ Erro SMTP na porta ${smtpPort}:`, error.message);
+    console.error(`[EMAIL] ❌ Erro SMTP na porta ${finalPort}:`, error.message);
     console.error(`[EMAIL] Erro completo:`, error);
     
     // Mensagens de erro mais específicas
     if (error.code === 'EAUTH') {
-      throw new Error('Erro de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.');
+      if (isGmail) {
+        throw new Error('Erro de autenticação Gmail. Verifique se está a usar App Password (não a senha normal). Para obter: Google Account → Segurança → Verificação em 2 etapas → Senhas de app');
+      } else {
+        throw new Error('Erro de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.');
+      }
     } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-      throw new Error(`Não foi possível conectar ao servidor SMTP ${smtpHost}:${smtpPort}. Verifique a conexão de rede e as configurações.`);
+      throw new Error(`Não foi possível conectar ao servidor SMTP ${smtpHost}:${finalPort}. Verifique a conexão de rede e as configurações.`);
     } else if (error.code === 'ECONNRESET') {
       throw new Error('Conexão SMTP foi resetada. Tente novamente.');
+    } else if (error.code === 'EENVELOPE') {
+      throw new Error('Erro no envelope do email. Verifique os endereços de destinatário.');
     }
     
     throw error;
