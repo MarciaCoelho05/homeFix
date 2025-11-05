@@ -36,13 +36,15 @@ try {
 
 const app = express();
 
+// Middleware CORS configurado para funcionar corretamente com todas as requisições
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const method = req.method;
   const path = req.path;
   
-  console.log(`[CORS-FIRST] ${method} ${path} - Origin: ${origin || 'none'} - Host: ${req.headers.host || 'none'}`);
+  console.log(`[CORS] ${method} ${path} - Origin: ${origin || 'none'} - Host: ${req.headers.host || 'none'}`);
   
+  // Configurar headers CORS para todas as requisições
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -55,25 +57,14 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
   
+  // Tratar requisições OPTIONS (preflight) imediatamente
   if (method === 'OPTIONS') {
-    console.log(`[CORS-FIRST] OPTIONS preflight - returning 204`);
+    console.log(`[CORS] OPTIONS preflight - returning 204 for ${path}`);
     return res.status(204).end();
   }
   
   next();
 });
-
-app.use(cors({
-  origin: (origin, callback) => {
-    console.log(`[CORS-PKG] Origin: ${origin || 'none'}`);
-    callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 204,
-}));
 
 app.get('/', (req, res) => {
   const origin = req.headers.origin;
@@ -446,6 +437,12 @@ app.use((req, res) => {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Tratar OPTIONS mesmo nas rotas 404
+  if (req.method === 'OPTIONS') {
+    console.log(`[404-HANDLER] OPTIONS preflight - returning 204 for ${req.path}`);
+    return res.status(204).end();
+  }
   
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'Rota API não encontrada' });
