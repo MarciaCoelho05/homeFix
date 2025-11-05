@@ -1,4 +1,9 @@
 ﻿const https = require('https');
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Garantir que o .env é carregado antes de ler as variáveis
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
 const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '0';
