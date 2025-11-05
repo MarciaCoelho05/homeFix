@@ -2,16 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY .npmrc ./
+COPY homefix-backend/package*.json ./
+COPY homefix-backend/.npmrc ./
 
-COPY prisma ./prisma/
+COPY homefix-backend/prisma ./prisma/
 
 RUN npm ci --ignore-scripts --legacy-peer-deps
 
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-COPY . .
+COPY homefix-backend/ .
 
 RUN chmod +x start.sh
 
