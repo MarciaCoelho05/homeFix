@@ -366,11 +366,26 @@ const Dashboard = () => {
             <strong>Data preferencial:</strong> {formatDate(request.scheduledAt)}
           </p>
           {request.owner && (
-            <p className="text-muted small mb-2">
-              <strong>Cliente:</strong>{' '}
-              {[request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ') ||
-                request.owner.email}
-            </p>
+            <div className="d-flex align-items-center gap-2 mb-2">
+              {(() => {
+                const ownerName = [request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ') || request.owner.email || 'Cliente';
+                const avatarUrl = request.owner.avatarUrl || 
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=ff7a00&color=fff&rounded=true&size=40`;
+                return (
+                  <>
+                    <img
+                      src={avatarUrl}
+                      alt={ownerName}
+                      className="rounded-circle border"
+                      style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                    />
+                    <p className="text-muted small mb-0">
+                      <strong>Cliente:</strong> {ownerName}
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
           )}
           {request.technician && (
             <p className="text-muted small mb-2">
