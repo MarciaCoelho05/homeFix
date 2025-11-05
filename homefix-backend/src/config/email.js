@@ -140,6 +140,15 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     };
     
     console.log(`[EMAIL] Usando header Api-Token (${apiType === 'sandbox' ? 'Sandbox' : 'Sending'} API)`);
+    console.log(`[EMAIL] Header Api-Token: ${token.substring(0, 10)}...${token.substring(token.length - 5)}`);
+    console.log(`[EMAIL] Headers completos:`, JSON.stringify(Object.keys(headers)));
+    console.log(`[EMAIL] Payload email:`, JSON.stringify({
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject,
+      text_length: emailData.text?.length || 0,
+      html_length: emailData.html?.length || 0
+    }));
     
     const options = {
       hostname: urlObj.hostname,
