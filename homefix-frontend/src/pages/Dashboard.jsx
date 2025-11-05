@@ -553,7 +553,7 @@ const Dashboard = () => {
                   Insira o preço do serviço antes de marcar como concluído. Este valor será usado para gerar a fatura.
                 </p>
                 <div className="mb-3">
-                  <label className="form-label">Preço (EUR)</label>
+                  <label className="form-label">Preço (EUR) <span className="text-muted small">- sem IVA</span></label>
                   <input
                     type="number"
                     step="0.01"
@@ -564,6 +564,7 @@ const Dashboard = () => {
                     placeholder="0.00"
                     autoFocus
                   />
+                  <small className="text-muted">O preço indicado é sem IVA. O IVA será calculado na fatura se necessário.</small>
                 </div>
               </div>
               <div className="modal-footer">
