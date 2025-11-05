@@ -82,10 +82,14 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 
   const apiType = mailtrapApiType || 'sandbox';
   console.log(`[EMAIL] Enviando email via Mailtrap API (${apiType})`);
-  console.log(`[EMAIL] Token length: ${token.length} caracteres`);
+  console.log(`[EMAIL] Token (primeiros 10): ${token.substring(0, 10)}... (${token.length} chars)`);
+  console.log(`[EMAIL] Token (últimos 5): ...${token.substring(token.length - 5)}`);
   
   if (apiType === 'sandbox') {
-    console.log(`[EMAIL] Inbox ID: ${inboxId}`);
+  console.log(`[EMAIL] Inbox ID: ${inboxId}`);
+    console.log(`[EMAIL] Configuração: MailtrapTransport com testInboxId=${inboxId}`);
+  } else {
+    console.log(`[EMAIL] Configuração: MailtrapTransport para Sending API`);
   }
 
   try {
@@ -95,7 +99,13 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 
     if (apiType === 'sandbox') {
       transportConfig.testInboxId = Number(inboxId);
+      console.log(`[EMAIL] Usando Sandbox com testInboxId=${transportConfig.testInboxId}`);
     }
+
+    console.log(`[EMAIL] Criando transport com configuração:`, JSON.stringify({
+      token: token.substring(0, 10) + '...',
+      testInboxId: transportConfig.testInboxId || 'N/A (Sending API)'
+    }));
 
     const transport = nodemailer.createTransport(
       MailtrapTransport(transportConfig)
@@ -131,6 +141,7 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
 
     if (apiType === 'sandbox') {
       mailtrapOptions.sandbox = true;
+      console.log(`[EMAIL] Opção sandbox=true definida nas opções de envio`);
     }
 
     if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
@@ -145,11 +156,11 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     
     return result;
   } catch (error) {
-    console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
-    
+          console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
+          
     if (error.message && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
-      console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
-      console.error('[EMAIL] 💡 Verifique no Mailtrap:');
+            console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
+            console.error('[EMAIL] 💡 Verifique no Mailtrap:');
       console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
       if (apiType === 'sandbox') {
         console.error('[EMAIL]    2. Vá para o seu Sandbox inbox (ID: ' + inboxId + ')');
@@ -160,7 +171,14 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
         console.error('[EMAIL]    3. Copie o token com permissão "Send emails"');
       }
       console.error('[EMAIL]    5. Configure no Railway: MAILTRAP_API_TOKEN=<token>');
-      console.error(`[EMAIL]    Token atual: ${token.substring(0, 10)}... (${token.length} chars)`);
+      console.error(`[EMAIL]    Token atual (primeiros 15): ${token.substring(0, 15)}...`);
+      console.error(`[EMAIL]    Token atual (últimos 10): ...${token.substring(token.length - 10)}`);
+      console.error(`[EMAIL]    Token length: ${token.length} caracteres`);
+      console.error(`[EMAIL]    Token esperado (32 chars): a53352d9f62dfea5564bae9305d46e22`);
+      if (token.length !== 32) {
+        console.error(`[EMAIL]    ⚠️  ATENÇÃO: Token tem ${token.length} caracteres, mas o esperado tem 32!`);
+        console.error(`[EMAIL]    ⚠️  Verifique se o token no Railway está correto`);
+      }
     }
     
     throw error;
@@ -181,12 +199,12 @@ const sendMailViaSMTP = async (mailOptions) => {
   
   const isGmail = smtpHost.includes('gmail.com');
   const isMailtrap = smtpHost.includes('mailtrap.io');
-
+  
   let finalPort = smtpPort;
   let isSecure = false;
   let useStartTLS = false;
   let tlsConfig = {};
-
+  
   if (isGmail) {
     finalPort = smtpPort || 587;
     isSecure = finalPort === 465;
@@ -344,7 +362,7 @@ const transporter = {
           console.error('[EMAIL]   4. Opcional: MAILTRAP_API_TYPE=sending (ou sandbox)');
           console.error('[EMAIL]   5. Reinicie o serviço no Railway');
         } else {
-          console.error('[EMAIL] 💡 Recomendação: Use MAILTRAP_API_TOKEN em vez de SMTP');
+        console.error('[EMAIL] 💡 Recomendação: Use MAILTRAP_API_TOKEN em vez de SMTP');
         }
         
         throw smtpError;
