@@ -53,7 +53,6 @@ const Chat = () => {
   useEffect(() => {
     const loadRequests = async () => {
       try {
-        // Admin vê todos os pedidos, técnico vê apenas os seus, cliente vê apenas os seus
         const endpoint = role === 'admin' ? '/requests' : role === 'technician' ? '/requests' : '/requests/mine';
         const res = await api.get(endpoint);
         const list = res.data || [];
@@ -63,7 +62,7 @@ const Chat = () => {
                 const technicianId = req.technicianId || req.technician?.id || null;
                 return String(technicianId) === String(userId);
               })
-            : list; // Admin vê todos, cliente vê apenas os seus (já filtrado pelo backend)
+                   : list;
         setRequests(visibleRequests);
         if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
           setRequestId(initialRequestId);

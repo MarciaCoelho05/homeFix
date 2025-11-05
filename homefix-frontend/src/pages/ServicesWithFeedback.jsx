@@ -215,7 +215,6 @@ const ServicesWithFeedback = () => {
         };
       })
       .filter((service) => {
-        // Excluir feedback específico: "Reparação de fuga" com descrição "Fuga no lavatório da cozinha"
         const title = (service.title || '').toLowerCase().trim();
         const description = (service.description || '').toLowerCase().trim();
         if (

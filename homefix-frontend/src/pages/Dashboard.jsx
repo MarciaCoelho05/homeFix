@@ -48,7 +48,6 @@ const Dashboard = () => {
   useEffect(() => {
     fetchRequests();
     
-    // Buscar perfil do usuário para obter technicianCategory
     if (role === 'technician' || role === 'admin') {
       api.get('/profile')
         .then(res => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Footer from './Footer';
-import SupportButton from './SupportButton';
+import FloatingChat from './FloatingChat';
 import api from '../services/api';
 import { useSearch } from '../contexts/SearchContext';
 
@@ -205,10 +205,10 @@ const Layout = ({ children }) => {
       <main className="container py-4">
         {children}
       </main>
-      <Footer />
-      {isAuthenticated && <SupportButton />}
-    </>
-  );
-};
-
-export default Layout;
+            <Footer />
+            {isAuthenticated && <FloatingChat />}
+          </>
+        );
+      };
+      
+      export default Layout;
