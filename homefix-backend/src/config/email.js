@@ -29,16 +29,6 @@ if (mailtrapApiToken && mailtrapApiToken.trim()) {
   console.log('[EMAIL]   SMTP User:', smtpUser ? '✅ definido' : '❌ não definido');
   console.log('[EMAIL]   SMTP Pass:', smtpPass ? '✅ definido' : '❌ não definido');
   
-  if (isRailway) {
-    console.error('[EMAIL] ⚠️  AVISO CRÍTICO: Railway bloqueia conexões SMTP!');
-    console.error('[EMAIL] 💡 CONFIGURE MAILTRAP_API_TOKEN NO RAILWAY:');
-    console.error('[EMAIL]     1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
-    console.error('[EMAIL]     2. Crie um token com permissão "Send emails"');
-    console.error('[EMAIL]     3. No Railway, adicione: MAILTRAP_API_TOKEN=<token>');
-    console.error('[EMAIL]     4. Opcional: MAILTRAP_API_TYPE=sending (ou sandbox)');
-    console.error('[EMAIL]     5. Reinicie o serviço');
-    console.error('[EMAIL]   SMTP falhará com timeout no Railway!');
-  }
   
   if (smtpHost.includes('gmail.com')) {
     console.log('[EMAIL] ⚠️  Gmail detectado: Use App Password (não a senha normal)');
@@ -52,24 +42,6 @@ if (mailtrapApiToken && mailtrapApiToken.trim()) {
     console.log('[EMAIL] ⚠️  Em produção, Railway pode bloquear conexões SMTP');
     console.log('[EMAIL]   Se tiver problemas, configure MAILTRAP_API_TOKEN');
   }
-} else {
-  console.error('[EMAIL] ❌ Configuração incompleta!');
-  console.error('[EMAIL] Configure MAILTRAP_API_TOKEN (recomendado) ou SMTP_USER/SMTP_PASS');
-  
-  if (isRailway) {
-    console.error('[EMAIL] ⚠️  NO RAILWAY: MAILTRAP_API_TOKEN é obrigatório!');
-    console.error('[EMAIL]   SMTP não funciona no Railway devido a bloqueios de rede');
-    console.error('[EMAIL]   Configure no Railway:');
-    console.error('[EMAIL]     - MAILTRAP_API_TOKEN=<token_do_mailtrap>');
-    console.error('[EMAIL]     - MAILTRAP_API_TYPE=sending (ou sandbox)');
-  }
-  
-  console.error('[EMAIL] Variáveis necessárias para SMTP:');
-  console.error('[EMAIL]   - SMTP_HOST (opcional, padrão: sandbox.smtp.mailtrap.io)');
-  console.error('[EMAIL]     Exemplos: smtp.gmail.com, sandbox.smtp.mailtrap.io');
-  console.error('[EMAIL]   - SMTP_PORT (opcional, padrão: 587 para Gmail, 2525 para Mailtrap)');
-  console.error('[EMAIL]   - SMTP_USER (obrigatório - email completo para Gmail)');
-  console.error('[EMAIL]   - SMTP_PASS (obrigatório - App Password para Gmail)');
 }
 
 const sendMailViaMailtrapAPI = async (mailOptions) => {
@@ -198,35 +170,12 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
           }
         } else {
           const error = new Error(`Mailtrap API error: ${res.statusCode} - ${responseData}`);
-          console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
-          console.error(`[EMAIL] Resposta completa: ${responseData}`);
-          
-          if (res.statusCode === 401) {
-            console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
-            if (apiType === 'sandbox') {
-              console.error('[EMAIL] 💡 Para Sandbox API, obtenha o Inbox Token:');
-              console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
-              console.error('[EMAIL]    2. Vá para o Sandbox inbox (ID: ' + inboxId + ')');
-              console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
-              console.error('[EMAIL]    4. Copie o "Inbox Token"');
-            } else {
-              console.error('[EMAIL] 💡 Para Sending API, verifique o token:');
-              console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
-              console.error('[EMAIL]    2. Verifique se o token tem permissão "Send emails"');
-              console.error('[EMAIL]    3. O token deve ser do tipo "API Token" (não Inbox Token)');
-              console.error('[EMAIL]    4. Configure no Railway: MAILTRAP_API_TOKEN=<token>');
-            }
-            console.error(`[EMAIL]    Token atual: ${token.substring(0, 15)}... (${token.length} chars)`);
-            console.error(`[EMAIL]    API Type: ${apiType}`);
-          }
-          
           reject(error);
         }
       });
     });
 
     req.on('error', (error) => {
-      console.error('[EMAIL] ❌ Erro na requisição Mailtrap API:', error);
       reject(error);
     });
 
@@ -318,9 +267,6 @@ const sendMailViaSMTP = async (mailOptions) => {
     console.log(`[EMAIL] Message ID: ${result.messageId || 'N/A'}`);
     return result;
   } catch (error) {
-    console.error(`[EMAIL] ❌ Erro SMTP na porta ${finalPort}:`, error.message);
-    console.error(`[EMAIL] Erro completo:`, error);
-    
     const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
     
     if (error.code === 'EAUTH') {
@@ -333,18 +279,7 @@ const sendMailViaSMTP = async (mailOptions) => {
       let errorMsg = `Não foi possível conectar ao servidor SMTP ${smtpHost}:${finalPort}. Verifique a conexão de rede e as configurações.`;
       
       if (isRailway) {
-        console.error('[EMAIL] ⚠️  Railway pode estar bloqueando conexões SMTP');
-        console.error('[EMAIL] 💡 SOLUÇÃO RECOMENDADA: Configure MAILTRAP_API_TOKEN');
-        console.error('[EMAIL]   1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
-        console.error('[EMAIL]   2. Crie um novo token ou use um existente');
-        console.error('[EMAIL]   3. Configure no Railway:');
-        console.error('[EMAIL]      - MAILTRAP_API_TOKEN=<seu_token>');
-        console.error('[EMAIL]      - MAILTRAP_API_TYPE=sending (ou sandbox para testes)');
-        console.error('[EMAIL]   4. Se usar sandbox, configure também:');
-        console.error('[EMAIL]      - MAILTRAP_INBOX_ID=<id_do_inbox>');
         errorMsg += '\n\n⚠️ Railway bloqueia conexões SMTP. Use MAILTRAP_API_TOKEN em vez de SMTP.';
-      } else {
-        console.error('[EMAIL] 💡 Recomendação: Use MAILTRAP_API_TOKEN em vez de SMTP');
       }
       
       throw new Error(errorMsg);
@@ -364,19 +299,6 @@ const transporter = {
       try {
         return await sendMailViaMailtrapAPI(mailOptions);
       } catch (apiError) {
-        console.error('[EMAIL] ❌ Erro ao enviar email via API:', apiError.message);
-        
-        if (apiError.message.includes('401') || apiError.message.includes('Unauthorized')) {
-          console.error('[EMAIL] ⚠️  Token Mailtrap inválido ou sem permissões');
-          console.error('[EMAIL] 💡 CORREÇÃO NECESSÁRIA:');
-          console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
-          console.error('[EMAIL]    2. Clique no seu token para editar');
-          console.error('[EMAIL]    3. Na secção "Permissions", encontre "API/SMTP"');
-          console.error('[EMAIL]    4. Marque a checkbox "Admin" ou "Viewer" para API/SMTP');
-          console.error('[EMAIL]    5. Guarde as alterações');
-          console.error('[EMAIL]    6. Ou configure SMTP como fallback (veja abaixo)');
-        }
-        
         if (smtpUser && smtpPass) {
           console.log('[EMAIL] 🔄 Tentando fallback para SMTP...');
           try {
@@ -384,42 +306,16 @@ const transporter = {
             console.log('[EMAIL] ✅ Email enviado via SMTP (fallback)');
             return result;
           } catch (smtpError) {
-            console.error('[EMAIL] ❌ Erro SMTP (fallback):', smtpError.message);
-            console.error('[EMAIL] ⚠️  Railway pode estar bloqueando conexões SMTP');
             throw new Error(`Falha na API (${apiError.message}) e no SMTP (${smtpError.message})`);
           }
         } else {
-          console.error('[EMAIL] ❌ SMTP não configurado para fallback');
-          console.error('[EMAIL] 💡 Configure SMTP_USER e SMTP_PASS no Railway para fallback automático');
           throw apiError;
         }
       }
     } else if (smtpUser && smtpPass) {
-      const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || false;
-      
-      if (isRailway) {
-        console.error('[EMAIL] ⚠️  AVISO: Usando SMTP no Railway (pode ter problemas)');
-        console.error('[EMAIL] 💡 RECOMENDAÇÃO: Configure MAILTRAP_API_TOKEN no Railway');
-        console.error('[EMAIL]   Railway frequentemente bloqueia conexões SMTP');
-      }
-      
       try {
         return await sendMailViaSMTP(mailOptions);
       } catch (smtpError) {
-        console.error('[EMAIL] ❌ Erro SMTP:', smtpError.message);
-        
-        if (isRailway) {
-          console.error('[EMAIL] ⚠️  Railway está bloqueando conexões SMTP');
-          console.error('[EMAIL] 💡 SOLUÇÃO OBRIGATÓRIA: Configure MAILTRAP_API_TOKEN');
-          console.error('[EMAIL]   1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
-          console.error('[EMAIL]   2. Crie um token com permissão "Send emails"');
-          console.error('[EMAIL]   3. Adicione no Railway: MAILTRAP_API_TOKEN=<token>');
-          console.error('[EMAIL]   4. Opcional: MAILTRAP_API_TYPE=sending (ou sandbox)');
-          console.error('[EMAIL]   5. Reinicie o serviço no Railway');
-        } else {
-        console.error('[EMAIL] 💡 Recomendação: Use MAILTRAP_API_TOKEN em vez de SMTP');
-        }
-        
         throw smtpError;
       }
     } else {
