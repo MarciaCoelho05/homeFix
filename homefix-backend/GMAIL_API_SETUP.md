@@ -21,7 +21,8 @@ Este projeto usa a Gmail API para envio de emails. Siga os passos abaixo para co
 3. Se solicitado, configure a tela de consentimento:
    - Escolha **External** (ou Internal se tiver Google Workspace)
    - Preencha os dados obrigatórios
-   - Adicione o seu email como usuário de teste
+   - **IMPORTANTE**: Adicione o seu email (`homefix593@gmail.com`) como usuário de teste na seção "Test users"
+   - Veja o guia detalhado em `FIX_ACCESS_DENIED.md` se encontrar erro "access_denied"
 4. Configure o tipo de aplicação:
    - Tipo: **Web application**
    - Nome: HomeFix Email Sender
@@ -71,6 +72,7 @@ Após configurar as variáveis, o sistema tentará usar a Gmail API automaticame
 ## Troubleshooting
 
 - **Erro `redirect_uri_mismatch`**: O redirect URI não está configurado no Google Cloud Console. Veja `FIX_REDIRECT_URI.md` para instruções detalhadas.
+- **Erro `access_denied` / "App não concluiu o processo de validação"**: A aplicação está em modo de teste e precisa adicionar usuários de teste. Veja `FIX_ACCESS_DENIED.md` para instruções detalhadas.
 - **Erro 401 / `invalid_grant`**: Refresh token inválido ou expirado. Obtenha um novo refresh token seguindo `GET_REFRESH_TOKEN.md`.
 - **Erro 403**: Permissões insuficientes. Verifique se o escopo `gmail.send` foi concedido.
 - **Erro 429**: Limite de taxa excedido. Aguarde alguns minutos antes de tentar novamente.

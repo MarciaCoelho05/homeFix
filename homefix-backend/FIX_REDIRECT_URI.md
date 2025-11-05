@@ -60,7 +60,11 @@ Acesso bloqueado: o pedido da app Homefiz é inválido
 2. Se necessário, **atualize a página** (F5)
 3. Configure as credenciais novamente (se necessário)
 4. Clique em **"Authorize APIs"**
-5. Agora deve funcionar! ✅
+
+**⚠️ Se você ver um erro "access_denied" ou "App não concluiu o processo de validação":**
+- Isso significa que o redirect URI foi corrigido, mas agora você precisa adicionar usuários de teste
+- Veja o guia `FIX_ACCESS_DENIED.md` para resolver isso
+- Após adicionar o usuário de teste, tente novamente
 
 ## 📝 Verificação Visual
 
