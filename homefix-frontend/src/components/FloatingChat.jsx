@@ -179,20 +179,58 @@ const FloatingChat = () => {
   const isAdmin = role === 'admin';
   const isAuthenticated = !!token;
 
-  // Debug
-  useEffect(() => {
-    console.log('[FloatingChat] Render check:', { role, isAdmin, isAuthenticated, shouldRender: !isAdmin });
-  }, [role, isAdmin, isAuthenticated]);
+  // Debug sempre
+  console.log('[FloatingChat] 🔍 Component render:', { 
+    role, 
+    isAdmin, 
+    isAuthenticated, 
+    shouldRender: !isAdmin,
+    hasToken: !!token,
+    userId: !!userId
+  });
   
   if (isAdmin) {
+    console.log('[FloatingChat] ❌ BLOCKED - Admin user');
     return null;
   }
+
+  console.log('[FloatingChat] ✅ RENDERING - Will show button');
+
+  // Verificar se o botão está no DOM após renderização
+  useEffect(() => {
+    const checkButton = () => {
+      const btn = document.getElementById('homefix-floating-chat-button');
+      if (btn) {
+        console.log('[FloatingChat] ✅ Button found in DOM!', btn);
+        const styles = window.getComputedStyle(btn);
+        console.log('[FloatingChat] Button computed styles:', {
+          display: styles.display,
+          visibility: styles.visibility,
+          opacity: styles.opacity,
+          zIndex: styles.zIndex,
+          position: styles.position,
+          bottom: styles.bottom,
+          right: styles.right,
+        });
+      } else {
+        console.error('[FloatingChat] ❌ Button NOT found in DOM!');
+      }
+    };
+    
+    // Verificar após um pequeno delay para garantir que o DOM foi atualizado
+    const timeout = setTimeout(checkButton, 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log('[FloatingChat] Button clicked!');
+          setIsOpen(!isOpen);
+        }}
         className="floating-chat-button"
+        id="homefix-floating-chat-button"
         style={{
           position: 'fixed',
           bottom: '20px',
