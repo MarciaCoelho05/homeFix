@@ -18,11 +18,12 @@ const FloatingChat = () => {
     if (typeof window !== 'undefined') {
       const checkToken = localStorage.getItem('token');
       const checkRole = localStorage.getItem('role');
+      const shouldRender = checkRole !== 'admin';
       console.log('[FloatingChat] Render check:', { 
         hasToken: !!checkToken, 
         role: checkRole, 
         userId: localStorage.getItem('userId'),
-        shouldRender: !!checkToken && checkRole !== 'admin'
+        shouldRender: shouldRender
       });
     }
   }, [token, role, userId]);
@@ -89,7 +90,7 @@ const FloatingChat = () => {
   }, []);
 
   useEffect(() => {
-    if (isOpen && isAuthenticated && isClientOrTechnician) {
+    if (isOpen && isAuthenticated && (role === 'technician' || role === 'user')) {
       let intervalId = null;
       
       const loadChat = async () => {
@@ -116,7 +117,7 @@ const FloatingChat = () => {
       setMessages([]);
       setSupportRequestId(null);
     }
-  }, [isOpen, isAuthenticated, isClientOrTechnician, getOrCreateSupportRequest, fetchMessages]);
+  }, [isOpen, isAuthenticated, role, getOrCreateSupportRequest, fetchMessages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -140,17 +141,18 @@ const FloatingChat = () => {
   };
 
   // Renderizar para todos, exceto admins
+  // Se role é null (não autenticado), também deve renderizar
   const shouldRender = role !== 'admin';
   
   if (!shouldRender) {
-    console.log('[FloatingChat] Admin user, not rendering');
+    console.log('[FloatingChat] Admin user, not rendering. Role:', role);
     return null;
   }
 
   const isAuthenticated = !!token;
-  const isClientOrTechnician = isAuthenticated && (role === null || role === 'technician' || role === 'user');
+  const isClientOrTechnician = isAuthenticated && (role === 'technician' || role === 'user' || role === null);
 
-  console.log('[FloatingChat] Rendering chat button - Token:', isAuthenticated, 'Role:', role);
+  console.log('[FloatingChat] ✅ Rendering chat button - Token:', isAuthenticated, 'Role:', role, 'ShouldRender:', shouldRender);
 
   return (
     <>
