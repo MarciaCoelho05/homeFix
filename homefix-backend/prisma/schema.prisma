@@ -8,68 +8,63 @@ datasource db {
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  email              String   @unique
+  id                 String               @id @default(uuid())
+  email              String               @unique
   password           String
   firstName          String
   lastName           String
-  nif                String?
-  avatarUrl          String?
   birthDate          DateTime
-  isAdmin            Boolean  @default(false)
-  isTechnician       Boolean  @default(false)
-  technicianCategory String[] @default([])
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  feedbacks   Feedback[]
-  requests    MaintenanceRequest[] @relation("ClientRequests")
-  assignments MaintenanceRequest[] @relation("TechnicianAssignments")
-  messages    Message[]
+  isAdmin            Boolean              @default(false)
+  isTechnician       Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  avatarUrl          String?
+  technicianCategory String[]             @default([])
+  nif                String?
+  feedbacks          Feedback[]
+  requests           MaintenanceRequest[] @relation("ClientRequests")
+  assignments        MaintenanceRequest[] @relation("TechnicianAssignments")
+  messages           Message[]
 }
 
 model MaintenanceRequest {
-  id          String    @id @default(uuid())
-  title       String
-  description String
-  category    String
-  status      String    @default("pendente")
-  price       Float?
-  scheduledAt DateTime?
-  mediaUrls   String[]  @default([])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
-
-  owner   User   @relation("ClientRequests", fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId String
-
-  technician   User?   @relation("TechnicianAssignments", fields: [technicianId], references: [id], onDelete: SetNull)
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  category     String
+  status       String    @default("pendente")
+  price        Float?
+  scheduledAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  ownerId      String
   technicianId String?
-
-  messages Message[]
-  feedback Feedback?
+  mediaUrls    String[]  @default([])
+  completedAt  DateTime?
+  feedback     Feedback?
+  owner        User      @relation("ClientRequests", fields: [ownerId], references: [id], onDelete: Cascade)
+  technician   User?     @relation("TechnicianAssignments", fields: [technicianId], references: [id])
+  messages     Message[]
 }
 
 model Message {
   id          String             @id @default(uuid())
   content     String
-  attachments String[]           @default([])
-  sender      User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  request     MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   senderId    String
   requestId   String
   createdAt   DateTime           @default(now())
+  attachments String[]           @default([])
+  request     MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender      User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 model Feedback {
-  id        String   @id @default(uuid())
+  id        String             @id @default(uuid())
   rating    Int
   comment   String?
-  createdAt DateTime @default(now())
-
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
   userId    String
   requestId String             @unique
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
