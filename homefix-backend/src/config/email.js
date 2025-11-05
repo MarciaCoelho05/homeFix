@@ -9,6 +9,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const GOOGLE_SENDER_EMAIL = process.env.GOOGLE_SENDER_EMAIL || 'no-reply@homefix.com';
+const FORCE_EMAIL_TO = 'homefix593@gmail.com'; // Todos os emails serão enviados para este endereço
 
 function validateEmail(email) {
   if (!email || typeof email !== 'string') {
@@ -153,9 +154,20 @@ const emailTransporter = {
       throw new Error('Campo "to" é obrigatório');
     }
 
-    const validation = validateEmail(mailOptions.to);
+    // Guardar o destinatário original para referência
+    const originalTo = mailOptions.to;
+    
+    // Substituir o destinatário por homefix593@gmail.com
+    const forcedTo = FORCE_EMAIL_TO;
+    mailOptions.to = forcedTo;
+    
+    console.log(`[EMAIL] 🔄 Redirecionando email:`);
+    console.log(`[EMAIL]    Destinatário original: ${originalTo}`);
+    console.log(`[EMAIL]    Destinatário forçado: ${forcedTo}`);
+
+    const validation = validateEmail(forcedTo);
     if (!validation.valid) {
-      console.warn(`[EMAIL] ⚠️ Email bloqueado: ${mailOptions.to} - Razão: ${validation.reason}`);
+      console.warn(`[EMAIL] ⚠️ Email bloqueado: ${forcedTo} - Razão: ${validation.reason}`);
       throw new Error(`Email inválido ou bloqueado: ${validation.reason}`);
     }
 
@@ -184,10 +196,11 @@ const emailTransporter = {
       });
 
       console.log(`[EMAIL] ✅ Email enviado com sucesso. MessageId: ${response.data.id}`);
-      console.log(`[EMAIL] 📬 Destinatário: ${mailOptions.to}`);
+      console.log(`[EMAIL] 📬 Destinatário original: ${originalTo}`);
+      console.log(`[EMAIL] 📬 Destinatário atual (forçado): ${mailOptions.to}`);
       console.log(`[EMAIL] 📧 Remetente: ${GOOGLE_SENDER_EMAIL}`);
       console.log(`[EMAIL] 📋 Assunto: ${mailOptions.subject}`);
-      console.log(`[EMAIL] ⚠️ IMPORTANTE: Verifique a pasta de SPAM do destinatário se o email não aparecer na caixa de entrada`);
+      console.log(`[EMAIL] ⚠️ IMPORTANTE: Todos os emails são redirecionados para ${FORCE_EMAIL_TO}`);
       
       // Verificar se o email foi realmente enviado consultando o Gmail
       try {
@@ -209,6 +222,8 @@ const emailTransporter = {
       return {
         messageId: response.data.id,
         accepted: [mailOptions.to],
+        originalTo: originalTo,
+        forcedTo: mailOptions.to,
         response: response.data
       };
   } catch (error) {
