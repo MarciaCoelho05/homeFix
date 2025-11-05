@@ -4,9 +4,10 @@ const path = require('path');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN || 'a53352d9f62dfea5564bae9305d46e22';
+const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN || '0f887a6977f46822e15a3980bf7a24f3';
 const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '2369461';
-const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sandbox';
+const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sending';
+const mailtrapDomain = process.env.MAILTRAP_DOMAIN || 'demomailtrap.co';
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 
@@ -87,7 +88,13 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     console.log(`[EMAIL] Inbox ID: ${inboxId}`);
   }
 
-  let fromEmail = mailOptions.from || 'no-reply@homefix.com';
+  let fromEmail = mailOptions.from;
+  if (!fromEmail) {
+    fromEmail = apiType === 'sending' 
+      ? `no-reply@${mailtrapDomain}`
+      : 'no-reply@homefix.com';
+  }
+  
   if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
     const match = fromEmail.match(/<(.+)>/);
     if (match) fromEmail = match[1];
@@ -181,14 +188,21 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
           
           if (res.statusCode === 401) {
             console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
-            console.error('[EMAIL] 💡 Para Sandbox API, obtenha o token correto:');
-            console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
-            console.error('[EMAIL]    2. Vá para o Sandbox inbox (ID: ' + inboxId + ')');
-            console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
-            console.error('[EMAIL]    4. Copie o "Inbox Token" (não o API Token geral)');
-            console.error('[EMAIL]    5. Configure no Railway: MAILTRAP_API_TOKEN=<inbox_token>');
+            if (apiType === 'sandbox') {
+              console.error('[EMAIL] 💡 Para Sandbox API, obtenha o Inbox Token:');
+              console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
+              console.error('[EMAIL]    2. Vá para o Sandbox inbox (ID: ' + inboxId + ')');
+              console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
+              console.error('[EMAIL]    4. Copie o "Inbox Token"');
+            } else {
+              console.error('[EMAIL] 💡 Para Sending API, verifique o token:');
+              console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io/api-tokens');
+              console.error('[EMAIL]    2. Verifique se o token tem permissão "Send emails"');
+              console.error('[EMAIL]    3. O token deve ser do tipo "API Token" (não Inbox Token)');
+              console.error('[EMAIL]    4. Configure no Railway: MAILTRAP_API_TOKEN=<token>');
+            }
             console.error(`[EMAIL]    Token atual: ${token.substring(0, 15)}... (${token.length} chars)`);
-            console.error(`[EMAIL]    Token esperado: 32 caracteres (a53352d9f62dfea5564bae9305d46e22)`);
+            console.error(`[EMAIL]    API Type: ${apiType}`);
           }
           
           reject(error);
