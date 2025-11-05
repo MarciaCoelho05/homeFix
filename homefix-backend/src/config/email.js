@@ -4,9 +4,9 @@ const path = require('path');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN;
-const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '0';
-const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sending';
+const mailtrapApiToken = process.env.MAILTRAP_API_TOKEN || 'a53352d9f62dfea5564bae9305d46e22';
+const mailtrapInboxId = process.env.MAILTRAP_INBOX_ID || '2369461';
+const mailtrapApiType = process.env.MAILTRAP_API_TYPE || 'sandbox';
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 
