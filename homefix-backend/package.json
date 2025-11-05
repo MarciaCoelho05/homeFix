@@ -21,7 +21,8 @@
     "worker": "node src/worker/emailWorker.js",
     "db:test": "node src/scripts/test-db.js",
     "db:init": "node src/scripts/init-db.js",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "db:restore": "node src/scripts/restore-db.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
