@@ -15,6 +15,13 @@ router.use((req, res, next) => {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    console.log(`[userRoutes] OPTIONS preflight - returning 204`);
+    return res.status(204).end();
+  }
   
   console.log(`[userRoutes] ${req.method} ${req.path}`);
   next();
