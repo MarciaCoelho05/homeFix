@@ -1,4 +1,5 @@
-﻿const https = require('https');
+﻿const nodemailer = require('nodemailer');
+const { MailtrapTransport } = require('mailtrap');
 const dotenv = require('dotenv');
 const path = require('path');
 
@@ -79,146 +80,94 @@ const sendMailViaMailtrapAPI = async (mailOptions) => {
     throw new Error('MAILTRAP_API_TOKEN não está configurado ou é inválido');
   }
 
-  console.log(`[EMAIL] Enviando email via Mailtrap API`);
-  console.log(`[EMAIL] Inbox ID: ${inboxId}`);
+  const apiType = mailtrapApiType || 'sandbox';
+  console.log(`[EMAIL] Enviando email via Mailtrap API (${apiType})`);
   console.log(`[EMAIL] Token length: ${token.length} caracteres`);
-
-  let fromEmail = mailOptions.from || 'no-reply@homefix.com';
-  if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
-    const match = fromEmail.match(/<(.+)>/);
-    if (match) fromEmail = match[1];
-  }
-
-  const emailData = {
-    from: {
-      email: fromEmail,
-      name: 'HomeFix'
-    },
-    to: Array.isArray(mailOptions.to) 
-      ? mailOptions.to.map(email => typeof email === 'string' ? { email } : email)
-      : [{ email: mailOptions.to }],
-    subject: mailOptions.subject || 'Sem assunto',
-    text: mailOptions.text || '',
-    html: mailOptions.html || mailOptions.text || ''
-  };
-
-  if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
-    emailData.attachments = mailOptions.attachments.map(att => ({
-      filename: att.filename || 'attachment',
-      content: att.content || att.path,
-      type: att.contentType || 'application/octet-stream',
-      disposition: 'attachment'
-    }));
-  }
-
-  const apiType = mailtrapApiType || 'sending';
-  const url = apiType === 'sandbox'
-    ? `https://sandbox.api.mailtrap.io/api/send/${inboxId}`
-    : `https://send.api.mailtrap.io/api/send`;
   
-  console.log(`[EMAIL] URL: ${url}`);
-  console.log(`[EMAIL] API Type: ${apiType === 'sending' ? 'Sending API (envio real)' : 'Sandbox API (teste)'}`);
-  console.log(`[EMAIL] Token completo (para debug): ${token}`);
-  console.log(`[EMAIL] Token length: ${token.length} caracteres`);
-  console.log(`[EMAIL] Inbox ID: ${inboxId}`);
+  if (apiType === 'sandbox') {
+    console.log(`[EMAIL] Inbox ID: ${inboxId}`);
+  }
 
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(emailData);
-    
-    const urlObj = new URL(url);
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Content-Length': Buffer.byteLength(data)
+  try {
+    const transportConfig = {
+      token: token
     };
-    
+
     if (apiType === 'sandbox') {
-      headers['Api-Token'] = token;
-      console.log(`[EMAIL] Usando header Api-Token para Sandbox API`);
-    } else {
-      headers['Authorization'] = `Bearer ${token}`;
-      console.log(`[EMAIL] Usando header Authorization para Sending API`);
+      transportConfig.testInboxId = Number(inboxId);
+    }
+
+    const transport = nodemailer.createTransport(
+      MailtrapTransport(transportConfig)
+    );
+
+    let fromEmail = mailOptions.from || 'no-reply@homefix.com';
+    let fromName = 'HomeFix';
+    
+    if (typeof fromEmail === 'string' && fromEmail.includes('<')) {
+      const match = fromEmail.match(/["']?([^"']+)["']?\s*<(.+)>/);
+      if (match) {
+        fromName = match[1].trim();
+        fromEmail = match[2].trim();
+      } else {
+        const emailMatch = fromEmail.match(/<(.+)>/);
+        if (emailMatch) {
+          fromEmail = emailMatch[1];
+        }
+      }
+    }
+
+    const mailtrapOptions = {
+      from: {
+        address: fromEmail,
+        name: fromName
+      },
+      to: mailOptions.to,
+      subject: mailOptions.subject || 'Sem assunto',
+      text: mailOptions.text || '',
+      html: mailOptions.html || mailOptions.text || '',
+      category: mailOptions.category || 'HomeFix'
+    };
+
+    if (apiType === 'sandbox') {
+      mailtrapOptions.sandbox = true;
+    }
+
+    if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
+      mailtrapOptions.attachments = mailOptions.attachments;
+    }
+
+    console.log(`[EMAIL] Enviando para: ${Array.isArray(mailtrapOptions.to) ? mailtrapOptions.to.join(', ') : mailtrapOptions.to}`);
+    const result = await transport.sendMail(mailtrapOptions);
+    
+    console.log(`[EMAIL] ✅ Email enviado via Mailtrap API`);
+    console.log(`[EMAIL] Message ID: ${result.messageId || 'N/A'}`);
+    
+    return result;
+  } catch (error) {
+    console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
+    
+    if (error.message && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+      console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
+      console.error('[EMAIL] 💡 Verifique no Mailtrap:');
+      console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
+      if (apiType === 'sandbox') {
+        console.error('[EMAIL]    2. Vá para o seu Sandbox inbox (ID: ' + inboxId + ')');
+        console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
+        console.error('[EMAIL]    4. Copie o "Inbox Token"');
+      } else {
+        console.error('[EMAIL]    2. Vá para "Settings" → "API Tokens"');
+        console.error('[EMAIL]    3. Copie o token com permissão "Send emails"');
+      }
+      console.error('[EMAIL]    5. Configure no Railway: MAILTRAP_API_TOKEN=<token>');
+      console.error(`[EMAIL]    Token atual: ${token.substring(0, 10)}... (${token.length} chars)`);
     }
     
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname,
-      method: 'POST',
-      headers: headers,
-      timeout: 30000
-    };
-
-    console.log(`[EMAIL] Header de autenticação: ${apiType === 'sandbox' ? 'Api-Token' : 'Authorization'}`);
-    console.log(`[EMAIL] Token completo: ${token}`);
-    console.log(`[EMAIL] Payload preview:`, JSON.stringify(emailData).substring(0, 100) + '...');
-
-    const req = https.request(options, (res) => {
-      let responseData = '';
-      
-      res.on('data', (chunk) => {
-        responseData += chunk;
-      });
-      
-      res.on('end', () => {
-        console.log(`[EMAIL] Resposta da API: Status ${res.statusCode}`);
-        console.log(`[EMAIL] Resposta: ${responseData.substring(0, 200)}`);
-        
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            const result = JSON.parse(responseData || '{}');
-            console.log(`[EMAIL] ✅ Email enviado via Mailtrap API: ${result.message_ids?.[0] || 'N/A'}`);
-            resolve({
-              messageId: result.message_ids?.[0] || 'mailtrap-' + Date.now(),
-              accepted: emailData.to.map(t => t.email),
-              response: result
-            });
-          } catch (parseError) {
-            console.log(`[EMAIL] ✅ Email enviado via Mailtrap API (resposta não-JSON)`);
-            resolve({
-              messageId: 'mailtrap-' + Date.now(),
-              accepted: emailData.to.map(t => t.email)
-            });
-          }
-        } else {
-          const error = new Error(`Mailtrap API error: ${res.statusCode} - ${responseData}`);
-          console.error('[EMAIL] ❌ Erro ao enviar email via Mailtrap API:', error.message);
-          
-          if (res.statusCode === 401) {
-            console.error('[EMAIL] ❌ ERRO 401: Token não autorizado!');
-            console.error('[EMAIL] 💡 Para Sandbox API, o token deve vir das configurações do inbox:');
-            console.error('[EMAIL]    1. Aceda ao Mailtrap: https://mailtrap.io');
-            console.error('[EMAIL]    2. Vá para o seu Sandbox inbox');
-            console.error('[EMAIL]    3. Clique em "Settings" → "Integrations" → "API"');
-            console.error('[EMAIL]    4. Copie o "Inbox Token" (não o API Token geral)');
-            console.error('[EMAIL]    5. Configure no Railway: MAILTRAP_API_TOKEN=<inbox_token>');
-            console.error(`[EMAIL]    Token atual: ${token} (${token.length} chars)`);
-            console.error(`[EMAIL]    Inbox ID: ${inboxId}`);
-            console.error(`[EMAIL]    Endpoint: ${url}`);
-          }
-          
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      console.error('[EMAIL] ❌ Erro na requisição Mailtrap API:', error);
-      reject(error);
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Timeout ao enviar email via Mailtrap API'));
-    });
-
-    req.write(data);
-    req.end();
-  });
+    throw error;
+  }
 };
 
 const sendMailViaSMTP = async (mailOptions) => {
-  const nodemailer = require('nodemailer');
   const smtpHost = process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io';
   const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : null;
   
