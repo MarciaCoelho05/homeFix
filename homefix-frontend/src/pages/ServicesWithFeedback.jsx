@@ -205,8 +205,10 @@ const ServicesWithFeedback = () => {
         const rating = feedback.rating || service.feedbackRating || 5;
         const comment = feedback.comment || service.feedbackComment || 'Servico avaliado com sucesso.';
         const author = feedback.user?.firstName || service.feedbackAuthor || 'Cliente HomeFix';
+        // Remover title e description para não exibir no feedback
+        const { title, description, ...serviceWithoutTitleDesc } = service;
         return {
-          ...service,
+          ...serviceWithoutTitleDesc,
           feedback,
           rating,
           comment,
