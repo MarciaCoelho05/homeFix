@@ -495,7 +495,7 @@ const Dashboard = () => {
                         <video
                           src={url}
                           controls
-                          style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px' }}
+                          style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: '8px' }}
                           className="border"
                         />
                       ) : (
@@ -503,8 +503,15 @@ const Dashboard = () => {
                           <img
                             src={url}
                             alt={`Anexo ${index + 1}`}
-                            style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }}
+                            style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: '8px', objectFit: 'cover', cursor: 'pointer' }}
                             className="border"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                              e.currentTarget.style.transition = 'transform 0.2s';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
                           />
                         </a>
                       )}

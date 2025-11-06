@@ -1076,7 +1076,7 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
       `Link para dashboard: ${dashboardLink}`,
       '',
       'Atenciosamente,',
-      'Equipa HomeFix'
+      'Equipa HOMEFIX - V2.0'
     ].join('\n');
 
     const template = getBaseEmailTemplate('#ff7a00');
@@ -1089,34 +1089,46 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
       </head>
       <body>
         <div class="container">
-          ${template.header('HomeFix - Data Alterada')}
+          ${template.header('HOMEFIX - V2.0 - Data Alterada')}
           <div class="content">
             <p>Olá <strong>${ownerName}</strong>,</p>
             
-            <div class="info-box">
-              <p style="margin: 0;"><strong>📅 Data do pedido alterada</strong></p>
-              <p style="margin: 8px 0 0 0;">O técnico ${technicianName} alterou a data do seu pedido.</p>
+            <div class="info-box" style="background-color: #fff7ed; border-left: 4px solid #ff7a00; padding: 16px; margin: 20px 0; border-radius: 8px;">
+              <p style="margin: 0; font-size: 18px; color: #ff7a00;"><strong>📅 Data do pedido alterada</strong></p>
+              <p style="margin: 8px 0 0 0; color: #374151;">O técnico <strong>${technicianName}</strong> alterou a data do seu pedido.</p>
             </div>
             
-            <div class="details">
-              <h3>${request.title}</h3>
-              <ul>
-                <li><strong>Categoria:</strong> ${request.category}</li>
-                <li><strong>Técnico:</strong> ${technicianName}</li>
-                <li><strong>Data anterior:</strong> ${oldDateStr}</li>
-                <li><strong>Nova data:</strong> <strong style="color: #ff7a00;">${newDateStr}</strong></li>
+            <div class="details" style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #ff7a00; margin-top: 0;">${request.title}</h3>
+              <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                  <span style="position: absolute; left: 0; color: #ff7a00;">▸</span>
+                  <strong>Categoria:</strong> ${request.category}
+                </li>
+                <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                  <span style="position: absolute; left: 0; color: #ff7a00;">▸</span>
+                  <strong>Técnico:</strong> ${technicianName}
+                </li>
+                <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                  <span style="position: absolute; left: 0; color: #ff7a00;">▸</span>
+                  <strong>Data anterior:</strong> <span style="color: #6b7280;">${oldDateStr}</span>
+                </li>
+                <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                  <span style="position: absolute; left: 0; color: #ff7a00;">▸</span>
+                  <strong>Nova data:</strong> <strong style="color: #ff7a00; font-size: 16px;">${newDateStr}</strong>
+                </li>
               </ul>
             </div>
             
-            <p>Se tiver alguma questão sobre esta alteração, pode contactar o técnico através do chat na aplicação.</p>
+            <p style="color: #374151; line-height: 1.6;">Se tiver alguma questão sobre esta alteração, pode contactar o técnico através do chat na aplicação.</p>
             
-            <p style="text-align: center;">
-              <a href="${chatLink}" class="button">Abrir Chat com Técnico</a>
-            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${chatLink}" class="button" style="display: inline-block; padding: 14px 28px; background-color: #ff7a00; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 0 10px;">💬 Abrir Chat com Técnico</a>
+            </div>
             
-            <p style="text-align: center;">
-              <a href="${dashboardLink}" style="color: #ff7a00;">Ver Meus Pedidos</a>
-            </p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${dashboardLink}" style="color: #ff7a00; text-decoration: none; font-weight: 600;">📋 Ver Meus Pedidos</a>
+            </div>
             
             ${template.footer()}
           </div>
@@ -1126,9 +1138,9 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
     `;
 
     await sendEmailSafe({
-      from: '"HomeFix" <no-reply@homefix.com>',
+      from: '"HOMEFIX - V2.0" <no-reply@homefix.com>',
       to: request.owner.email,
-      subject: `Data alterada: ${request.title} - HomeFix`,
+      subject: `📅 Data alterada: ${request.title} - HOMEFIX - V2.0`,
       text,
       html,
     });
