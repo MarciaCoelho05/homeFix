@@ -19,10 +19,24 @@ import ResetPassword from './pages/ResetPassword';
 import Schedule from './pages/Schedule';
 import ServicesWithFeedback from './pages/ServicesWithFeedback';
 
-const isAuthenticated = () => !!localStorage.getItem('token');
-const isAdmin = () => localStorage.getItem('role') === 'admin';
-
 const PrivateRoute = ({ children, adminOnly = false }) => {
+  // Check authentication inside component to avoid module-level localStorage access
+  const isAuthenticated = () => {
+    try {
+      return typeof window !== 'undefined' && !!localStorage.getItem('token');
+    } catch (e) {
+      return false;
+    }
+  };
+  
+  const isAdmin = () => {
+    try {
+      return typeof window !== 'undefined' && localStorage.getItem('role') === 'admin';
+    } catch (e) {
+      return false;
+    }
+  };
+  
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
   }
