@@ -136,8 +136,7 @@ async function login(req, res) {
     }
     
     if (!user || !user.id) {
-      console.log('[LOGIN] Usuário não encontrado ou sem ID para email:', normalizedEmail);
-      // Retornar 401 mas sem expor que o email existe
+      console.log('[LOGIN] Usuário não encontrado ou sem ID');
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
@@ -153,13 +152,11 @@ async function login(req, res) {
       console.log('[LOGIN] Senha corresponde:', passwordMatch ? 'sim' : 'não');
     } catch (compareError) {
       console.error('[LOGIN] Erro ao comparar senha:', compareError);
-      console.error('[LOGIN] Erro stack:', compareError.stack);
       return res.status(500).json({ message: 'Erro ao validar senha' });
     }
     
     if (!passwordMatch) {
       console.log('[LOGIN] Senha incorreta para usuário:', normalizedEmail);
-      // Retornar 401 mas sem expor que o email existe
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
