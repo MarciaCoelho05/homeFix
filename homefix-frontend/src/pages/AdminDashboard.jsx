@@ -110,6 +110,7 @@ const AdminDashboard = () => {
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [terminatingRequestId, setTerminatingRequestId] = useState('');
+  const [completingRequestId, setCompletingRequestId] = useState('');
 
   const [userSort, setUserSort] = useState({ key: 'createdAt', direction: 'desc' });
   const [requestSort, setRequestSort] = useState({ key: 'createdAt', direction: 'desc' });
@@ -258,6 +259,47 @@ const AdminDashboard = () => {
     const value = url.toLowerCase();
     return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].some((ext) => value.endsWith(ext));
   };
+
+  const handleCompleteSupport = useCallback(async () => {
+    if (!selectedRequestId || !selectedRequest) return;
+    
+    const normalizedStatus = (selectedRequest.status || '').toLowerCase().replace(/_/g, '');
+    const isCompleted = normalizedStatus === 'concluido' || normalizedStatus === 'completed';
+    
+    if (isCompleted) {
+      setError('Este pedido já está concluído.');
+      return;
+    }
+    
+    if (!window.confirm('Tem a certeza que deseja concluir este pedido de suporte?')) {
+      return;
+    }
+    
+    setCompletingRequestId(selectedRequestId);
+    setStatus('');
+    setError('');
+    
+    try {
+      await api.put(`/requests/${selectedRequestId}`, {
+        title: selectedRequest.title,
+        description: selectedRequest.description,
+        category: selectedRequest.category,
+        price: selectedRequest.price,
+        status: 'concluido',
+        scheduledAt: selectedRequest.scheduledAt,
+        mediaUrls: selectedRequest.mediaUrls || [],
+        completedAt: new Date().toISOString(),
+      });
+      setStatus('Pedido de suporte concluído com sucesso.');
+      await fetchMessages(selectedRequestId);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao concluir pedido de suporte:', err);
+      setError(err?.response?.data?.message || 'Não foi possível concluir o pedido de suporte.');
+    } finally {
+      setCompletingRequestId('');
+    }
+  }, [selectedRequestId, selectedRequest, fetchMessages, loadData]);
 
   const handleTerminateSupportRequest = useCallback(async () => {
     if (!selectedRequestId || !selectedRequest) return;
@@ -943,7 +985,42 @@ const AdminDashboard = () => {
                       const normalizedStatus = (selectedRequest.status || '').toLowerCase().replace(/_/g, '');
                       const isCompleted = normalizedStatus === 'concluido' || normalizedStatus === 'completed';
                       
-                      return isCompleted ? (
+                      return !isCompleted ? (
+                        <div
+                          style={{
+                            borderTop: '1px solid #e5e7eb',
+                            paddingTop: '16px',
+                            paddingBottom: '16px',
+                            marginBottom: '16px',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="btn w-100"
+                            onClick={handleCompleteSupport}
+                            disabled={completingRequestId === selectedRequestId}
+                            style={{
+                              padding: '12px 20px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: completingRequestId === selectedRequestId ? 'not-allowed' : 'pointer',
+                              fontWeight: 600,
+                              fontSize: '14px',
+                              opacity: completingRequestId === selectedRequestId ? 0.6 : 1,
+                              transition: 'opacity 0.2s',
+                            }}
+                          >
+                            {completingRequestId === selectedRequestId
+                              ? 'A concluir...'
+                              : 'Concluir Suporte'}
+                          </button>
+                          <p className="small text-muted mt-2 mb-0 text-center">
+                            Marque este pedido como concluído quando o suporte estiver finalizado.
+                          </p>
+                        </div>
+                      ) : (
                         <div
                           style={{
                             borderTop: '1px solid #e5e7eb',
@@ -978,7 +1055,7 @@ const AdminDashboard = () => {
                             Este pedido está concluído. Pode terminá-lo para removê-lo da lista.
                           </p>
                         </div>
-                      ) : null;
+                      );
                     })()}
 
                     <form

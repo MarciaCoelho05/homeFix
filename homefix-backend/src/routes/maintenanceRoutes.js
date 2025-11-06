@@ -225,7 +225,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
 });
 
 router.put('/:id', protect, async (req, res) => {
-  const { title, description, category, price, status, techId, technicianId, scheduledAt, mediaUrls } = req.body;
+  const { title, description, category, price, status, techId, technicianId, scheduledAt, mediaUrls, completedAt } = req.body;
   const existing = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
     include: {
@@ -258,6 +258,12 @@ router.put('/:id', protect, async (req, res) => {
       ? mediaUrls.filter(Boolean).map((url) => url.toString())
       : [mediaUrls.toString()];
 
+  // Verificar se o status está sendo alterado para concluído
+  const normalizedStatus = (status || '').toLowerCase().replace(/_/g, '');
+  const isBeingCompleted = normalizedStatus === 'concluido' || normalizedStatus === 'completed';
+  const wasCompleted = (existing.status || '').toLowerCase().replace(/_/g, '') === 'concluido' || 
+                       (existing.status || '').toLowerCase().replace(/_/g, '') === 'completed';
+
   const data = {
     title,
     description,
@@ -267,6 +273,14 @@ router.put('/:id', protect, async (req, res) => {
     scheduledAt: newScheduledAt,
     mediaUrls: normalizedMedia,
   };
+
+  // Se está sendo marcado como concluído e ainda não estava concluído, definir completedAt
+  if (isBeingCompleted && !wasCompleted) {
+    data.completedAt = completedAt ? new Date(completedAt) : new Date();
+  } else if (completedAt !== undefined) {
+    // Se completedAt foi explicitamente fornecido, usar esse valor
+    data.completedAt = completedAt ? new Date(completedAt) : null;
+  }
 
   if (isAdmin) {
     data.technicianId = technicianId || techId || null;
