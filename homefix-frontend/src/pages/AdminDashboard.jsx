@@ -142,12 +142,13 @@ const AdminDashboard = () => {
           try {
             const messagesRes = await api.get(`/messages/${req.id}`);
             const messages = messagesRes.data || [];
-            // Filtrar apenas mensagens enviadas para o suporte (não do admin)
+            // Contar todas as mensagens (incluindo do admin) mas apenas mostrar pedidos com mensagens de suporte
             const supportMessages = messages.filter(msg => !msg.sender?.isAdmin);
+            const hasSupportMessages = supportMessages.length > 0;
             return {
               ...req,
-              messageCount: supportMessages.length,
-              hasMessages: supportMessages.length > 0,
+              messageCount: messages.length,
+              hasMessages: hasSupportMessages,
               supportMessages: supportMessages,
             };
           } catch {
@@ -179,9 +180,8 @@ const AdminDashboard = () => {
     try {
       const res = await api.get(`/messages/${requestId}`);
       const allMessages = res.data || [];
-      // Filtrar apenas mensagens enviadas para o suporte (não do admin)
-      const supportMessages = allMessages.filter(msg => !msg.sender?.isAdmin);
-      setMessages(supportMessages);
+      // Mostrar todas as mensagens para parecer uma conversa completa
+      setMessages(allMessages);
     } catch (err) {
       console.error('Erro ao carregar mensagens:', err);
       setMessages([]);
