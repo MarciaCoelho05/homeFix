@@ -102,12 +102,14 @@ const AdminDashboard = () => {
   
   // Chat de suporte
   const [selectedRequestId, setSelectedRequestId] = useState('');
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [messages, setMessages] = useState([]);
   const [chatContent, setChatContent] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatRequests, setChatRequests] = useState([]);
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [terminatingRequestId, setTerminatingRequestId] = useState('');
 
   const [userSort, setUserSort] = useState({ key: 'createdAt', direction: 'desc' });
   const [requestSort, setRequestSort] = useState({ key: 'createdAt', direction: 'desc' });
@@ -174,17 +176,23 @@ const AdminDashboard = () => {
   const fetchMessages = useCallback(async (requestId) => {
     if (!requestId) {
       setMessages([]);
+      setSelectedRequest(null);
       return;
     }
     setChatLoading(true);
     try {
-      const res = await api.get(`/messages/${requestId}`);
-      const allMessages = res.data || [];
+      const [messagesRes, requestRes] = await Promise.all([
+        api.get(`/messages/${requestId}`),
+        api.get(`/requests/${requestId}`)
+      ]);
+      const allMessages = messagesRes.data || [];
       // Mostrar todas as mensagens para parecer uma conversa completa
       setMessages(allMessages);
+      setSelectedRequest(requestRes.data);
     } catch (err) {
       console.error('Erro ao carregar mensagens:', err);
       setMessages([]);
+      setSelectedRequest(null);
     } finally {
       setChatLoading(false);
     }
@@ -250,6 +258,40 @@ const AdminDashboard = () => {
     const value = url.toLowerCase();
     return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].some((ext) => value.endsWith(ext));
   };
+
+  const handleTerminateSupportRequest = useCallback(async () => {
+    if (!selectedRequestId || !selectedRequest) return;
+    
+    const normalizedStatus = (selectedRequest.status || '').toLowerCase().replace(/_/g, '');
+    const isCompleted = normalizedStatus === 'concluido' || normalizedStatus === 'completed';
+    
+    if (!isCompleted) {
+      setError('Apenas pedidos concluídos podem ser terminados.');
+      return;
+    }
+    
+    if (!window.confirm('Tem a certeza que deseja terminar este pedido de suporte? Esta ação é irreversível e eliminará o pedido e todas as mensagens associadas.')) {
+      return;
+    }
+    
+    setTerminatingRequestId(selectedRequestId);
+    setStatus('');
+    setError('');
+    
+    try {
+      await api.delete(`/requests/${selectedRequestId}`);
+      setStatus('Pedido de suporte terminado com sucesso.');
+      setSelectedRequestId('');
+      setSelectedRequest(null);
+      setMessages([]);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao terminar pedido de suporte:', err);
+      setError(err?.response?.data?.message || 'Não foi possível terminar o pedido de suporte.');
+    } finally {
+      setTerminatingRequestId('');
+    }
+  }, [selectedRequestId, selectedRequest, loadData]);
 
   useEffect(() => {
     loadData();
@@ -896,6 +938,48 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
+
+                    {selectedRequest && (() => {
+                      const normalizedStatus = (selectedRequest.status || '').toLowerCase().replace(/_/g, '');
+                      const isCompleted = normalizedStatus === 'concluido' || normalizedStatus === 'completed';
+                      
+                      return isCompleted ? (
+                        <div
+                          style={{
+                            borderTop: '1px solid #e5e7eb',
+                            paddingTop: '16px',
+                            paddingBottom: '16px',
+                            marginBottom: '16px',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="btn w-100"
+                            onClick={handleTerminateSupportRequest}
+                            disabled={terminatingRequestId === selectedRequestId}
+                            style={{
+                              padding: '12px 20px',
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: terminatingRequestId === selectedRequestId ? 'not-allowed' : 'pointer',
+                              fontWeight: 600,
+                              fontSize: '14px',
+                              opacity: terminatingRequestId === selectedRequestId ? 0.6 : 1,
+                              transition: 'opacity 0.2s',
+                            }}
+                          >
+                            {terminatingRequestId === selectedRequestId
+                              ? 'A terminar...'
+                              : 'Terminar pedido de suporte'}
+                          </button>
+                          <p className="small text-muted mt-2 mb-0 text-center">
+                            Este pedido está concluído. Pode terminá-lo para removê-lo da lista.
+                          </p>
+                        </div>
+                      ) : null;
+                    })()}
 
                     <form
                       onSubmit={(e) => {
