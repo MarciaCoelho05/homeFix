@@ -801,13 +801,14 @@ const AdminDashboard = () => {
                               : msg.sender?.isTechnician
                                 ? 'Técnico'
                                 : 'Cliente';
-                            // Mensagens de suporte sempre à esquerda (enviadas por clientes/técnicos)
+                            const isAdminMessage = msg.sender?.isAdmin;
+                            // Mensagens do admin à direita, clientes/técnicos à esquerda
                             return (
                               <div
                                 key={msg.id}
                                 style={{
                                   display: 'flex',
-                                  justifyContent: 'flex-start',
+                                  justifyContent: isAdminMessage ? 'flex-end' : 'flex-start',
                                 }}
                               >
                                 <div
@@ -815,9 +816,18 @@ const AdminDashboard = () => {
                                     maxWidth: '75%',
                                     padding: '10px 14px',
                                     borderRadius: '12px',
-                                    backgroundColor: msg.sender?.isTechnician ? '#e3f2fd' : '#f3f4f6',
-                                    borderLeft: msg.sender?.isTechnician ? '3px solid #2196f3' : '3px solid #9e9e9e',
-                                    color: '#1f2937',
+                                    backgroundColor: isAdminMessage 
+                                      ? '#ff7a00' 
+                                      : msg.sender?.isTechnician 
+                                        ? '#e3f2fd' 
+                                        : '#f3f4f6',
+                                    borderLeft: isAdminMessage 
+                                      ? 'none' 
+                                      : msg.sender?.isTechnician 
+                                        ? '3px solid #2196f3' 
+                                        : '3px solid #9e9e9e',
+                                    borderRight: isAdminMessage ? '3px solid #ff7a00' : 'none',
+                                    color: isAdminMessage ? 'white' : '#1f2937',
                                     fontSize: '14px',
                                     lineHeight: '1.4',
                                     position: 'relative',
@@ -828,7 +838,11 @@ const AdminDashboard = () => {
                                       fontSize: '12px',
                                       fontWeight: 600,
                                       marginBottom: '4px',
-                                      color: msg.sender?.isTechnician ? '#1976d2' : '#374151',
+                                      color: isAdminMessage 
+                                        ? 'white' 
+                                        : msg.sender?.isTechnician 
+                                          ? '#1976d2' 
+                                          : '#374151',
                                     }}
                                   >
                                     {senderLabel} ({senderRole})
