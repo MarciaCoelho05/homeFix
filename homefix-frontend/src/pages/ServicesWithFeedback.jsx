@@ -204,7 +204,7 @@ const ServicesWithFeedback = () => {
         const feedback = service.feedback || service.latestFeedback || {};
         const rating = feedback.rating || service.feedbackRating || 5;
         const comment = feedback.comment || service.feedbackComment || 'Servico avaliado com sucesso.';
-        const author = feedback.user?.firstName || service.feedbackAuthor || 'Cliente HomeFix';
+        const author = feedback.user?.firstName || service.feedbackAuthor || 'Cliente HOMEFIX';
         const { title, description, ...serviceWithoutTitleDesc } = service;
         return {
           ...serviceWithoutTitleDesc,
@@ -328,7 +328,7 @@ const ServicesWithFeedback = () => {
             <div className="flex-grow-1">
               <h2 className="h4 fw-semibold mb-2">Técnicos validados</h2>
               <p className="text-muted mb-0">
-                Cada prestador é verificado pela equipa HomeFix. Garantimos orçamentos transparentes e acompanhamento até à conclusão do trabalho.
+                Cada prestador é verificado pela equipa HOMEFIX - V2.0. Garantimos orçamentos transparentes e acompanhamento até à conclusão do trabalho.
               </p>
             </div>
           </div>

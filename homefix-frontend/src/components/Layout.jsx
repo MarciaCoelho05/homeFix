@@ -112,7 +112,7 @@ const Layout = ({ children }) => {
       <nav className="navbar navbar-expand-lg homefix-navbar shadow-sm">
         <div className="container">
           <Link className="navbar-brand fw-bold" to={brandLink}>
-            HomeFix
+            HOMEFIX - V2.0
             {isAuthenticated && userName && (
               <span className="ms-2 fw-normal text-muted" style={{ fontSize: '0.9rem' }}>
                 | Olá, {userName}
