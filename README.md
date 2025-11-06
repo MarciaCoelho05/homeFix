@@ -251,6 +251,17 @@ homefix-frontend/
 - **Storage**: Cloudinary (imagens/vídeos)
 - **Email**: Gmail API
 
+### ⚙️ Configuração do Vercel (Frontend)
+
+**IMPORTANTE**: Como este é um monorepo, é necessário configurar o **Root Directory** no Vercel:
+
+1. Acesse o projeto no [Vercel Dashboard](https://vercel.com/dashboard)
+2. Vá em **Settings** → **General** → **Build and Deployment**
+3. Na secção **Root Directory**, defina: `homefix-frontend`
+4. Clique em **Save**
+
+Sem esta configuração, o Vercel não conseguirá encontrar os ficheiros do frontend e o build falhará.
+
 ### Variáveis de Ambiente Necessárias
 
 **Backend:**
