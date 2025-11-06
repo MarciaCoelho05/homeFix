@@ -255,7 +255,7 @@ const FloatingChat = () => {
             position: 'fixed',
             bottom: '90px',
             right: '20px',
-            width: 'calc(100% - 40px)',
+            width: 'calc(100% - 20px)',
             maxWidth: '380px',
             height: '500px',
             maxHeight: 'calc(100vh - 120px)',

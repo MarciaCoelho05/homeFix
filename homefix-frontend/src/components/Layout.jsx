@@ -124,7 +124,7 @@ const Layout = ({ children }) => {
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             {!isAdmin && location.pathname === '/services' && (
-              <div className="mx-auto my-2 my-lg-0" style={{ maxWidth: '400px', width: '100%' }}>
+              <div className="mx-auto my-2 my-lg-0 w-100" style={{ maxWidth: '400px' }}>
                 <input
                   type="text"
                   className="form-control"
@@ -202,8 +202,10 @@ const Layout = ({ children }) => {
         </div>
       </nav>
 
-      <main className="container py-4">
-        {children}
+      <main className="container-fluid px-3 px-md-4 px-lg-5 py-4" style={{ maxWidth: '100%', width: '100%' }}>
+        <div className="container">
+          {children}
+        </div>
       </main>
       <Footer />
       <FloatingChat />

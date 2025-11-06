@@ -495,7 +495,7 @@ const Dashboard = () => {
                         <video
                           src={url}
                           controls
-                          style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: '8px' }}
+                          style={{ width: '100%', maxWidth: '350px', maxHeight: '350px', borderRadius: '8px' }}
                           className="border"
                         />
                       ) : (
@@ -503,7 +503,7 @@ const Dashboard = () => {
                           <img
                             src={url}
                             alt={`Anexo ${index + 1}`}
-                            style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: '8px', objectFit: 'cover', cursor: 'pointer' }}
+                            style={{ width: '100%', maxWidth: '350px', maxHeight: '350px', borderRadius: '8px', objectFit: 'cover', cursor: 'pointer' }}
                             className="border"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.transform = 'scale(1.05)';
@@ -756,7 +756,8 @@ const Dashboard = () => {
             <>
               <section className="mb-5">
                 <h2 className="h5 fw-semibold mb-4">Calendário de pedidos</h2>
-                <div style={{ maxWidth: '50%', margin: '0 auto' }}>
+                <div className="row">
+                  <div className="col-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
                   <TechnicianCalendar
                     requests={assignedRequests}
                     onDateSelect={(dayInfo) => {
@@ -770,6 +771,7 @@ const Dashboard = () => {
                       handleOpenDateModal(request);
                     }}
                   />
+                  </div>
                 </div>
               </section>
 
