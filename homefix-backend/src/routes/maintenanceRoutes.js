@@ -228,7 +228,10 @@ router.put('/:id', protect, async (req, res) => {
   const { title, description, category, price, status, techId, technicianId, scheduledAt, mediaUrls } = req.body;
   const existing = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
-    select: { ownerId: true, technicianId: true },
+    include: {
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+    },
   });
 
   if (!existing) {
@@ -243,6 +246,12 @@ router.put('/:id', protect, async (req, res) => {
     return res.status(403).json({ message: 'Acesso negado' });
   }
 
+  // Verificar se a data foi alterada
+  const oldScheduledAt = existing.scheduledAt;
+  const newScheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+  const dateChanged = oldScheduledAt?.getTime() !== newScheduledAt?.getTime();
+  const isTechnicianChangingDate = isAssignedTech && dateChanged && scheduledAt;
+
   const normalizedMedia = mediaUrls === undefined
     ? undefined
     : Array.isArray(mediaUrls)
@@ -255,7 +264,7 @@ router.put('/:id', protect, async (req, res) => {
     category,
     price,
     status,
-    scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+    scheduledAt: newScheduledAt,
     mediaUrls: normalizedMedia,
   };
 
@@ -266,7 +275,19 @@ router.put('/:id', protect, async (req, res) => {
   const updated = await prisma.maintenanceRequest.update({
     where: { id: req.params.id },
     data,
+    include: {
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+    },
   });
+
+  // Se o técnico alterou a data, notificar o cliente
+  if (isTechnicianChangingDate && updated.owner) {
+    notifyClientAboutDateChange(updated, oldScheduledAt, newScheduledAt).catch((err) => {
+      console.error('Erro ao enviar email de alteração de data:', err);
+    });
+  }
+
   res.json(updated);
 });
 
@@ -1019,6 +1040,102 @@ async function notifyTechniciansAboutRequest(request, ownerId) {
     console.error('❌ Erro ao enviar email de pedido:', error);
     console.error('Detalhes do erro:', error.message);
     console.error('Stack:', error.stack);
+  }
+}
+
+async function notifyClientAboutDateChange(request, oldDate, newDate) {
+  try {
+    if (!request.owner || !request.owner.email) {
+      console.log('Cliente sem email, não é possível enviar notificação de alteração de data');
+      return;
+    }
+
+    const ownerName = [request.owner.firstName, request.owner.lastName].filter(Boolean).join(' ').trim() || 'Cliente';
+    const technicianName = request.technician
+      ? [request.technician.firstName, request.technician.lastName].filter(Boolean).join(' ').trim() || request.technician.email
+      : 'Técnico';
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const chatLink = `${appUrl}/chat?requestId=${request.id}`;
+    const dashboardLink = `${appUrl}/dashboard`;
+
+    const oldDateStr = oldDate ? new Date(oldDate).toLocaleString('pt-PT') : 'Não definida';
+    const newDateStr = newDate ? new Date(newDate).toLocaleString('pt-PT') : 'Não definida';
+
+    const text = [
+      `Olá ${ownerName},`,
+      '',
+      `O técnico ${technicianName} alterou a data do seu pedido "${request.title}".`,
+      '',
+      `Data anterior: ${oldDateStr}`,
+      `Nova data: ${newDateStr}`,
+      '',
+      'Se tiver alguma questão sobre esta alteração, pode contactar o técnico através do chat na aplicação.',
+      '',
+      `Link para chat: ${chatLink}`,
+      `Link para dashboard: ${dashboardLink}`,
+      '',
+      'Atenciosamente,',
+      'Equipa HomeFix'
+    ].join('\n');
+
+    const template = getBaseEmailTemplate('#ff7a00');
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>${template.styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          ${template.header('HomeFix - Data Alterada')}
+          <div class="content">
+            <p>Olá <strong>${ownerName}</strong>,</p>
+            
+            <div class="info-box">
+              <p style="margin: 0;"><strong>📅 Data do pedido alterada</strong></p>
+              <p style="margin: 8px 0 0 0;">O técnico ${technicianName} alterou a data do seu pedido.</p>
+            </div>
+            
+            <div class="details">
+              <h3>${request.title}</h3>
+              <ul>
+                <li><strong>Categoria:</strong> ${request.category}</li>
+                <li><strong>Técnico:</strong> ${technicianName}</li>
+                <li><strong>Data anterior:</strong> ${oldDateStr}</li>
+                <li><strong>Nova data:</strong> <strong style="color: #ff7a00;">${newDateStr}</strong></li>
+              </ul>
+            </div>
+            
+            <p>Se tiver alguma questão sobre esta alteração, pode contactar o técnico através do chat na aplicação.</p>
+            
+            <p style="text-align: center;">
+              <a href="${chatLink}" class="button">Abrir Chat com Técnico</a>
+            </p>
+            
+            <p style="text-align: center;">
+              <a href="${dashboardLink}" style="color: #ff7a00;">Ver Meus Pedidos</a>
+            </p>
+            
+            ${template.footer()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmailSafe({
+      from: '"HomeFix" <no-reply@homefix.com>',
+      to: request.owner.email,
+      subject: `Data alterada: ${request.title} - HomeFix`,
+      text,
+      html,
+    });
+
+    console.log(`✅ Email de alteração de data enviado para ${request.owner.email}`);
+  } catch (error) {
+    console.error('Erro ao enviar email de alteração de data:', error);
   }
 }
 

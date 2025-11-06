@@ -188,7 +188,7 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                     ? '#ff7a00'
                     : dayInfo.isCurrentMonth
                       ? hasRequests
-                        ? '#fef3c7'
+                        ? '#ffe4cc'
                         : '#ffffff'
                       : '#f9fafb',
                   color: dayIsToday
@@ -196,19 +196,25 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                     : dayInfo.isCurrentMonth
                       ? '#1f2937'
                       : '#d1d5db',
-                  border: dayIsToday ? '2px solid #ff7a00' : '1px solid #e5e7eb',
+                  border: dayIsToday 
+                    ? '2px solid #ff7a00' 
+                    : hasRequests && dayInfo.isCurrentMonth
+                      ? '1px solid #ff7a00'
+                      : '1px solid #e5e7eb',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
                   if (dayInfo.isCurrentMonth && hasRequests) {
-                    e.currentTarget.style.backgroundColor = dayIsToday ? '#ff7a00' : '#fde68a';
+                    e.currentTarget.style.backgroundColor = dayIsToday ? '#ff7a00' : '#ffd4a3';
                     e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.borderColor = '#ff7a00';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (dayInfo.isCurrentMonth && hasRequests) {
-                    e.currentTarget.style.backgroundColor = dayIsToday ? '#ff7a00' : '#fef3c7';
+                    e.currentTarget.style.backgroundColor = dayIsToday ? '#ff7a00' : '#ffe4cc';
                     e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = '#ff7a00';
                   }
                 }}
               >
@@ -253,9 +259,9 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
               style={{
                 width: '16px',
                 height: '16px',
-                backgroundColor: '#fef3c7',
+                backgroundColor: '#ffe4cc',
                 borderRadius: '4px',
-                border: '1px solid #e5e7eb',
+                border: '1px solid #ff7a00',
               }}
             ></div>
             <span className="small">Com pedidos</span>
