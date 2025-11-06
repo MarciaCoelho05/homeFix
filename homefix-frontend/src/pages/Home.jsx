@@ -111,19 +111,6 @@ const Home = () => {
           </div>
         </section>
 
-        <section className="mb-5">
-          <div className="card bg-light border-0 shadow-sm">
-            <div className="card-body p-4 p-md-5 d-flex flex-column flex-md-row align-items-md-center gap-4">
-              <div className="flex-grow-1">
-                <h2 className="h4 fw-semibold mb-2">Técnicos validados</h2>
-                <p className="text-muted mb-0">
-                  Cada prestador é verificado pela equipa HomeFix. Garantimos orçamentos transparentes e acompanhamento até à conclusão do trabalho.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {statusMsg && <p className="text-muted small">{statusMsg}</p>}
       </div>
     </Layout>

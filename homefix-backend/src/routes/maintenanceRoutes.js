@@ -75,7 +75,7 @@ router.get('/', protect, async (req, res) => {
   const requests = await prisma.maintenanceRequest.findMany({
     where,
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
       messages: true,
       feedback: { include: { user: { select: { firstName: true } } } },
@@ -94,7 +94,7 @@ router.get('/mine', protect, async (req, res) => {
   const requests = await prisma.maintenanceRequest.findMany({
     where: { ownerId: req.user.id },
     include: {
-        owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+        owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
         technician: { select: { id: true, firstName: true, lastName: true, email: true } },
         messages: true,
         feedback: { 
@@ -148,7 +148,7 @@ router.post('/', protect, async (req, res) => {
       mediaUrls: normalizedMedia,
     },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
     },
   });
   res.status(201).json(request);
@@ -189,7 +189,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
     },
   });
 
@@ -275,7 +275,7 @@ router.delete('/:id', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -446,7 +446,7 @@ router.post('/:id/accept', protect, async (req, res) => {
       status: req.body?.status?.toString() || 'em_progresso',
     },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -489,7 +489,7 @@ router.post('/:id/complete', protect, async (req, res) => {
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: req.params.id },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true, avatarUrl: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -512,7 +512,7 @@ router.post('/:id/complete', protect, async (req, res) => {
       completedAt: new Date(),
     },
     include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true } },
+      owner: { select: { id: true, firstName: true, lastName: true, email: true, nif: true, avatarUrl: true } },
       technician: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
   });
@@ -570,7 +570,7 @@ router.patch('/:id/price', protect, async (req, res) => {
       where: { id: req.params.id },
       data: { price: numericPrice },
       include: {
-        owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+        owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
         technician: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
     });

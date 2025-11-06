@@ -7,12 +7,10 @@ async function restoreDatabase() {
   console.log('🔄 Iniciando restauração do banco de dados...\n');
 
   try {
-    // 1. Gerar Prisma Client
     console.log('📦 1. Gerando Prisma Client...');
     execSync('npx prisma generate --schema=./prisma/schema.prisma', { stdio: 'inherit' });
     console.log('✅ Prisma Client gerado\n');
 
-    // 2. Aplicar migrações (com retry em caso de timeout)
     console.log('📦 2. Aplicando migrações...');
     let migrationSuccess = false;
     let retries = 3;
@@ -38,12 +36,10 @@ async function restoreDatabase() {
       }
     }
 
-    // 3. Executar seed
     console.log('🌱 3. Executando seed...');
     execSync('node prisma/seed.js', { stdio: 'inherit' });
     console.log('✅ Seed executado\n');
 
-    // 4. Verificar tabelas
     console.log('🔍 4. Verificando tabelas...');
     const tables = await prisma.$queryRaw`
       SELECT table_name 
@@ -58,7 +54,6 @@ async function restoreDatabase() {
       console.log(`   - ${table.table_name}`);
     });
 
-    // 5. Verificar utilizadores
     console.log('\n👥 5. Verificando utilizadores...');
     const users = await prisma.user.findMany({
       select: {

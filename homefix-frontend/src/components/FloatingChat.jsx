@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 
 const FloatingChat = () => {
-  console.log('[FloatingChat] 🚀 Component FUNCTION CALLED');
+  if (typeof window !== 'undefined') {
+    console.log('[FloatingChat] 🚀 Component FUNCTION CALLED');
+    console.log('[FloatingChat] Window object exists:', typeof window !== 'undefined');
+  }
   
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -13,10 +16,24 @@ const FloatingChat = () => {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   
-  // Ler valores do localStorage diretamente no render
-  const [role, setRole] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [token, setToken] = useState(null);
+  const [role, setRole] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('role');
+    }
+    return null;
+  });
+  const [userId, setUserId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('userId');
+    }
+    return null;
+  });
+  const [token, setToken] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  });
   
   console.log('[FloatingChat] 📊 Initial state:', { role, token: !!token, userId: !!userId });
 
@@ -38,7 +55,6 @@ const FloatingChat = () => {
     }
   }, []);
 
-  // Atualizar estado quando localStorage mudar
   useEffect(() => {
     const updateState = () => {
       if (typeof window !== 'undefined') {
@@ -54,11 +70,9 @@ const FloatingChat = () => {
 
     updateState();
     
-    // Listener para mudanças no storage
     const handleStorageChange = () => updateState();
     window.addEventListener('storage', handleStorageChange);
     
-    // Polling para detectar mudanças (fallback)
     const interval = setInterval(updateState, 1000);
     
     return () => {
@@ -103,7 +117,9 @@ const FloatingChat = () => {
 
       return supportRequest.id;
     } catch (err) {
-      console.error('Erro ao criar/buscar pedido de suporte:', err);
+      if (err?.response?.status !== 401) {
+        console.error('Erro ao criar/buscar pedido de suporte:', err);
+      }
       return null;
     }
   }, [token, userId, role]);
@@ -120,7 +136,9 @@ const FloatingChat = () => {
       const res = await api.get(`/messages/${requestId}`);
       setMessages(res.data || []);
     } catch (err) {
-      console.error('Erro ao carregar mensagens:', err);
+      if (err?.response?.status !== 401) {
+        console.error('Erro ao carregar mensagens:', err);
+      }
       setError('Não foi possível carregar mensagens.');
       setMessages([]);
     } finally {
@@ -152,7 +170,6 @@ const FloatingChat = () => {
         }
       };
     } else if (isOpen && !isAuthenticated) {
-      // Para usuários não autenticados, limpar mensagens
       setMessages([]);
       setSupportRequestId(null);
     }
@@ -179,18 +196,17 @@ const FloatingChat = () => {
     }
   };
 
-  // Renderizar para todos, exceto admins
   const isAdmin = role === 'admin';
   const isAuthenticated = !!token;
 
-  // Debug sempre
   console.log('[FloatingChat] 🔍 Component render:', { 
     role, 
     isAdmin, 
     isAuthenticated, 
     shouldRender: !isAdmin,
     hasToken: !!token,
-    userId: !!userId
+    userId: !!userId,
+    windowDefined: typeof window !== 'undefined'
   });
   
   if (isAdmin) {
@@ -198,9 +214,8 @@ const FloatingChat = () => {
     return null;
   }
 
-  console.log('[FloatingChat] ✅ RENDERING - Will show button');
+  console.log('[FloatingChat] ✅ RENDERING - Will show button for role:', role || 'guest');
 
-  // Verificar se o botão está no DOM após renderização
   useEffect(() => {
     const checkButton = () => {
       const btn = document.getElementById('homefix-floating-chat-button');
@@ -221,7 +236,6 @@ const FloatingChat = () => {
       }
     };
     
-    // Verificar após um pequeno delay para garantir que o DOM foi atualizado
     const timeout = setTimeout(checkButton, 100);
     return () => clearTimeout(timeout);
   }, []);
@@ -243,11 +257,11 @@ const FloatingChat = () => {
           height: '60px',
           borderRadius: '50%',
           backgroundColor: '#ff7a00',
-          color: 'white',
+          color: '#1e40af',
           border: 'none',
           boxShadow: '0 4px 12px rgba(255, 122, 0, 0.4)',
           cursor: 'pointer',
-          zIndex: 99999,
+          zIndex: 999999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -287,7 +301,7 @@ const FloatingChat = () => {
             backgroundColor: 'white',
             borderRadius: '16px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            zIndex: 10000,
+            zIndex: 999998,
             display: 'flex',
             flexDirection: 'column',
             border: '1px solid #e5e7eb',
@@ -548,7 +562,7 @@ const FloatingChat = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 9998,
+            zIndex: 999997,
             backgroundColor: 'transparent',
           }}
         />

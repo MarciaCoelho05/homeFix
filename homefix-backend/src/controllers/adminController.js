@@ -49,7 +49,6 @@ async function deleteUser(req, res) {
   const { id } = req.params;
 
   try {
-    // Buscar dados do usuário antes de eliminar para enviar email de confirmação
     const user = await prisma.user.findUnique({
       where: { id },
       select: { email: true, firstName: true, lastName: true },
@@ -78,7 +77,6 @@ async function deleteUser(req, res) {
       await tx.user.delete({ where: { id } });
     });
 
-    // Enviar email de confirmação de eliminação
     if (user && user.email) {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
       const mailer = require('../config/email');
@@ -160,7 +158,6 @@ async function deleteUser(req, res) {
         }
       } catch (emailError) {
         console.error('Erro ao enviar email de confirmação de eliminação:', emailError);
-        // Não falhar a eliminação se o email falhar
       }
     }
 

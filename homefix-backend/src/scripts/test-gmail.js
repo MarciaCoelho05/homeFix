@@ -4,7 +4,6 @@ async function testGmail() {
   console.log('\n🧪 Testando Gmail API...\n');
 
   try {
-    // Testar verificação primeiro
     console.log('1️⃣ Verificando conexão com Gmail API...');
     await new Promise((resolve, reject) => {
       mailer.verify((error, success) => {
@@ -18,7 +17,6 @@ async function testGmail() {
       });
     });
 
-    // Testar envio de email
     console.log('2️⃣ Testando envio de email...');
     const testEmail = process.env.TEST_EMAIL || 'teste@example.com';
     

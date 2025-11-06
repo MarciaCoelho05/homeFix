@@ -328,7 +328,6 @@ async function forgotPassword(req, res) {
     
     console.log(`[EMAIL] Tentando enviar email de recuperação para ${email}...`);
     
-    // Tentar enviar email, mas não falhar se houver erro (por questões de segurança)
     try {
       const emailResult = await Promise.race([
         mailer.sendMail({
@@ -350,11 +349,9 @@ async function forgotPassword(req, res) {
       if (emailError.stack) {
         console.error('[FORGOT] Stack:', emailError.stack);
       }
-      // Não falhar a requisição por causa do email - por questões de segurança
       console.warn('[FORGOT] ⚠️  Email não foi enviado, mas retornando sucesso por segurança');
     }
     
-    // Sempre retornar sucesso (por questões de segurança)
     setCorsHeaders();
     return res.json({ message: 'Se o email existir, enviaremos instruções' });
   } catch (err) {
@@ -381,7 +378,6 @@ async function resetPassword(req, res) {
     const hashed = await bcrypt.hash(password, 10);
     await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
     
-    // Enviar email de confirmação de senha redefinida
     const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utilizador';
     const mailer = require('../config/email');
     
@@ -451,7 +447,6 @@ async function resetPassword(req, res) {
       console.log(`✅ Email de confirmação de redefinição de senha enviado para ${user.email}`);
     } catch (emailError) {
       console.error('Erro ao enviar email de confirmação:', emailError);
-      // Não falhar a redefinição se o email falhar
     }
     
     return res.json({ message: 'Palavra-passe atualizada com sucesso' });
@@ -461,7 +456,6 @@ async function resetPassword(req, res) {
   }
 }
 
-// Função auxiliar para enviar email de boas-vindas
 async function sendWelcomeEmail(user) {
   try {
     console.log(`📧 Enviando email de boas-vindas para ${user.email}...`);

@@ -3,7 +3,6 @@ const prisma = new PrismaClient();
 
 async function listTables() {
   try {
-    // Listar todas as tabelas usando SQL direto
     const tables = await prisma.$queryRaw`
       SELECT table_name 
       FROM information_schema.tables 
@@ -26,7 +25,6 @@ async function listTables() {
     console.log('─'.repeat(50));
     console.log(`\nTotal: ${tables.length} tabela(s)\n`);
 
-    // Para cada tabela, mostrar a estrutura
     for (const table of tables) {
       const tableName = table.table_name;
       console.log(`\n📋 Estrutura da tabela: ${tableName}`);
@@ -51,7 +49,6 @@ async function listTables() {
       });
     }
 
-    // Contar registros em cada tabela
     console.log('\n\n📈 Contagem de registros por tabela:');
     console.log('─'.repeat(50));
     

@@ -118,8 +118,6 @@ body::after {
   background: var(--primary);
   color: #fff;
 }
-
-/* Hero */
 .home-hero {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-800) 100%);
 }
@@ -129,17 +127,13 @@ body::after {
 }
 .stat-number { font-size: 1.25rem; font-weight: 700; }
 .stat-label { font-size: .8rem; opacity: .9; }
-
-/* Buttons re-theme */
 .btn-primary {
   background: var(--primary);
   border-color: var(--primary);
 }
 .btn-primary:hover { background: var(--primary-700); border-color: var(--primary-700); }
 .btn-outline-primary { color: var(--primary); border-color: var(--primary); }
-.btn-outline-primary:hover { background: var(--primary); color: #fff; }
-
-/* Service cards */
+.btn-outline-primary:hover { background: var(--primary);   color: #fff; }
 .service-card {
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -150,15 +144,11 @@ body::after {
   height: 100%;
 }
 .service-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
-.service-card .btn { margin-top: auto; }
-
-/* Status badges */
+.service-card .btn {   margin-top: auto; }
 .status-badge { background: #f3f4f6; color: #374151; }
 .status-pendente { background: #fff7ed; color: #9a3412; }
 .status-em_andamento { background: #eff6ff; color: #1e40af; }
-.status-concluido { background: #ecfdf5; color: #065f46; }
-
-/* Global page polish for all views */
+.status-concluido {   background: #ecfdf5; color: #065f46; }
 .form-control:focus, input.form-control:focus, textarea.form-control:focus, select.form-control:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 .2rem rgba(255, 122, 0, .15);
@@ -175,17 +165,14 @@ body::after {
   font-weight: 600;
   border-radius: .375rem;
 }
-/* Navbar toggler visibility */
 .homefix-navbar .navbar-toggler {
   border-color: rgba(0,0,0,0.1);
 }
 .homefix-navbar .navbar-toggler-icon {
   background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0,0,0,0.6)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
 }
-/* Headings */
 h1, .display-6 { color: #0f172a; }
 h2, .h4 { color: #111827; }
-/* Links */
 a { color: var(--primary); }
 a:hover { color: var(--primary-700); }
 
@@ -234,7 +221,6 @@ a:hover { color: var(--primary-700); }
   border-radius: 16px;
   box-shadow: 0 15px 45px rgba(15, 23, 42, 0.12);
 }
-
 .home-page {
   padding: 24px;
   border-radius: 16px;
@@ -438,15 +424,25 @@ img {
   color: #111827;
   font-weight: 500;
 }
-
-/* Floating Chat Button - Garantir visibilidade */
 .floating-chat-button {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.4) !important;
+  transform: none !important;
+  overflow: visible !important;
+}
+body .floating-chat-button,
+html body .floating-chat-button,
+#root .floating-chat-button {
+  z-index: 999999 !important;
+  display: flex !important;
+  position: fixed !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }

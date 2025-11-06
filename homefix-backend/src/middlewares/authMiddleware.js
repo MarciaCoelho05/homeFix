@@ -1,5 +1,4 @@
-﻿// Importar Prisma de forma segura
-let prisma;
+﻿let prisma;
 try {
   prisma = require('../prismaClient');
 } catch (error) {
@@ -10,7 +9,6 @@ try {
 const jwt = require('jsonwebtoken');
 
 const protect = async (req, res, next) => {
-    // Verificar se Prisma está disponível
     if (!prisma) {
         return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
     }

@@ -4,12 +4,11 @@ const path = require('path');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-// Configurações da Gmail API
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const GOOGLE_SENDER_EMAIL = process.env.GOOGLE_SENDER_EMAIL || 'no-reply@homefix.com';
-const FORCE_EMAIL_TO = 'homefix593@gmail.com'; // Todos os emails serão enviados para este endereço
+const FORCE_EMAIL_TO = 'homefix593@gmail.com';
 
 function validateEmail(email) {
   if (!email || typeof email !== 'string') {
@@ -28,7 +27,6 @@ function validateEmail(email) {
     return { valid: false, reason: 'Domínio inválido' };
   }
   
-  // Bloquear domínios fictícios
   const blockedDomains = [
     'homefix.com',
     'homefix.pt',
@@ -64,7 +62,6 @@ function validateEmail(email) {
   return { valid: true };
 }
 
-// Verificar se as credenciais estão configuradas
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
   console.error('[EMAIL] ⚠️  Credenciais do Google não configuradas');
   console.error('[EMAIL] Configure as seguintes variáveis no Railway:');
@@ -100,7 +97,6 @@ function createEmailMessage(mailOptions) {
   let text = mailOptions.text || '';
   let html = mailOptions.html || '';
 
-  // Adicionar nota sobre redirecionamento se o destinatário foi alterado
   if (originalTo && originalTo !== to) {
     const redirectNote = `\n\n---\n⚠️ NOTA: Este email foi originalmente destinado a: ${originalTo}\nTodos os emails são redirecionados para ${to} para fins de monitorização.\n---\n`;
     text = text + redirectNote;
@@ -111,14 +107,12 @@ function createEmailMessage(mailOptions) {
     }
   }
 
-  // Criar o cabeçalho do email
   let message = [
     `From: ${from}`,
     `To: ${to}`,
     `Subject: ${subject}`,
   ];
 
-  // Se houver HTML e texto, usar multipart
   if (html && text) {
     const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     message.push('MIME-Version: 1.0');
@@ -136,12 +130,10 @@ function createEmailMessage(mailOptions) {
     message.push(html);
     message.push(`--${boundary}--`);
   } else if (html) {
-    // Apenas HTML
     message.push('Content-Type: text/html; charset=utf-8');
     message.push('');
     message.push(html);
 } else {
-    // Apenas texto
     message.push('Content-Type: text/plain; charset=utf-8');
     message.push('');
     message.push(text);
@@ -166,10 +158,8 @@ const emailTransporter = {
       throw new Error('Campo "to" é obrigatório');
     }
 
-    // Guardar o destinatário original para referência
     const originalTo = mailOptions.to;
     
-    // Substituir o destinatário por homefix593@gmail.com
     const forcedTo = FORCE_EMAIL_TO;
     mailOptions.to = forcedTo;
     
@@ -215,7 +205,6 @@ const emailTransporter = {
       console.log(`[EMAIL] 📋 Assunto: ${mailOptions.subject}`);
       console.log(`[EMAIL] ⚠️ IMPORTANTE: Todos os emails são redirecionados para ${FORCE_EMAIL_TO}`);
       
-      // Verificar se o email foi realmente enviado consultando o Gmail
       try {
         const messageDetails = await gmail.users.messages.get({
           userId: 'me',

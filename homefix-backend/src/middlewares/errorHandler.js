@@ -1,7 +1,6 @@
 function errorHandler(err, req, res, next) {
     const origin = req.headers.origin;
     
-    // Garantir que headers CORS sejam sempre enviados, mesmo em caso de erro
     if (origin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -15,7 +14,6 @@ function errorHandler(err, req, res, next) {
     
     console.error('[ERROR]', err.stack || err.message);
     
-    // Se for OPTIONS, retornar 204 mesmo em caso de erro
     if (req.method === 'OPTIONS') {
         return res.status(204).end();
     }
