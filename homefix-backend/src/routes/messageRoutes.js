@@ -50,7 +50,14 @@ router.get('/:requestId', async (req, res) => {
       },
       orderBy: { createdAt: 'asc' },
     });
-    res.json(messages);
+    
+    // Se o usuário não for admin, filtrar mensagens de admins
+    // (chat cliente-técnico não deve mostrar mensagens do suporte/admin)
+    const filteredMessages = req.user.isAdmin === true
+      ? messages
+      : messages.filter(msg => !msg.sender?.isAdmin);
+    
+    res.json(filteredMessages);
   } catch (err) {
     console.error('Erro ao obter mensagens:', err);
     console.error('Stack:', err.stack);
