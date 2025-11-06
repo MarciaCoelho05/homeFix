@@ -1,55 +1,101 @@
 import axios from 'axios';
 
+let cachedApiUrl = null;
+
 const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    let apiUrl = String(import.meta.env.VITE_API_URL).trim();
-    
-    apiUrl = apiUrl.replace(/^\//, '');
-    
-    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
-      apiUrl = `https://${apiUrl}`;
-    }
-    
-    apiUrl = apiUrl.replace(/\/+$/, '');
-    
-    if (!apiUrl.endsWith('/api')) {
-      apiUrl = `${apiUrl}/api`;
-    }
-    
-    console.log('[API] Using VITE_API_URL:', apiUrl);
-    
-    return apiUrl;
+  if (cachedApiUrl) {
+    return cachedApiUrl;
   }
-  
-  if (import.meta.env.PROD && typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    console.warn('[API] VITE_API_URL not set, using auto-detection for:', hostname);
-    
-    if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend') || hostname.includes('vercel.app')) {
-      if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend')) {
-        console.warn('[API] Vercel frontend detected. Using Railway backend.');
-        return 'https://homefix-production.up.railway.app/api';
+
+  try {
+    if (import.meta.env.VITE_API_URL) {
+      let apiUrl = String(import.meta.env.VITE_API_URL).trim();
+      
+      apiUrl = apiUrl.replace(/^\//, '');
+      
+      if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+        apiUrl = `https://${apiUrl}`;
       }
-      console.error('[API] Could not auto-detect backend. Please set VITE_API_URL in Vercel.');
+      
+      apiUrl = apiUrl.replace(/\/+$/, '');
+      
+      if (!apiUrl.endsWith('/api')) {
+        apiUrl = `${apiUrl}/api`;
+      }
+      
+      console.log('[API] Using VITE_API_URL:', apiUrl);
+      cachedApiUrl = apiUrl;
+      return apiUrl;
     }
     
-    if (hostname.includes('railway.app') || hostname.includes('railway.internal')) {
-      console.error('[API] Railway detected. Please set VITE_API_URL in Vercel.');
+    if (import.meta.env.PROD && typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      console.warn('[API] VITE_API_URL not set, using auto-detection for:', hostname);
+      
+      if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend') || hostname.includes('vercel.app')) {
+        if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend')) {
+          console.warn('[API] Vercel frontend detected. Using Railway backend.');
+          cachedApiUrl = 'https://homefix-production.up.railway.app/api';
+          return cachedApiUrl;
+        }
+        console.error('[API] Could not auto-detect backend. Please set VITE_API_URL in Vercel.');
+      }
+      
+      if (hostname.includes('railway.app') || hostname.includes('railway.internal')) {
+        console.error('[API] Railway detected. Please set VITE_API_URL in Vercel.');
+      }
     }
+    
+    cachedApiUrl = '/api';
+    return cachedApiUrl;
+  } catch (e) {
+    console.error('[API] Error getting API URL:', e);
+    return '/api';
   }
-  
-  return '/api';
 };
 
+// Initialize with default, will be updated on first request if needed
 const api = axios.create({
-  baseURL: getApiUrl(),
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
+// Ensure baseURL is set correctly before first request
+let baseUrlInitialized = false;
+const ensureBaseUrl = () => {
+  if (!baseUrlInitialized) {
+    try {
+      const url = getApiUrl();
+      if (url && url !== api.defaults.baseURL) {
+        api.defaults.baseURL = url;
+        console.log('[API] Base URL initialized to:', api.defaults.baseURL);
+      }
+      baseUrlInitialized = true;
+    } catch (e) {
+      console.error('[API] Error initializing base URL:', e);
+    }
+  }
+};
+
+// Initialize immediately if window is available, otherwise wait
+if (typeof window !== 'undefined') {
+  // Use requestAnimationFrame to ensure DOM is ready
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(ensureBaseUrl);
+  } else {
+    setTimeout(ensureBaseUrl, 0);
+  }
+} else {
+  ensureBaseUrl();
+}
+
 api.interceptors.request.use((config) => {
+  // Ensure baseURL is set before each request
+  ensureBaseUrl();
+  
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
