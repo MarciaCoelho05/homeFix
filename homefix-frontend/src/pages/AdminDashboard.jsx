@@ -126,21 +126,32 @@ const AdminDashboard = () => {
       setRequests(requestsRes.data || []);
       setFeedbacks(feedbacksRes.data || []);
       
-      // Carregar pedidos para chat
+      // Carregar pedidos para chat - apenas pedidos de suporte
       const chatRequestsRes = await api.get('/requests');
       const chatRequestsList = chatRequestsRes.data || [];
+      // Filtrar apenas pedidos de suporte
+      const supportRequests = chatRequestsList.filter(req => 
+        req.title?.toLowerCase().includes('chat de suporte') || 
+        req.title?.toLowerCase().includes('suporte') || 
+        req.title?.toLowerCase().includes('apoio') ||
+        req.category?.toLowerCase() === 'suporte'
+      );
       // Filtrar apenas pedidos com mensagens
       const requestsWithMessages = await Promise.all(
-        chatRequestsList.map(async (req) => {
+        supportRequests.map(async (req) => {
           try {
             const messagesRes = await api.get(`/messages/${req.id}`);
+            const messages = messagesRes.data || [];
+            // Filtrar apenas mensagens enviadas para o suporte (não do admin)
+            const supportMessages = messages.filter(msg => !msg.sender?.isAdmin);
             return {
               ...req,
-              messageCount: (messagesRes.data || []).length,
-              hasMessages: (messagesRes.data || []).length > 0,
+              messageCount: supportMessages.length,
+              hasMessages: supportMessages.length > 0,
+              supportMessages: supportMessages,
             };
           } catch {
-            return { ...req, messageCount: 0, hasMessages: false };
+            return { ...req, messageCount: 0, hasMessages: false, supportMessages: [] };
           }
         })
       );
@@ -167,7 +178,10 @@ const AdminDashboard = () => {
     setChatLoading(true);
     try {
       const res = await api.get(`/messages/${requestId}`);
-      setMessages(res.data || []);
+      const allMessages = res.data || [];
+      // Filtrar apenas mensagens enviadas para o suporte (não do admin)
+      const supportMessages = allMessages.filter(msg => !msg.sender?.isAdmin);
+      setMessages(supportMessages);
     } catch (err) {
       console.error('Erro ao carregar mensagens:', err);
       setMessages([]);
@@ -700,7 +714,7 @@ const AdminDashboard = () => {
             </div>
           </section>
 
-          <section className="card border-0 shadow-sm mb-5">
+              <section className="card border-0 shadow-sm mb-5">
             <div
               style={{
                 backgroundColor: '#ff7a00',
@@ -710,20 +724,20 @@ const AdminDashboard = () => {
               }}
             >
               <h2 className="h5 fw-semibold mb-0" style={{ color: 'white', margin: 0 }}>
-                Chat de Suporte - Pedidos
+                Chat de Suporte
               </h2>
               <p className="small mb-0 mt-2" style={{ opacity: 0.9 }}>
-                Visualize e responda às mensagens de técnicos e clientes
+                Visualize e responda às mensagens de suporte de técnicos e clientes
               </p>
             </div>
             <div className="card-body p-3 p-md-4">
               {chatRequests.length === 0 ? (
-                <p className="text-muted text-center py-4">Não há pedidos com mensagens no momento.</p>
+                <p className="text-muted text-center py-4">Não há mensagens de suporte no momento.</p>
               ) : (
                 <div className="row">
                   <div className="col-12 col-md-4 mb-3 mb-md-0">
                     <label className="form-label small text-uppercase fw-semibold" style={{ color: '#374151' }}>
-                      Selecionar pedido ({chatRequests.length})
+                      Selecionar conversa ({chatRequests.length})
                     </label>
                     <select
                       className="form-select"
@@ -736,11 +750,20 @@ const AdminDashboard = () => {
                         fontSize: '14px',
                       }}
                     >
-                      {chatRequests.map((req) => (
-                        <option key={req.id} value={req.id}>
-                          {req.title} - {req.messageCount} mensagem{req.messageCount !== 1 ? 's' : ''}
-                        </option>
-                      ))}
+                      {chatRequests.map((req) => {
+                        const ownerName = req.owner
+                          ? [req.owner.firstName, req.owner.lastName].filter(Boolean).join(' ').trim() || req.owner.email || 'Cliente'
+                          : 'Cliente';
+                        const technicianName = req.technician
+                          ? [req.technician.firstName, req.technician.lastName].filter(Boolean).join(' ').trim() || req.technician.email || 'Técnico'
+                          : null;
+                        const displayName = technicianName ? `${technicianName} / ${ownerName}` : ownerName;
+                        return (
+                          <option key={req.id} value={req.id}>
+                            {displayName} - {req.messageCount} mensagem{req.messageCount !== 1 ? 's' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div className="col-12 col-md-8">
@@ -778,13 +801,13 @@ const AdminDashboard = () => {
                               : msg.sender?.isTechnician
                                 ? 'Técnico'
                                 : 'Cliente';
-                            const isAdmin = msg.sender?.isAdmin;
+                            // Mensagens de suporte sempre à esquerda (enviadas por clientes/técnicos)
                             return (
                               <div
                                 key={msg.id}
                                 style={{
                                   display: 'flex',
-                                  justifyContent: isAdmin ? 'flex-end' : 'flex-start',
+                                  justifyContent: 'flex-start',
                                 }}
                               >
                                 <div
@@ -792,8 +815,9 @@ const AdminDashboard = () => {
                                     maxWidth: '75%',
                                     padding: '10px 14px',
                                     borderRadius: '12px',
-                                    backgroundColor: isAdmin ? '#ff7a00' : '#f3f4f6',
-                                    color: isAdmin ? 'white' : '#1f2937',
+                                    backgroundColor: msg.sender?.isTechnician ? '#e3f2fd' : '#f3f4f6',
+                                    borderLeft: msg.sender?.isTechnician ? '3px solid #2196f3' : '3px solid #9e9e9e',
+                                    color: '#1f2937',
                                     fontSize: '14px',
                                     lineHeight: '1.4',
                                     position: 'relative',
@@ -804,8 +828,7 @@ const AdminDashboard = () => {
                                       fontSize: '12px',
                                       fontWeight: 600,
                                       marginBottom: '4px',
-                                      opacity: 0.9,
-                                      color: isAdmin ? 'white' : '#374151',
+                                      color: msg.sender?.isTechnician ? '#1976d2' : '#374151',
                                     }}
                                   >
                                     {senderLabel} ({senderRole})
