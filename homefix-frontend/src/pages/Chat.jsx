@@ -73,21 +73,30 @@ const Chat = () => {
           }
         } else {
           const endpoint = role === 'technician' ? '/requests' : '/requests/mine';
-          const res = await api.get(endpoint);
-          const list = res.data || [];
-          const visibleRequests =
-            role === 'technician' && userId
-              ? list.filter((req) => {
-                  const technicianId = req.technicianId || req.technician?.id || null;
-                  return String(technicianId) === String(userId);
-                })
-                     : list;
-          setRequests(visibleRequests);
-          if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
-            setRequestId(initialRequestId);
-          } else if (!initialRequestId && visibleRequests.length > 0) {
-            setRequestId(visibleRequests[0].id);
-            setSearchParams({ requestId: visibleRequests[0].id });
+        const res = await api.get(endpoint);
+        const list = res.data || [];
+          // Filtrar pedidos de suporte para clientes e técnicos
+          // (apenas admin deve ver pedidos de suporte)
+          const filteredList = list.filter(req => {
+            const isSupport = req.title?.toLowerCase().includes('chat de suporte') || 
+                             req.title?.toLowerCase().includes('suporte') || 
+                             req.title?.toLowerCase().includes('apoio') ||
+                             req.category?.toLowerCase() === 'suporte';
+            return !isSupport; // Excluir pedidos de suporte
+          });
+        const visibleRequests =
+          role === 'technician' && userId
+              ? filteredList.filter((req) => {
+                const technicianId = req.technicianId || req.technician?.id || null;
+                return String(technicianId) === String(userId);
+              })
+                     : filteredList;
+        setRequests(visibleRequests);
+        if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
+          setRequestId(initialRequestId);
+        } else if (!initialRequestId && visibleRequests.length > 0) {
+          setRequestId(visibleRequests[0].id);
+          setSearchParams({ requestId: visibleRequests[0].id });
           }
         }
       } catch (err) {
@@ -294,14 +303,14 @@ const Chat = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {messages.map((msg) => {
-                    const senderLabel =
-                      [msg.sender?.firstName, msg.sender?.lastName].filter(Boolean).join(' ') ||
-                      msg.sender?.email ||
-                      'Utilizador';
-                    const senderId = msg.senderId || msg.sender?.id || null;
+                  const senderLabel =
+                    [msg.sender?.firstName, msg.sender?.lastName].filter(Boolean).join(' ') ||
+                    msg.sender?.email ||
+                    'Utilizador';
+                  const senderId = msg.senderId || msg.sender?.id || null;
                     const isOwn = String(senderId) === String(userId);
                     const canDelete = role === 'admin' || isOwn;
-                    return (
+                  return (
                       <div
                         key={msg.id}
                         style={{
@@ -332,25 +341,25 @@ const Chat = () => {
                               }}
                             >
                               {senderLabel}
-                            </div>
+                        </div>
                           )}
                           <div>{msg.content}</div>
-                          {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                      {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
                             <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                               {msg.attachments.map((url, idx) => {
                                 const isVideoFile = isVideo(url);
                                 return isVideoFile ? (
-                                  <video
+                              <video
                                     key={idx}
-                                    src={url}
-                                    controls
+                                src={url}
+                                controls
                                     style={{ maxWidth: '150px', maxHeight: '150px', borderRadius: '8px' }}
-                                  />
-                                ) : (
+                              />
+                            ) : (
                                   <img
                                     key={idx}
-                                    src={url}
-                                    alt="Anexo"
+                                  src={url}
+                                  alt="Anexo"
                                     style={{
                                       maxWidth: '150px',
                                       maxHeight: '150px',
@@ -375,7 +384,7 @@ const Chat = () => {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
-                          </div>
+                        </div>
                           {canDelete && msg.id && (
                             <button
                               type="button"
@@ -397,8 +406,8 @@ const Chat = () => {
                             </button>
                           )}
                         </div>
-                      </div>
-                    );
+                    </div>
+                  );
                   })}
                 </div>
               )}
