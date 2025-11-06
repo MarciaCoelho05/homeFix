@@ -1076,7 +1076,7 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
       `Link para dashboard: ${dashboardLink}`,
       '',
       'Atenciosamente,',
-      'Equipa HOMEFIX - V2.0'
+      'Equipa HomeFix'
     ].join('\n');
 
     const template = getBaseEmailTemplate('#ff7a00');
@@ -1089,7 +1089,7 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
       </head>
       <body>
         <div class="container">
-          ${template.header('HOMEFIX - V2.0 - Data Alterada')}
+          ${template.header('HomeFix - Data Alterada')}
           <div class="content">
             <p>Olá <strong>${ownerName}</strong>,</p>
             
@@ -1138,9 +1138,9 @@ async function notifyClientAboutDateChange(request, oldDate, newDate) {
     `;
 
     await sendEmailSafe({
-      from: '"HOMEFIX - V2.0" <no-reply@homefix.com>',
+      from: '"HomeFix" <no-reply@homefix.com>',
       to: request.owner.email,
-      subject: `📅 Data alterada: ${request.title} - HOMEFIX - V2.0`,
+      subject: `📅 Data alterada: ${request.title} - HomeFix`,
       text,
       html,
     });
