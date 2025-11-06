@@ -21,16 +21,24 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,
+        format: 'es',
       },
     },
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    target: 'es2020',
   },
   esbuild: {
     legalComments: 'none',
-    minifyIdentifiers: true,
+    minifyIdentifiers: false, // Desabilitar minificação de identificadores para evitar problemas
     minifySyntax: true,
     minifyWhitespace: true,
+    keepNames: true, // Manter nomes de funções para facilitar debug
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2020',
+    },
   },
 })
