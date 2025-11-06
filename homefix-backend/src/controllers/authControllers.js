@@ -103,17 +103,7 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
-    // Log para debug
-    console.log('[LOGIN] Request recebido:', {
-      method: req.method,
-      path: req.path,
-      bodyKeys: req.body ? Object.keys(req.body) : 'no body',
-      contentType: req.headers['content-type'],
-      origin: req.headers.origin
-    });
-    
     if (!prisma) {
-      console.error('[LOGIN] Prisma não inicializado');
       return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
     }
     
@@ -124,7 +114,7 @@ async function login(req, res) {
     console.log('[LOGIN] Password recebido:', password ? 'sim (' + password.length + ' chars)' : 'não fornecido');
     
     if (!email || !password) {
-      console.log('[LOGIN] Email ou senha não fornecidos - retornando 400');
+      console.log('[LOGIN] Email ou senha não fornecidos');
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
     
@@ -146,7 +136,8 @@ async function login(req, res) {
     }
     
     if (!user || !user.id) {
-      console.log('[LOGIN] Usuário não encontrado ou sem ID');
+      console.log('[LOGIN] Usuário não encontrado ou sem ID para email:', normalizedEmail);
+      // Retornar 401 mas sem expor que o email existe
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
@@ -162,11 +153,13 @@ async function login(req, res) {
       console.log('[LOGIN] Senha corresponde:', passwordMatch ? 'sim' : 'não');
     } catch (compareError) {
       console.error('[LOGIN] Erro ao comparar senha:', compareError);
+      console.error('[LOGIN] Erro stack:', compareError.stack);
       return res.status(500).json({ message: 'Erro ao validar senha' });
     }
     
     if (!passwordMatch) {
       console.log('[LOGIN] Senha incorreta para usuário:', normalizedEmail);
+      // Retornar 401 mas sem expor que o email existe
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
     
