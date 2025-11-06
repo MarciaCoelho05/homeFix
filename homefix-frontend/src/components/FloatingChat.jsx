@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const FloatingChat = () => {
@@ -29,6 +29,11 @@ const FloatingChat = () => {
     }
     return null;
   });
+  
+  // Definir isAuthenticated e isAdmin antes de serem usados nos useEffects
+  // Usar useMemo para recalcular quando token ou role mudarem
+  const isAuthenticated = useMemo(() => !!token, [token]);
+  const isAdmin = useMemo(() => role === 'admin', [role]);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -183,17 +188,11 @@ const FloatingChat = () => {
     }
   };
 
-  const isAdmin = role === 'admin';
-  const isAuthenticated = !!token;
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[FloatingChat] Component mounted/updated:', { isAdmin, role, token: !!token });
+    // Log apenas em desenvolvimento e de forma reduzida
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
       const button = document.getElementById('homefix-floating-chat-button');
-      if (button) {
-        console.log('[FloatingChat] Button found in DOM:', button);
-        console.log('[FloatingChat] Button computed styles:', window.getComputedStyle(button));
-      } else {
+      if (!button) {
         console.warn('[FloatingChat] Button NOT found in DOM');
       }
     }

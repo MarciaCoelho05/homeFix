@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import API from "../services/api";
+import api from "../services/api";
 
 const formatDateForInput = (date) => {
   const year = date.getFullYear();
@@ -120,7 +120,7 @@ export default function Register() {
         isTechnician: userType === "tecnico",
         ...(userType === "tecnico" && categories.length > 0 ? { technicianCategory: categories } : {}),
       };
-      await API.post("/auth/register", payload);
+      await api.post("/auth/register", payload);
       navigate("/login");
     } catch (err) {
       const resp = err?.response?.data;

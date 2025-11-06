@@ -26,7 +26,9 @@ function initializeApiUrl() {
         apiUrl = `${apiUrl}/api`;
       }
       api.defaults.baseURL = apiUrl;
-      console.log('[API] Using VITE_API_URL:', apiUrl);
+      if (import.meta.env.DEV) {
+        console.log('[API] Using VITE_API_URL:', apiUrl);
+      }
       return true;
     }
     
@@ -38,13 +40,17 @@ function initializeApiUrl() {
           hostname.includes('homefix-frontend') || 
           hostname.includes('homefixfrontend')) {
         api.defaults.baseURL = 'https://homefix-production.up.railway.app/api';
-        console.log('[API] Auto-detected Railway backend for:', hostname);
+        if (import.meta.env.DEV) {
+          console.log('[API] Auto-detected Railway backend for:', hostname);
+        }
         return true;
       }
     }
     
     // Keep default
-    console.log('[API] Using default base URL:', DEFAULT_BASE_URL);
+    if (import.meta.env.DEV) {
+      console.log('[API] Using default base URL:', DEFAULT_BASE_URL);
+    }
     return false;
   } catch (e) {
     console.error('[API] Error initializing URL:', e);
@@ -88,7 +94,10 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  console.log('[API] Making request:', config.method?.toUpperCase(), config.url, 'to', config.baseURL);
+  // Log apenas em desenvolvimento
+  if (import.meta.env.DEV) {
+    console.log('[API] Making request:', config.method?.toUpperCase(), config.url, 'to', config.baseURL);
+  }
   return config;
 }, (error) => {
   return Promise.reject(error);

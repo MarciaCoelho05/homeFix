@@ -39,20 +39,40 @@ export default function ResetPassword() {
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto bg-white rounded shadow p-4">
-        <h2 className="h5 fw-bold mb-2">Definir nova palavra-passe</h2>
-        {status && <div className="alert alert-info py-2">{status}</div>}
-        <form onSubmit={submit} noValidate>
-          <label className="form-label">Nova palavra-passe</label>
-          <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} value={password} onChange={e => { setPassword(e.target.value); setErrors({}) }} />
-          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-          <label className="form-label mt-2">Confirmar palavra-passe</label>
-          <input type="password" className={`form-control ${errors.confirm ? 'is-invalid' : ''}`} value={confirm} onChange={e => { setConfirm(e.target.value); setErrors({}) }} />
-          {errors.confirm && <div className="invalid-feedback">{errors.confirm}</div>}
-          <button className="btn btn-primary mt-3 w-100" disabled={!isValid || submitting}>
-            {submitting ? 'A atualizar...' : 'Atualizar'}
-          </button>
-        </form>
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-8 col-lg-5">
+          <div className="card shadow-sm border-0">
+            <div className="card-body p-4 p-md-5">
+              <h2 className="h5 fw-semibold mb-3 text-center">Definir nova palavra-passe</h2>
+              {status && <div className="alert alert-info py-2 mb-3">{status}</div>}
+              <form onSubmit={submit} noValidate>
+                <div className="mb-3">
+                  <label className="form-label small text-uppercase">Nova palavra-passe</label>
+                  <input 
+                    type="password" 
+                    className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
+                    value={password} 
+                    onChange={e => { setPassword(e.target.value); setErrors({}) }} 
+                  />
+                  {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                </div>
+                <div className="mb-3">
+                  <label className="form-label small text-uppercase">Confirmar palavra-passe</label>
+                  <input 
+                    type="password" 
+                    className={`form-control ${errors.confirm ? 'is-invalid' : ''}`} 
+                    value={confirm} 
+                    onChange={e => { setConfirm(e.target.value); setErrors({}) }} 
+                  />
+                  {errors.confirm && <div className="invalid-feedback">{errors.confirm}</div>}
+                </div>
+                <button className="btn btn-primary w-100" disabled={!isValid || submitting}>
+                  {submitting ? 'A atualizar...' : 'Atualizar'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   )

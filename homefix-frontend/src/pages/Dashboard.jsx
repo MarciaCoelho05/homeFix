@@ -198,7 +198,7 @@ const Dashboard = () => {
         setStatus('Fatura descarregada com sucesso.');
       } catch (err) {
         console.error('Erro ao descarregar fatura:', err);
-        setError(err?.response?.data?.message || 'Nao foi possivel -egar a fatura.');
+        setError(err?.response?.data?.message || 'Não foi possível descarregar a fatura.');
       } finally {
         setDownloadingInvoiceId('');
       }

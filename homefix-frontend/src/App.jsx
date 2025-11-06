@@ -6,7 +6,8 @@ const App = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    // Log apenas em desenvolvimento
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
       console.log('[APP] 🚀 App component loaded - Version V2.0');
       console.log('[APP] ✅ Aplicação funcionando!');
     }

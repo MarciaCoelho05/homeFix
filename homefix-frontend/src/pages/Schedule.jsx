@@ -21,24 +21,30 @@ export default function Schedule() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-lg mx-auto bg-white rounded shadow">
-        <h2 className="fs-4 font-bold mb-3">Agendar Manutencao</h2>
-        {status && <p className="fs-6 text-blue-500 mb-2">{status}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <label className="block">
-            <span className="text-secondary">Data e Hora:</span>
-            <input
-              type="datetime-local"
-              value={datetime}
-              onChange={(e) => setDatetime(e.target.value)}
-              required
-              className="mt-1 block w-full p-2 border rounded"
-            />
-          </label>
-          <button type="submit" className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700">
-            Enviar Agendamento
-          </button>
-        </form>
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-8 col-lg-6">
+          <div className="card shadow-sm border-0">
+            <div className="card-body p-4 p-md-5">
+              <h2 className="h4 fw-semibold mb-3">Agendar Manutenção</h2>
+              {status && <div className={`alert ${status.includes('sucesso') ? 'alert-success' : 'alert-danger'} py-2 mb-3`}>{status}</div>}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label small text-uppercase">Data e Hora</label>
+                  <input
+                    type="datetime-local"
+                    value={datetime}
+                    onChange={(e) => setDatetime(e.target.value)}
+                    required
+                    className="form-control"
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary w-100">
+                  Enviar Agendamento
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );
