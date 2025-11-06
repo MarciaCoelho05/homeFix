@@ -11,7 +11,7 @@ const api = axios.create({
   }
 });
 
-// Initialize API URL after everything is loaded
+// Initialize API URL synchronously if possible
 function initializeApiUrl() {
   try {
     // Check environment variable first
@@ -27,7 +27,7 @@ function initializeApiUrl() {
       }
       api.defaults.baseURL = apiUrl;
       console.log('[API] Using VITE_API_URL:', apiUrl);
-      return;
+      return true;
     }
     
     // Auto-detect in production
@@ -39,28 +39,33 @@ function initializeApiUrl() {
           hostname.includes('homefixfrontend')) {
         api.defaults.baseURL = 'https://homefix-production.up.railway.app/api';
         console.log('[API] Auto-detected Railway backend for:', hostname);
-        return;
+        return true;
       }
     }
     
     // Keep default
     console.log('[API] Using default base URL:', DEFAULT_BASE_URL);
+    return false;
   } catch (e) {
     console.error('[API] Error initializing URL:', e);
-    // Keep default on error
+    return false;
   }
 }
 
-// Initialize after DOM is ready
+// Try to initialize immediately if window is available
+let urlInitialized = false;
 if (typeof window !== 'undefined') {
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    // Already loaded, initialize immediately
-    setTimeout(initializeApiUrl, 0);
-  } else {
-    // Wait for DOM to be ready
-    document.addEventListener('DOMContentLoaded', initializeApiUrl);
-    // Fallback in case DOMContentLoaded already fired
-    setTimeout(initializeApiUrl, 100);
+  // Try synchronous initialization first
+  urlInitialized = initializeApiUrl();
+  
+  // If not initialized, try again after DOM is ready
+  if (!urlInitialized) {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      initializeApiUrl();
+    } else {
+      document.addEventListener('DOMContentLoaded', initializeApiUrl);
+      setTimeout(() => initializeApiUrl(), 100);
+    }
   }
 } else {
   // SSR - initialize immediately
@@ -69,15 +74,21 @@ if (typeof window !== 'undefined') {
 
 // Request interceptor
 api.interceptors.request.use((config) => {
-  // Ensure URL is set before each request
-  if (config.baseURL === DEFAULT_BASE_URL && typeof window !== 'undefined') {
-    initializeApiUrl();
+  // Ensure URL is set before each request - always check
+  if (typeof window !== 'undefined') {
+    const wasInitialized = initializeApiUrl();
+    if (wasInitialized && config.baseURL === DEFAULT_BASE_URL) {
+      // Re-initialize if needed
+      config.baseURL = api.defaults.baseURL;
+    }
   }
   
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  console.log('[API] Making request:', config.method?.toUpperCase(), config.url, 'to', config.baseURL);
   return config;
 }, (error) => {
   return Promise.reject(error);
