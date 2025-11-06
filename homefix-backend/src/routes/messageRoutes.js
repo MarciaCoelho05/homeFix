@@ -37,7 +37,16 @@ router.get('/:requestId', async (req, res) => {
     const messages = await prisma.message.findMany({
       where: { requestId },
       include: {
-        sender: { select: { id: true, email: true, firstName: true, lastName: true } },
+        sender: { 
+          select: { 
+            id: true, 
+            email: true, 
+            firstName: true, 
+            lastName: true,
+            isAdmin: true,
+            isTechnician: true
+          } 
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -80,7 +89,16 @@ router.post('/', async (req, res) => {
       requestId,
     },
     include: {
-      sender: { select: { id: true, email: true, firstName: true, lastName: true } },
+      sender: { 
+        select: { 
+          id: true, 
+          email: true, 
+          firstName: true, 
+          lastName: true,
+          isAdmin: true,
+          isTechnician: true
+        } 
+      },
     },
   });
 
