@@ -756,19 +756,21 @@ const Dashboard = () => {
             <>
               <section className="mb-5">
                 <h2 className="h5 fw-semibold mb-4">Calendário de pedidos</h2>
-                <TechnicianCalendar
-                  requests={assignedRequests}
-                  onDateSelect={(dayInfo) => {
-                    if (dayInfo.requests && dayInfo.requests.length > 0) {
-                      // Scroll para o pedido ou mostrar modal
-                      const firstRequest = dayInfo.requests[0];
-                      handleOpenDateModal(firstRequest);
-                    }
-                  }}
-                  onRequestClick={(request) => {
-                    handleOpenDateModal(request);
-                  }}
-                />
+                <div style={{ maxWidth: '50%', margin: '0 auto' }}>
+                  <TechnicianCalendar
+                    requests={assignedRequests}
+                    onDateSelect={(dayInfo) => {
+                      if (dayInfo.requests && dayInfo.requests.length > 0) {
+                        // Scroll para o pedido ou mostrar modal
+                        const firstRequest = dayInfo.requests[0];
+                        handleOpenDateModal(firstRequest);
+                      }
+                    }}
+                    onRequestClick={(request) => {
+                      handleOpenDateModal(request);
+                    }}
+                  />
+                </div>
               </section>
 
               <section className="mb-5">

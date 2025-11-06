@@ -125,12 +125,12 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
   };
 
   return (
-    <div className="card border-0 shadow-sm">
+    <div className="card border-0 shadow-sm" style={{ width: '100%' }}>
       <div
         style={{
           backgroundColor: '#ff7a00',
           color: 'white',
-          padding: '16px 20px',
+          padding: '8px 10px', /* Reduzido 50% de 16px 20px */
           borderRadius: '16px 16px 0 0',
         }}
       >
@@ -143,7 +143,7 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
           >
             ‹
           </button>
-          <h5 className="mb-0 fw-semibold">
+          <h5 className="mb-0 fw-semibold" style={{ fontSize: '14px' }}>
             {monthNames[currentMonth]} {currentYear}
           </h5>
           <button
@@ -157,13 +157,13 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
         </div>
       </div>
 
-      <div className="p-3">
-        <div className="d-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+      <div className="p-2" style={{ padding: '8px' }}>
+        <div className="d-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
           {weekDays.map((day) => (
             <div
               key={day}
               className="text-center fw-semibold small"
-              style={{ padding: '8px', color: '#6b7280' }}
+              style={{ padding: '4px', color: '#6b7280', fontSize: '11px' }}
             >
               {day}
             </div>
@@ -180,10 +180,10 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                 onClick={() => handleDayClick(dayInfo)}
                 style={{
                   aspectRatio: '1',
-                  padding: '4px',
+                  padding: '2px', /* Reduzido 50% de 4px */
                   cursor: dayInfo.isCurrentMonth && hasRequests ? 'pointer' : 'default',
                   position: 'relative',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                   backgroundColor: dayIsToday
                     ? '#ff7a00'
                     : dayInfo.isCurrentMonth
@@ -219,7 +219,7 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                 }}
               >
                 <div className="d-flex flex-column align-items-center justify-content-center h-100">
-                  <span className="small fw-semibold">{dayInfo.day}</span>
+                  <span className="small fw-semibold" style={{ fontSize: '11px' }}>{dayInfo.day}</span>
                   {hasRequests && (
                     <div className="mt-1">
                       <span
@@ -227,8 +227,8 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                         style={{
                           backgroundColor: '#ff7a00',
                           color: 'white',
-                          fontSize: '10px',
-                          padding: '2px 6px',
+                          fontSize: '8px',
+                          padding: '1px 4px',
                         }}
                       >
                         {dayInfo.requests.length}
@@ -241,30 +241,30 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
           })}
         </div>
 
-        <div className="mt-3 d-flex gap-3 align-items-center">
-          <div className="d-flex align-items-center gap-2">
+        <div className="mt-2 d-flex gap-2 align-items-center" style={{ fontSize: '11px' }}>
+          <div className="d-flex align-items-center gap-1">
             <div
               style={{
-                width: '16px',
-                height: '16px',
+                width: '12px',
+                height: '12px',
                 backgroundColor: '#ff7a00',
-                borderRadius: '4px',
+                borderRadius: '3px',
                 border: '1px solid #ff7a00',
               }}
             ></div>
-            <span className="small">Hoje</span>
+            <span className="small" style={{ fontSize: '11px' }}>Hoje</span>
           </div>
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-1">
             <div
               style={{
-                width: '16px',
-                height: '16px',
+                width: '12px',
+                height: '12px',
                 backgroundColor: '#ffe4cc',
-                borderRadius: '4px',
+                borderRadius: '3px',
                 border: '1px solid #ff7a00',
               }}
             ></div>
-            <span className="small">Com pedidos</span>
+            <span className="small" style={{ fontSize: '11px' }}>Com pedidos</span>
           </div>
         </div>
       </div>
