@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd homefix-frontend && npm install && npm run vercel-build",
+  "outputDirectory": "homefix-frontend/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
