@@ -2,11 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 
 const FloatingChat = () => {
-  if (typeof window !== 'undefined') {
-    console.log('[FloatingChat] 🚀 Component FUNCTION CALLED');
-    console.log('[FloatingChat] Window object exists:', typeof window !== 'undefined');
-  }
-  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState('');
@@ -35,8 +30,6 @@ const FloatingChat = () => {
     return null;
   });
   
-  console.log('[FloatingChat] 📊 Initial state:', { role, token: !!token, userId: !!userId });
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentRole = localStorage.getItem('role');
@@ -46,12 +39,6 @@ const FloatingChat = () => {
       setRole(currentRole);
       setUserId(currentUserId);
       setToken(currentToken);
-      
-      console.log('[FloatingChat] State updated:', { 
-        role: currentRole, 
-        userId: currentUserId, 
-        token: !!currentToken 
-      });
     }
   }, []);
 
@@ -199,52 +186,15 @@ const FloatingChat = () => {
   const isAdmin = role === 'admin';
   const isAuthenticated = !!token;
 
-  console.log('[FloatingChat] 🔍 Component render:', { 
-    role, 
-    isAdmin, 
-    isAuthenticated, 
-    shouldRender: !isAdmin,
-    hasToken: !!token,
-    userId: !!userId,
-    windowDefined: typeof window !== 'undefined'
-  });
-  
   if (isAdmin) {
-    console.log('[FloatingChat] ❌ BLOCKED - Admin user');
     return null;
   }
 
-  console.log('[FloatingChat] ✅ RENDERING - Will show button for role:', role || 'guest');
-
-  useEffect(() => {
-    const checkButton = () => {
-      const btn = document.getElementById('homefix-floating-chat-button');
-      if (btn) {
-        console.log('[FloatingChat] ✅ Button found in DOM!', btn);
-        const styles = window.getComputedStyle(btn);
-        console.log('[FloatingChat] Button computed styles:', {
-          display: styles.display,
-          visibility: styles.visibility,
-          opacity: styles.opacity,
-          zIndex: styles.zIndex,
-          position: styles.position,
-          bottom: styles.bottom,
-          right: styles.right,
-        });
-      } else {
-        console.error('[FloatingChat] ❌ Button NOT found in DOM!');
-      }
-    };
-    
-    const timeout = setTimeout(checkButton, 100);
-    return () => clearTimeout(timeout);
-  }, []);
 
   return (
     <>
       <button
         onClick={() => {
-          console.log('[FloatingChat] Button clicked!');
           setIsOpen(!isOpen);
         }}
         className="floating-chat-button"

@@ -424,7 +424,10 @@ img {
   color: #111827;
   font-weight: 500;
 }
-.floating-chat-button {
+.floating-chat-button,
+#homefix-floating-chat-button,
+button.floating-chat-button,
+button#homefix-floating-chat-button {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
@@ -439,10 +442,15 @@ img {
 }
 body .floating-chat-button,
 html body .floating-chat-button,
-#root .floating-chat-button {
+#root .floating-chat-button,
+body #homefix-floating-chat-button,
+html body #homefix-floating-chat-button,
+#root #homefix-floating-chat-button {
   z-index: 999999 !important;
   display: flex !important;
   position: fixed !important;
   visibility: visible !important;
   opacity: 1 !important;
+  bottom: 20px !important;
+  right: 20px !important;
 }
