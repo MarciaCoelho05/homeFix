@@ -44,6 +44,10 @@ router.get('/', protect, async (req, res) => {
       return res.status(403).json({ message: 'Acesso negado' });
     }
 
+    // Define variables in outer scope for use in filtering
+    let technicianCategories = [];
+    let hasSpecificCategories = false;
+
     let where;
     if (isAdmin) {
       where = {};
@@ -51,28 +55,16 @@ router.get('/', protect, async (req, res) => {
         where.status = req.query.status.toString();
       }
     } else {
-      const technicianCategories = Array.isArray(req.user.technicianCategory) 
+      technicianCategories = Array.isArray(req.user.technicianCategory) 
         ? req.user.technicianCategory 
         : req.user.technicianCategory ? [req.user.technicianCategory] : [];
-      const hasSpecificCategories = technicianCategories.length > 0 && 
+      hasSpecificCategories = technicianCategories.length > 0 && 
                                     !technicianCategories.some(cat => 
                                       cat && (cat.toLowerCase() === 'outros' || cat.toLowerCase() === 'other')
                                     );
 
       console.log('[REQUESTS] Technician categories:', technicianCategories);
       console.log('[REQUESTS] Has specific categories:', hasSpecificCategories);
-
-      // Normalize categories for comparison (remove accents, lowercase)
-      const normalizeCategory = (cat) => {
-        if (!cat) return '';
-        return cat.toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '') // Remove accents
-          .trim();
-      };
-
-      const normalizedTechCategories = technicianCategories.map(normalizeCategory);
-      console.log('[REQUESTS] Normalized technician categories:', normalizedTechCategories);
 
       // For technicians with specific categories, we'll fetch all pending requests
       // and filter by normalized category match in code to handle accent variations
@@ -110,6 +102,7 @@ router.get('/', protect, async (req, res) => {
 
     // Additional filtering for technicians to handle category variations
     if (!isAdmin && isTechnician && hasSpecificCategories) {
+      // Normalize categories for comparison (remove accents, lowercase)
       const normalizeCategory = (cat) => {
         if (!cat) return '';
         return cat.toLowerCase()
@@ -119,6 +112,7 @@ router.get('/', protect, async (req, res) => {
       };
 
       const normalizedTechCategories = technicianCategories.map(normalizeCategory);
+      console.log('[REQUESTS] Normalized technician categories:', normalizedTechCategories);
       const technicianId = req.user.id;
       
       // Filter available requests (pendente, no technician) by normalized category match
