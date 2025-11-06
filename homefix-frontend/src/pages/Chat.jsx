@@ -53,22 +53,42 @@ const Chat = () => {
   useEffect(() => {
     const loadRequests = async () => {
       try {
-        const endpoint = role === 'admin' ? '/requests' : role === 'technician' ? '/requests' : '/requests/mine';
-        const res = await api.get(endpoint);
-        const list = res.data || [];
-        const visibleRequests =
-          role === 'technician' && userId
-            ? list.filter((req) => {
-                const technicianId = req.technicianId || req.technician?.id || null;
-                return String(technicianId) === String(userId);
-              })
-                   : list;
-        setRequests(visibleRequests);
-        if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
-          setRequestId(initialRequestId);
-        } else if (!initialRequestId && visibleRequests.length > 0) {
-          setRequestId(visibleRequests[0].id);
-          setSearchParams({ requestId: visibleRequests[0].id });
+        if (role === 'admin') {
+          // Para admin, mostrar apenas pedidos de suporte
+          const res = await api.get('/requests');
+          const list = res.data || [];
+          // Filtrar apenas pedidos de suporte
+          const supportRequests = list.filter(req => 
+            req.title?.toLowerCase().includes('chat de suporte') || 
+            req.title?.toLowerCase().includes('suporte') || 
+            req.title?.toLowerCase().includes('apoio') ||
+            req.category?.toLowerCase() === 'suporte'
+          );
+          setRequests(supportRequests);
+          if (initialRequestId && supportRequests.some((req) => String(req.id) === String(initialRequestId))) {
+            setRequestId(initialRequestId);
+          } else if (!initialRequestId && supportRequests.length > 0) {
+            setRequestId(supportRequests[0].id);
+            setSearchParams({ requestId: supportRequests[0].id });
+          }
+        } else {
+          const endpoint = role === 'technician' ? '/requests' : '/requests/mine';
+          const res = await api.get(endpoint);
+          const list = res.data || [];
+          const visibleRequests =
+            role === 'technician' && userId
+              ? list.filter((req) => {
+                  const technicianId = req.technicianId || req.technician?.id || null;
+                  return String(technicianId) === String(userId);
+                })
+                     : list;
+          setRequests(visibleRequests);
+          if (initialRequestId && visibleRequests.some((req) => String(req.id) === String(initialRequestId))) {
+            setRequestId(initialRequestId);
+          } else if (!initialRequestId && visibleRequests.length > 0) {
+            setRequestId(visibleRequests[0].id);
+            setSearchParams({ requestId: visibleRequests[0].id });
+          }
         }
       } catch (err) {
         console.error('Erro ao carregar pedidos:', err);
@@ -172,7 +192,11 @@ const Chat = () => {
     return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].some((ext) => value.endsWith(ext));
   };
 
-  const chatTitle = role === 'technician' || role === 'admin' ? 'Conversas' : 'Chat com técnico';
+  const chatTitle = role === 'admin' 
+    ? 'Chat de Suporte' 
+    : role === 'technician' 
+      ? 'Conversas' 
+      : 'Chat com técnico';
 
   return (
     <Layout>
