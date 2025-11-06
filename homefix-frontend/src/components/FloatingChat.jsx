@@ -186,10 +186,22 @@ const FloatingChat = () => {
   const isAdmin = role === 'admin';
   const isAuthenticated = !!token;
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[FloatingChat] Component mounted/updated:', { isAdmin, role, token: !!token });
+      const button = document.getElementById('homefix-floating-chat-button');
+      if (button) {
+        console.log('[FloatingChat] Button found in DOM:', button);
+        console.log('[FloatingChat] Button computed styles:', window.getComputedStyle(button));
+      } else {
+        console.warn('[FloatingChat] Button NOT found in DOM');
+      }
+    }
+  }, [isAdmin, role, token]);
+
   if (isAdmin) {
     return null;
   }
-
 
   return (
     <>

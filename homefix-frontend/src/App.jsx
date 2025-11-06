@@ -50,7 +50,7 @@ const App = () => {
         color: 'white', 
         padding: '10px', 
         textAlign: 'center', 
-        zIndex: 999999,
+        zIndex: 1000,
         fontWeight: 'bold'
       }}>
         🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime}
