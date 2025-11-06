@@ -218,21 +218,52 @@ const TechnicianCalendar = ({ requests, onDateSelect, onRequestClick }) => {
                   }
                 }}
               >
-                <div className="d-flex flex-column align-items-center justify-content-center h-100">
+                <div className="d-flex flex-column align-items-center justify-content-center h-100" style={{ width: '100%' }}>
                   <span className="small fw-semibold" style={{ fontSize: '11px' }}>{dayInfo.day}</span>
                   {hasRequests && (
-                    <div className="mt-1">
-                      <span
-                        className="badge rounded-pill"
-                        style={{
-                          backgroundColor: '#ff7a00',
-                          color: 'white',
-                          fontSize: '8px',
-                          padding: '1px 4px',
-                        }}
-                      >
-                        {dayInfo.requests.length}
-                      </span>
+                    <div className="mt-1 w-100" style={{ overflow: 'hidden', textAlign: 'center' }}>
+                      {dayInfo.requests.length > 0 && (
+                        <div>
+                          <span
+                            className="badge rounded-pill"
+                            style={{
+                              backgroundColor: '#ff7a00',
+                              color: 'white',
+                              fontSize: '8px',
+                              padding: '1px 4px',
+                              marginBottom: '2px',
+                              display: 'block',
+                            }}
+                          >
+                            {dayInfo.requests.length}
+                          </span>
+                          {dayInfo.requests.map((req, idx) => {
+                            const ownerName = req.owner
+                              ? [req.owner.firstName, req.owner.lastName].filter(Boolean).join(' ').trim() || req.owner.email || 'Cliente'
+                              : 'Cliente';
+                            return (
+                              <div
+                                key={req.id || idx}
+                                className="small"
+                                style={{
+                                  fontSize: '8px',
+                                  color: dayIsToday ? 'rgba(255,255,255,0.9)' : '#374151',
+                                  fontWeight: 500,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  padding: '0 2px',
+                                  marginTop: '1px',
+                                  maxWidth: '100%',
+                                }}
+                                title={`${ownerName} - ${req.title || 'Pedido'}`}
+                              >
+                                {ownerName}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
