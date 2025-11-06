@@ -45,6 +45,7 @@ const ForgotPassword = () => {
                 <label className="form-label small text-uppercase">Email</label>
                 <input
                   type="email"
+                  name="email"
                   className={`form-control ${fieldError ? 'is-invalid' : ''}`}
                   value={email}
                   onChange={(event) => {
@@ -53,6 +54,7 @@ const ForgotPassword = () => {
                     setFieldError('');
                   }}
                   placeholder="email@exemplo.com"
+                  autoComplete="email"
                   required
                 />
                 {fieldError && <div className="invalid-feedback">{fieldError}</div>}

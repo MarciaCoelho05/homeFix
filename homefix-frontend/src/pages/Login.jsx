@@ -28,7 +28,9 @@ const Login = () => {
 
     try {
       setSubmitting(true);
-      const response = await api.post('/auth/login', { email, password });
+      // Normalize email to lowercase before sending (backend expects this)
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await api.post('/auth/login', { email: normalizedEmail, password });
       const { token, user } = response.data;
 
       localStorage.setItem('token', token);
@@ -45,8 +47,26 @@ const Login = () => {
       else if (role === 'technician') navigate('/dashboard');
       else navigate('/profile');
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Credenciais inválidas.';
-      setError(msg);
+      console.error('[Login] Error:', err);
+      console.error('[Login] Response:', err?.response);
+      
+      // Handle different error types
+      if (err?.response?.status === 401) {
+        const msg = err?.response?.data?.message || 'Credenciais inválidas. Verifique o email e a palavra-passe.';
+        setError(msg);
+      } else if (err?.response?.status === 400) {
+        const msg = err?.response?.data?.message || 'Dados inválidos. Verifique os campos preenchidos.';
+        setError(msg);
+      } else if (err?.response?.status >= 500) {
+        setError('Erro no servidor. Por favor, tente novamente mais tarde.');
+      } else if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
+        setError('Tempo de espera esgotado. Verifique a sua ligação à internet.');
+      } else if (err?.message?.includes('Network Error') || err?.code === 'ERR_NETWORK') {
+        setError('Erro de ligação. Verifique a sua ligação à internet e tente novamente.');
+      } else {
+        const msg = err?.response?.data?.message || err?.message || 'Erro ao fazer login. Tente novamente.';
+        setError(msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -81,8 +101,10 @@ const Login = () => {
                     type="email"
                     className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                     id="email"
+                    name="email"
                     value={email}
                     onChange={(event) => updateEmail(event.target.value)}
+                    autoComplete="email"
                     required
                   />
                   {fieldErrors.email && <div className="invalid-feedback">{fieldErrors.email}</div>}
@@ -95,8 +117,10 @@ const Login = () => {
                     type="password"
                     className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                     id="password"
+                    name="password"
                     value={password}
                     onChange={(event) => updatePassword(event.target.value)}
+                    autoComplete="current-password"
                     required
                   />
                   {fieldErrors.password && <div className="invalid-feedback">{fieldErrors.password}</div>}

@@ -94,12 +94,18 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // Log apenas em desenvolvimento
-  if (import.meta.env.DEV) {
-    console.log('[API] Making request:', config.method?.toUpperCase(), config.url, 'to', config.baseURL);
+  // Log request details (always log in production for debugging)
+  const fullUrl = (config.baseURL || '') + (config.url || '');
+  console.log('[API] Making request:', config.method?.toUpperCase(), config.url);
+  console.log('[API] Full URL:', fullUrl);
+  if (config.data && !config.url.includes('/auth/login')) {
+    // Don't log password data
+    console.log('[API] Request data:', config.data);
   }
+  
   return config;
 }, (error) => {
+  console.error('[API] Request interceptor error:', error);
   return Promise.reject(error);
 });
 
@@ -107,9 +113,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const fullUrl = error.config ? (error.config.baseURL || '') + (error.config.url || '') : 'unknown';
     console.error('[API] Request error:', error.message);
-    if (error.config) {
-      console.error('[API] Failed URL:', error.config.baseURL + error.config.url);
+    console.error('[API] Failed URL:', fullUrl);
+    console.error('[API] Status:', error.response?.status);
+    console.error('[API] Status text:', error.response?.statusText);
+    if (error.response?.data) {
+      console.error('[API] Response data:', error.response.data);
+    }
+    if (error.response?.headers) {
+      console.error('[API] Response headers:', error.response.headers);
     }
     return Promise.reject(error);
   }

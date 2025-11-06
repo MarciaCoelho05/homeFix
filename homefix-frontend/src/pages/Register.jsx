@@ -181,6 +181,7 @@ export default function Register() {
                 value={form.firstName}
                 onChange={handleChange}
                 className={`form-control ${fieldErrors.firstName ? "is-invalid" : ""}`}
+                autoComplete="given-name"
               />
               {fieldErrors.firstName && <div className="invalid-feedback">{fieldErrors.firstName}</div>}
             </div>
@@ -192,6 +193,7 @@ export default function Register() {
                 value={form.lastName}
                 onChange={handleChange}
                 className={`form-control ${fieldErrors.lastName ? "is-invalid" : ""}`}
+                autoComplete="family-name"
               />
               {fieldErrors.lastName && <div className="invalid-feedback">{fieldErrors.lastName}</div>}
             </div>
@@ -206,6 +208,7 @@ export default function Register() {
               value={form.email}
               onChange={handleChange}
               className={`form-control ${fieldErrors.email ? "is-invalid" : ""}`}
+              autoComplete="email"
             />
             {fieldErrors.email && <div className="invalid-feedback">{fieldErrors.email}</div>}
           </div>
@@ -220,6 +223,7 @@ export default function Register() {
               onChange={handleChange}
               maxLength={9}
               className={`form-control ${fieldErrors.nif ? "is-invalid" : ""}`}
+              autoComplete="off"
             />
             {fieldErrors.nif && <div className="invalid-feedback">{fieldErrors.nif}</div>}
             <small className="text-muted">Necessário para fatura com IVA</small>
@@ -234,6 +238,7 @@ export default function Register() {
               value={form.password}
               onChange={handleChange}
               className={`form-control ${fieldErrors.password ? "is-invalid" : ""}`}
+              autoComplete="new-password"
             />
             {fieldErrors.password && <div className="invalid-feedback">{fieldErrors.password}</div>}
           </div>
@@ -247,6 +252,7 @@ export default function Register() {
               value={form.confirmPassword}
               onChange={handleChange}
               className={`form-control ${fieldErrors.confirmPassword ? "is-invalid" : ""}`}
+              autoComplete="new-password"
             />
             {fieldErrors.confirmPassword && <div className="invalid-feedback">{fieldErrors.confirmPassword}</div>}
           </div>
@@ -261,6 +267,7 @@ export default function Register() {
               max={dateLimits.max}
               onChange={handleChange}
               className={`form-control ${fieldErrors.birthDate ? "is-invalid" : ""}`}
+              autoComplete="bday"
             />
             {fieldErrors.birthDate && <div className="invalid-feedback">{fieldErrors.birthDate}</div>}
           </div>

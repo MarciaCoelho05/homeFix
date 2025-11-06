@@ -50,9 +50,11 @@ export default function ResetPassword() {
                   <label className="form-label small text-uppercase">Nova palavra-passe</label>
                   <input 
                     type="password" 
+                    name="password"
                     className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
                     value={password} 
-                    onChange={e => { setPassword(e.target.value); setErrors({}) }} 
+                    onChange={e => { setPassword(e.target.value); setErrors({}) }}
+                    autoComplete="new-password"
                   />
                   {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                 </div>
@@ -60,9 +62,11 @@ export default function ResetPassword() {
                   <label className="form-label small text-uppercase">Confirmar palavra-passe</label>
                   <input 
                     type="password" 
+                    name="confirmPassword"
                     className={`form-control ${errors.confirm ? 'is-invalid' : ''}`} 
                     value={confirm} 
-                    onChange={e => { setConfirm(e.target.value); setErrors({}) }} 
+                    onChange={e => { setConfirm(e.target.value); setErrors({}) }}
+                    autoComplete="new-password"
                   />
                   {errors.confirm && <div className="invalid-feedback">{errors.confirm}</div>}
                 </div>
