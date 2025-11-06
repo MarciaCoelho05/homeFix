@@ -1,15 +1,24 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchContext } from './contexts/SearchContext';
 import AppRoutes from './routes';
 
 const App = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
 
-  if (typeof window !== 'undefined') {
-    console.log('[APP] 🚀 App component loaded - Version V2.0:', new Date().toISOString());
-    console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[APP] 🚀 App component loaded - Version V2.0:', new Date().toISOString());
+      console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
+      
+      const updateTime = () => {
+        setCurrentTime(new Date().toLocaleTimeString());
+      };
+      updateTime();
+      const interval = setInterval(updateTime, 1000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   return (
     <SearchContext.Provider value={{ searchQuery: globalSearchQuery, setSearchQuery: setGlobalSearchQuery }}>
@@ -25,7 +34,7 @@ const App = () => {
         zIndex: 999999,
         fontWeight: 'bold'
       }}>
-        🚀 DEPLOY V2.0 FUNCIONANDO - {new Date().toLocaleTimeString()}
+        🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime}
       </div>
       <div style={{ marginTop: '50px' }}>
         <AppRoutes />
