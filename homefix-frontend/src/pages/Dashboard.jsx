@@ -37,8 +37,10 @@ const Dashboard = () => {
       setStatus('');
       try {
         const endpoint = role === 'technician' || role === 'admin' ? '/requests' : '/requests/mine';
+        console.log('[Dashboard] Fetching requests from:', endpoint);
         const res = await api.get(endpoint);
         const list = res.data || [];
+        console.log('[Dashboard] Received', list.length, 'requests from API');
         // Filtrar pedidos de suporte para clientes e técnicos
         // (apenas admin deve ver pedidos de suporte)
         const filteredList = role === 'admin'
@@ -50,10 +52,12 @@ const Dashboard = () => {
                                req.category?.toLowerCase() === 'suporte';
               return !isSupport; // Excluir pedidos de suporte
             });
+        console.log('[Dashboard] After filtering support requests:', filteredList.length, 'requests');
         setRequests(filteredList);
       } catch (err) {
-        console.error('Erro ao carregar pedidos:', err);
-        setError('Não foi possível carregar os pedidos.');
+        console.error('[Dashboard] Erro ao carregar pedidos:', err);
+        console.error('[Dashboard] Error response:', err?.response);
+        setError(err?.response?.data?.message || 'Não foi possível carregar os pedidos.');
       } finally {
         if (!silent) {
           setLoading(false);

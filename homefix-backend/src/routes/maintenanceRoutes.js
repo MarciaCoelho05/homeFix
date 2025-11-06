@@ -29,60 +29,80 @@ async function sendEmailSafe(mailOptions) {
 }
 
 router.get('/', protect, async (req, res) => {
-  const isAdmin = req.user.isAdmin === true;
-  const isTechnician = req.user.isTechnician === true;
+  try {
+    const isAdmin = req.user.isAdmin === true;
+    const isTechnician = req.user.isTechnician === true;
 
-  if (!isAdmin && !isTechnician) {
-    return res.status(403).json({ message: 'Acesso negado' });
-  }
+    console.log('[REQUESTS] GET / - User:', {
+      id: req.user.id,
+      isAdmin,
+      isTechnician,
+      categories: req.user.technicianCategory
+    });
 
-  let where;
-  if (isAdmin) {
-    where = {};
-    if (req.query.status) {
-      where.status = req.query.status.toString();
+    if (!isAdmin && !isTechnician) {
+      return res.status(403).json({ message: 'Acesso negado' });
     }
-  } else {
-    const technicianCategories = Array.isArray(req.user.technicianCategory) 
-      ? req.user.technicianCategory 
-      : req.user.technicianCategory ? [req.user.technicianCategory] : [];
-    const hasSpecificCategories = technicianCategories.length > 0 && 
-                                  !technicianCategories.some(cat => 
-                                    cat && (cat.toLowerCase() === 'outros' || cat.toLowerCase() === 'other')
-                                  );
 
-    const baseFilter = {
-      OR: [
-        { technicianId: req.user.id },
-        hasSpecificCategories 
-          ? { technicianId: null, status: 'pendente', category: { in: technicianCategories } }
-          : { technicianId: null, status: 'pendente' },
-      ],
-    };
+    let where;
+    if (isAdmin) {
+      where = {};
+      if (req.query.status) {
+        where.status = req.query.status.toString();
+      }
+    } else {
+      const technicianCategories = Array.isArray(req.user.technicianCategory) 
+        ? req.user.technicianCategory 
+        : req.user.technicianCategory ? [req.user.technicianCategory] : [];
+      const hasSpecificCategories = technicianCategories.length > 0 && 
+                                    !technicianCategories.some(cat => 
+                                      cat && (cat.toLowerCase() === 'outros' || cat.toLowerCase() === 'other')
+                                    );
 
-    if (req.query.status) {
-      const status = req.query.status.toString();
-      baseFilter.OR = [
-        { technicianId: req.user.id, status },
-        hasSpecificCategories 
-          ? { technicianId: null, status, category: { in: technicianCategories } }
-          : { technicianId: null, status },
-      ];
+      console.log('[REQUESTS] Technician categories:', technicianCategories);
+      console.log('[REQUESTS] Has specific categories:', hasSpecificCategories);
+
+      const baseFilter = {
+        OR: [
+          { technicianId: req.user.id },
+          hasSpecificCategories 
+            ? { technicianId: null, status: 'pendente', category: { in: technicianCategories } }
+            : { technicianId: null, status: 'pendente' },
+        ],
+      };
+
+      if (req.query.status) {
+        const status = req.query.status.toString();
+        baseFilter.OR = [
+          { technicianId: req.user.id, status },
+          hasSpecificCategories 
+            ? { technicianId: null, status, category: { in: technicianCategories } }
+            : { technicianId: null, status },
+        ];
+      }
+      where = baseFilter;
     }
-    where = baseFilter;
-  }
 
-  const requests = await prisma.maintenanceRequest.findMany({
-    where,
-    include: {
-      owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-      technician: { select: { id: true, firstName: true, lastName: true, email: true } },
-      messages: true,
-      feedback: { include: { user: { select: { firstName: true } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  res.json(requests);
+    console.log('[REQUESTS] Query where clause:', JSON.stringify(where, null, 2));
+
+    const requests = await prisma.maintenanceRequest.findMany({
+      where,
+      include: {
+        owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+        messages: true,
+        feedback: { include: { user: { select: { firstName: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    console.log('[REQUESTS] Found', requests.length, 'requests');
+    res.json(requests);
+  } catch (err) {
+    console.error('[REQUESTS] Error fetching requests:', err);
+    console.error('[REQUESTS] Stack:', err.stack);
+    res.status(500).json({ message: 'Erro ao carregar pedidos', error: err.message });
+  }
 });
 
 router.get('/mine', protect, async (req, res) => {
