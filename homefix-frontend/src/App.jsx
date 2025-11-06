@@ -4,37 +4,39 @@ import AppRoutes from './routes';
 
 const App = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [currentTime, setCurrentTime] = useState(() => {
-    if (typeof window !== 'undefined') {
+  const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const getTimeString = () => {
       try {
-        return new Date().toLocaleTimeString();
+        const date = new Date();
+        return date.toLocaleTimeString();
       } catch (e) {
         return '';
       }
-    }
-    return '';
-  });
+    };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const getISOString = () => {
       try {
-        console.log('[APP] 🚀 App component loaded - Version V2.0:', new Date().toISOString());
-        console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
-        
-        const updateTime = () => {
-          try {
-            setCurrentTime(new Date().toLocaleTimeString());
-          } catch (e) {
-            console.error('[APP] Error updating time:', e);
-          }
-        };
-        updateTime();
-        const interval = setInterval(updateTime, 1000);
-        return () => clearInterval(interval);
+        const date = new Date();
+        return date.toISOString();
       } catch (e) {
-        console.error('[APP] Error in useEffect:', e);
+        return '';
       }
-    }
+    };
+
+    console.log('[APP] 🚀 App component loaded - Version V2.0:', getISOString());
+    console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
+    
+    setCurrentTime(getTimeString());
+    
+    const interval = setInterval(() => {
+      setCurrentTime(getTimeString());
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (
