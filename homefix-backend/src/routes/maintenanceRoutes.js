@@ -62,12 +62,24 @@ router.get('/', protect, async (req, res) => {
       console.log('[REQUESTS] Technician categories:', technicianCategories);
       console.log('[REQUESTS] Has specific categories:', hasSpecificCategories);
 
+      // Normalize categories for comparison (remove accents, lowercase)
+      const normalizeCategory = (cat) => {
+        if (!cat) return '';
+        return cat.toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .trim();
+      };
+
+      const normalizedTechCategories = technicianCategories.map(normalizeCategory);
+      console.log('[REQUESTS] Normalized technician categories:', normalizedTechCategories);
+
+      // For technicians with specific categories, we'll fetch all pending requests
+      // and filter by normalized category match in code to handle accent variations
       const baseFilter = {
         OR: [
           { technicianId: req.user.id },
-          hasSpecificCategories 
-            ? { technicianId: null, status: 'pendente', category: { in: technicianCategories } }
-            : { technicianId: null, status: 'pendente' },
+          { technicianId: null, status: 'pendente' },
         ],
       };
 
@@ -75,9 +87,7 @@ router.get('/', protect, async (req, res) => {
         const status = req.query.status.toString();
         baseFilter.OR = [
           { technicianId: req.user.id, status },
-          hasSpecificCategories 
-            ? { technicianId: null, status, category: { in: technicianCategories } }
-            : { technicianId: null, status },
+          { technicianId: null, status },
         ];
       }
       where = baseFilter;
@@ -85,7 +95,7 @@ router.get('/', protect, async (req, res) => {
 
     console.log('[REQUESTS] Query where clause:', JSON.stringify(where, null, 2));
 
-    const requests = await prisma.maintenanceRequest.findMany({
+    let requests = await prisma.maintenanceRequest.findMany({
       where,
       include: {
         owner: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
@@ -96,7 +106,43 @@ router.get('/', protect, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log('[REQUESTS] Found', requests.length, 'requests');
+    console.log('[REQUESTS] Found', requests.length, 'requests before category filtering');
+
+    // Additional filtering for technicians to handle category variations
+    if (!isAdmin && isTechnician && hasSpecificCategories) {
+      const normalizeCategory = (cat) => {
+        if (!cat) return '';
+        return cat.toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .trim();
+      };
+
+      const normalizedTechCategories = technicianCategories.map(normalizeCategory);
+      const technicianId = req.user.id;
+      
+      // Filter available requests (pendente, no technician) by normalized category match
+      requests = requests.filter(req => {
+        // Always include assigned requests
+        if (req.technicianId === technicianId) return true;
+        
+        // For available requests, check normalized category match
+        if (!req.technicianId && req.status === 'pendente') {
+          const normalizedReqCategory = normalizeCategory(req.category);
+          return normalizedTechCategories.some(techCat => 
+            normalizedReqCategory === techCat || 
+            normalizedReqCategory.includes(techCat) ||
+            techCat.includes(normalizedReqCategory)
+          );
+        }
+        
+        return false;
+      });
+      
+      console.log('[REQUESTS] After category normalization filter:', requests.length, 'requests');
+    }
+
+    console.log('[REQUESTS] Returning', requests.length, 'requests');
     res.json(requests);
   } catch (err) {
     console.error('[REQUESTS] Error fetching requests:', err);
