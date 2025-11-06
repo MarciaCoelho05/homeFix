@@ -26,11 +26,10 @@ const getApiUrl = () => {
     
     console.warn('[API] VITE_API_URL not set, using auto-detection for:', hostname);
     
-    if (hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
-      if (hostname.includes('homefix-frontend')) {
-        const backendUrl = hostname.replace('homefix-frontend', 'homefix-backend');
-        console.warn('[API] Auto-detected Vercel backend:', `https://${backendUrl}/api`);
-        return `https://${backendUrl}/api`;
+    if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
+      if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend')) {
+        console.warn('[API] Vercel frontend detected. Using Railway backend.');
+        return 'https://homefix-production.up.railway.app/api';
       }
       console.error('[API] Could not auto-detect backend. Please set VITE_API_URL in Vercel.');
     }
