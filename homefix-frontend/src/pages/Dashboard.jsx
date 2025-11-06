@@ -73,7 +73,7 @@ const Dashboard = () => {
     if (role !== 'technician') return [];
     return requests.filter((request) => {
       const technicianId = request.technicianId || request.technician?.id || null;
-      const status = (request.status || '').toLowerCase();
+      const status = (request.status || '').toLowerCase().replace(/_/g, '');
       return !technicianId && status === 'pendente';
     });
   }, [requests, role]);
