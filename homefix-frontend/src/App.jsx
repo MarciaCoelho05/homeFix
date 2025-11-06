@@ -4,19 +4,36 @@ import AppRoutes from './routes';
 
 const App = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return new Date().toLocaleTimeString();
+      } catch (e) {
+        return '';
+      }
+    }
+    return '';
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('[APP] 🚀 App component loaded - Version V2.0:', new Date().toISOString());
-      console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
-      
-      const updateTime = () => {
-        setCurrentTime(new Date().toLocaleTimeString());
-      };
-      updateTime();
-      const interval = setInterval(updateTime, 1000);
-      return () => clearInterval(interval);
+      try {
+        console.log('[APP] 🚀 App component loaded - Version V2.0:', new Date().toISOString());
+        console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
+        
+        const updateTime = () => {
+          try {
+            setCurrentTime(new Date().toLocaleTimeString());
+          } catch (e) {
+            console.error('[APP] Error updating time:', e);
+          }
+        };
+        updateTime();
+        const interval = setInterval(updateTime, 1000);
+        return () => clearInterval(interval);
+      } catch (e) {
+        console.error('[APP] Error in useEffect:', e);
+      }
     }
   }, []);
 

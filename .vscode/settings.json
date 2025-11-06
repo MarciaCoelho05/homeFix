@@ -1,0 +1,10 @@
+{
+  "css.lint.unknownProperties": "ignore",
+  "css.lint.vendorPrefix": "ignore",
+  "files.exclude": {
+    "**/dist/**": false,
+    "**/node_modules/**": true
+  },
+  "css.validate": true
+}
+
