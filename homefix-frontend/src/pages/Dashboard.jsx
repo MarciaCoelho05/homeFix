@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import HeroBanner from '../components/HeroBanner';
+import TechnicianCalendar from '../components/TechnicianCalendar';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -17,6 +18,11 @@ const Dashboard = () => {
   const [currentRequestId, setCurrentRequestId] = useState('');
   const [feedbackForm, setFeedbackForm] = useState({});
   const [submittingFeedback, setSubmittingFeedback] = useState('');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [updatingDate, setUpdatingDate] = useState(false);
 
   const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
@@ -250,6 +256,50 @@ const Dashboard = () => {
     [feedbackForm, fetchRequests],
   );
 
+  const handleUpdateDate = async () => {
+    if (!selectedRequest || !newDate) return;
+    
+    setUpdatingDate(true);
+    setError('');
+    try {
+      // Combinar data e hora
+      const dateTime = newTime 
+        ? `${newDate}T${newTime}:00`
+        : `${newDate}T00:00:00`;
+      
+      await api.put(`/requests/${selectedRequest.id}`, {
+        scheduledAt: dateTime,
+      });
+      
+      setStatus('Data do pedido atualizada com sucesso.');
+      setShowDateModal(false);
+      setSelectedRequest(null);
+      setNewDate('');
+      setNewTime('');
+      await fetchRequests(true);
+    } catch (err) {
+      console.error('Erro ao atualizar data:', err);
+      setError(err?.response?.data?.message || 'Não foi possível atualizar a data do pedido.');
+    } finally {
+      setUpdatingDate(false);
+    }
+  };
+
+  const handleOpenDateModal = (request) => {
+    setSelectedRequest(request);
+    if (request.scheduledAt) {
+      const date = new Date(request.scheduledAt);
+      const dateStr = date.toISOString().split('T')[0];
+      const timeStr = date.toTimeString().split(' ')[0].slice(0, 5);
+      setNewDate(dateStr);
+      setNewTime(timeStr);
+    } else {
+      setNewDate('');
+      setNewTime('');
+    }
+    setShowDateModal(true);
+  };
+
   const formatDate = (value) => {
     if (!value) return '-';
     try {
@@ -363,9 +413,21 @@ const Dashboard = () => {
               <strong>Descrição:</strong> {request.description}
             </p>
           )}
-          <p className="text-muted small mb-2">
-            <strong>Data preferencial:</strong> {formatDate(request.scheduledAt)}
-          </p>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <p className="text-muted small mb-0">
+              <strong>Data preferencial:</strong> {formatDate(request.scheduledAt)}
+            </p>
+            {isAssignedTech && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => handleOpenDateModal(request)}
+                title="Alterar data"
+              >
+                📅
+              </button>
+            )}
+          </div>
           {request.owner && (
             <div className="d-flex align-items-center gap-2 mb-2">
               {(() => {
@@ -543,6 +605,77 @@ const Dashboard = () => {
       {status && <div className="alert alert-success py-2">{status}</div>}
       {error && <div className="alert alert-danger py-2">{error}</div>}
 
+      {showDateModal && selectedRequest && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Alterar data do pedido</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowDateModal(false);
+                    setSelectedRequest(null);
+                    setNewDate('');
+                    setNewTime('');
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-3">
+                  <strong>Pedido:</strong> {selectedRequest.title}
+                </p>
+                <div className="mb-3">
+                  <label className="form-label">Nova data</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Hora (opcional)</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                  />
+                  <small className="text-muted">Deixe em branco para usar 00:00</small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowDateModal(false);
+                    setSelectedRequest(null);
+                    setNewDate('');
+                    setNewTime('');
+                  }}
+                  disabled={updatingDate}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleUpdateDate}
+                  disabled={!newDate || updatingDate}
+                >
+                  {updatingDate ? 'A atualizar...' : 'Atualizar data'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPriceModal && (
         <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -614,6 +747,23 @@ const Dashboard = () => {
         <>
           {role === 'technician' && (
             <>
+              <section className="mb-5">
+                <h2 className="h5 fw-semibold mb-4">Calendário de pedidos</h2>
+                <TechnicianCalendar
+                  requests={assignedRequests}
+                  onDateSelect={(dayInfo) => {
+                    if (dayInfo.requests && dayInfo.requests.length > 0) {
+                      // Scroll para o pedido ou mostrar modal
+                      const firstRequest = dayInfo.requests[0];
+                      handleOpenDateModal(firstRequest);
+                    }
+                  }}
+                  onRequestClick={(request) => {
+                    handleOpenDateModal(request);
+                  }}
+                />
+              </section>
+
               <section className="mb-5">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h2 className="h5 fw-semibold mb-0">Pedidos disponíveis</h2>
