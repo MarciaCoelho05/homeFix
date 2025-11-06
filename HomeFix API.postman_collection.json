@@ -1,0 +1,1160 @@
+{
+	"info": {
+		"_postman_id": "8ec102a7-95a1-48bd-b082-95a1e97b04de",
+		"name": "HomeFix API",
+		"description": "Collection completa da API HomeFix para testes no Postman",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47629341",
+		"_collection_link": "https://yahcram-2163729.postman.co/workspace/M%C3%A1rcia's-Workspace~31ec8d56-69ff-4dee-8e87-2cb32542a88c/collection/47629341-8ec102a7-95a1-48bd-b082-95a1e97b04de?action=share&source=collection_link&creator=47629341"
+	},
+	"item": [
+		{
+			"name": "Autenticação",
+			"item": [
+				{
+					"name": "Registar Utilizador",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"teste@example.com\",\n  \"password\": \"senha123!\",\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"nif\": \"123456789\",\n  \"birthDate\": \"1990-01-01\",\n  \"isTechnician\": false,\n  \"technicianCategory\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registar Técnico",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tecnico@example.com\",\n  \"password\": \"senha123!\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Santos\",\n  \"nif\": \"987654321\",\n  \"birthDate\": \"1985-05-15\",\n  \"isTechnician\": true,\n  \"technicianCategory\": [\"Eletricidade\", \"Canalização\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set(\"auth_token\", jsonData.token);",
+									"        pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"teste@example.com\",\n  \"password\": \"senha123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Esqueci a Senha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"teste@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/forgot",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"forgot"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Redefinir Senha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"seu_token_aqui\",\n  \"password\": \"novaSenha123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"reset"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Perfil",
+			"item": [
+				{
+					"name": "Obter Perfil",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Perfil",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"nif\": \"123456789\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"birthDate\": \"1990-01-01\",\n  \"technicianCategory\": [\"Eletricidade\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Conta",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pedidos de Manutenção",
+			"item": [
+				{
+					"name": "Listar Todos os Pedidos (Admin/Técnico)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/?status=pendente",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								""
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pendente",
+									"description": "Opcional: pendente, em_progresso, concluido"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Meus Pedidos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/mine",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Criar Pedido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Reparação de torneira\",\n  \"description\": \"A torneira da cozinha está a pingar constantemente\",\n  \"category\": \"Canalização\",\n  \"price\": 50.00,\n  \"scheduledAt\": \"2024-12-25T10:00:00Z\",\n  \"status\": \"pendente\",\n  \"mediaUrls\": [\"https://example.com/image.jpg\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Pedido por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Pedido",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Reparação de torneira atualizada\",\n  \"description\": \"Descrição atualizada\",\n  \"category\": \"Canalização\",\n  \"price\": 60.00,\n  \"status\": \"em_progresso\",\n  \"scheduledAt\": \"2024-12-26T14:00:00Z\",\n  \"technicianId\": \"technician_id_aqui\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Pedido",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Aceitar Pedido (Técnico)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"em_progresso\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/accept",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"accept"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recusar Pedido (Técnico)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/decline",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"decline"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Concluir Pedido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"complete"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Preço",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 75.50\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/price",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"price"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Adicionar Feedback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excelente serviço! Muito profissional.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/feedback",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"feedback"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Fatura (PDF)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/maintenance/:id/invoice",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"maintenance",
+								":id",
+								"invoice"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mensagens",
+			"item": [
+				{
+					"name": "Obter Mensagens de um Pedido",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/:requestId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								":requestId"
+							],
+							"variable": [
+								{
+									"key": "requestId",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Enviar Mensagem",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requestId\": \"request_id_aqui\",\n  \"content\": \"Olá, quando pode vir fazer a reparação?\",\n  \"attachments\": [\"https://example.com/image.jpg\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Mensagem",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/:messageId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								":messageId"
+							],
+							"variable": [
+								{
+									"key": "messageId",
+									"value": "message_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Upload",
+			"item": [
+				{
+					"name": "Upload de Ficheiro",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/upload/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Listar Todos os Utilizadores",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Role de Utilizador",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isAdmin\": true,\n  \"isTechnician\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/:id/role",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id",
+								"role"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Utilizador",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos os Pedidos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/requests",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Pedido (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/requests/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"requests",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "request_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos os Feedbacks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/feedbacks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"feedbacks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Feedback",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/feedbacks/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"feedbacks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "feedback_id_aqui"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Email",
+			"item": [
+				{
+					"name": "Teste de Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"teste@example.com\",\n  \"subject\": \"Teste HomeFix\",\n  \"text\": \"Email de teste HomeFix\",\n  \"html\": \"<h1>Teste</h1>\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/email/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"email",
+								"test"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Público",
+			"item": [
+				{
+					"name": "Teste de Rotas Públicas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/public/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"public",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Pedidos Públicos (com Feedback)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/public/requests?status=concluido",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"public",
+								"requests"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "concluido",
+									"description": "Opcional: pendente, em_progresso, concluido"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CORS Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cors-test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"cors-test"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://homefix-production.up.railway.app"
+		},
+		{
+			"key": "auth_token",
+			"value": ""
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		}
+	]
+}
