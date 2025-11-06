@@ -99,6 +99,15 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  
+  // Chat de suporte
+  const [selectedRequestId, setSelectedRequestId] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [chatContent, setChatContent] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatRequests, setChatRequests] = useState([]);
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const [userSort, setUserSort] = useState({ key: 'createdAt', direction: 'desc' });
   const [requestSort, setRequestSort] = useState({ key: 'createdAt', direction: 'desc' });
@@ -116,6 +125,32 @@ const AdminDashboard = () => {
       setUsers(usersRes.data || []);
       setRequests(requestsRes.data || []);
       setFeedbacks(feedbacksRes.data || []);
+      
+      // Carregar pedidos para chat
+      const chatRequestsRes = await api.get('/requests');
+      const chatRequestsList = chatRequestsRes.data || [];
+      // Filtrar apenas pedidos com mensagens
+      const requestsWithMessages = await Promise.all(
+        chatRequestsList.map(async (req) => {
+          try {
+            const messagesRes = await api.get(`/messages/${req.id}`);
+            return {
+              ...req,
+              messageCount: (messagesRes.data || []).length,
+              hasMessages: (messagesRes.data || []).length > 0,
+            };
+          } catch {
+            return { ...req, messageCount: 0, hasMessages: false };
+          }
+        })
+      );
+      setChatRequests(requestsWithMessages.filter(req => req.hasMessages));
+      if (requestsWithMessages.filter(req => req.hasMessages).length > 0 && !selectedRequestId) {
+        const firstWithMessages = requestsWithMessages.find(req => req.hasMessages);
+        if (firstWithMessages) {
+          setSelectedRequestId(firstWithMessages.id);
+        }
+      }
     } catch (err) {
       console.error('Erro ao carregar dados administrativos:', err);
       setError('Nao foi possivel carregar os dados. Tente novamente.');
@@ -123,6 +158,84 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   }, []);
+  
+  const fetchMessages = useCallback(async (requestId) => {
+    if (!requestId) {
+      setMessages([]);
+      return;
+    }
+    setChatLoading(true);
+    try {
+      const res = await api.get(`/messages/${requestId}`);
+      setMessages(res.data || []);
+    } catch (err) {
+      console.error('Erro ao carregar mensagens:', err);
+      setMessages([]);
+    } finally {
+      setChatLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (selectedRequestId) {
+      fetchMessages(selectedRequestId);
+    }
+  }, [selectedRequestId, fetchMessages]);
+  
+  const handleSendMessage = async () => {
+    if (!selectedRequestId || (!chatContent.trim() && pendingAttachments.length === 0)) return;
+    
+    try {
+      await api.post('/messages', {
+        requestId: selectedRequestId,
+        content: chatContent.trim(),
+        attachments: pendingAttachments.map((item) => item.url),
+      });
+      setChatContent('');
+      setPendingAttachments([]);
+      fetchMessages(selectedRequestId);
+    } catch (err) {
+      console.error('Erro ao enviar mensagem:', err);
+      setError('Não foi possível enviar a mensagem.');
+    }
+  };
+  
+  const handleFileChange = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
+    
+    try {
+      setUploading(true);
+      const uploaded = [];
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        uploaded.push({
+          url: response.data.url,
+          type: file.type.startsWith('video') ? 'video' : 'image',
+        });
+      }
+      setPendingAttachments((prev) => [...prev, ...uploaded]);
+    } catch (err) {
+      console.error('Erro ao carregar anexos:', err);
+      setError('Não foi possível carregar os anexos.');
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handleRemoveAttachment = (url) => {
+    setPendingAttachments((prev) => prev.filter((item) => item.url !== url));
+  };
+  
+  const isVideo = (url = '') => {
+    const value = url.toLowerCase();
+    return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].some((ext) => value.endsWith(ext));
+  };
 
   useEffect(() => {
     loadData();
@@ -584,6 +697,294 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </section>
+
+          <section className="card border-0 shadow-sm mb-5">
+            <div
+              style={{
+                backgroundColor: '#ff7a00',
+                color: 'white',
+                padding: '20px 24px',
+                borderRadius: '16px 16px 0 0',
+              }}
+            >
+              <h2 className="h5 fw-semibold mb-0" style={{ color: 'white', margin: 0 }}>
+                Chat de Suporte - Pedidos
+              </h2>
+              <p className="small mb-0 mt-2" style={{ opacity: 0.9 }}>
+                Visualize e responda às mensagens de técnicos e clientes
+              </p>
+            </div>
+            <div className="card-body p-3 p-md-4">
+              {chatRequests.length === 0 ? (
+                <p className="text-muted text-center py-4">Não há pedidos com mensagens no momento.</p>
+              ) : (
+                <div className="row">
+                  <div className="col-12 col-md-4 mb-3 mb-md-0">
+                    <label className="form-label small text-uppercase fw-semibold" style={{ color: '#374151' }}>
+                      Selecionar pedido ({chatRequests.length})
+                    </label>
+                    <select
+                      className="form-select"
+                      value={selectedRequestId}
+                      onChange={(e) => setSelectedRequestId(e.target.value)}
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        fontSize: '14px',
+                      }}
+                    >
+                      {chatRequests.map((req) => (
+                        <option key={req.id} value={req.id}>
+                          {req.title} - {req.messageCount} mensagem{req.messageCount !== 1 ? 's' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-12 col-md-8">
+                    <div
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginBottom: '16px',
+                        minHeight: '300px',
+                        maxHeight: '500px',
+                        overflowY: 'auto',
+                        backgroundColor: '#f9fafb',
+                      }}
+                    >
+                      {chatLoading ? (
+                        <div className="text-center py-5">
+                          <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">A carregar...</span>
+                          </div>
+                        </div>
+                      ) : messages.length === 0 ? (
+                        <div className="text-center py-5 text-muted">
+                          <p>Sem mensagens para este pedido.</p>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {messages.map((msg) => {
+                            const senderLabel =
+                              [msg.sender?.firstName, msg.sender?.lastName].filter(Boolean).join(' ') ||
+                              msg.sender?.email ||
+                              'Utilizador';
+                            const senderRole = msg.sender?.isAdmin
+                              ? 'Admin'
+                              : msg.sender?.isTechnician
+                                ? 'Técnico'
+                                : 'Cliente';
+                            const isAdmin = msg.sender?.isAdmin;
+                            return (
+                              <div
+                                key={msg.id}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: isAdmin ? 'flex-end' : 'flex-start',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    maxWidth: '75%',
+                                    padding: '10px 14px',
+                                    borderRadius: '12px',
+                                    backgroundColor: isAdmin ? '#ff7a00' : '#f3f4f6',
+                                    color: isAdmin ? 'white' : '#1f2937',
+                                    fontSize: '14px',
+                                    lineHeight: '1.4',
+                                    position: 'relative',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      marginBottom: '4px',
+                                      opacity: 0.9,
+                                      color: isAdmin ? 'white' : '#374151',
+                                    }}
+                                  >
+                                    {senderLabel} ({senderRole})
+                                  </div>
+                                  <div>{msg.content}</div>
+                                  {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                                    <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                      {msg.attachments.map((url, idx) => {
+                                        const isVideoFile = isVideo(url);
+                                        return isVideoFile ? (
+                                          <video
+                                            key={idx}
+                                            src={url}
+                                            controls
+                                            style={{ maxWidth: '150px', maxHeight: '150px', borderRadius: '8px' }}
+                                          />
+                                        ) : (
+                                          <img
+                                            key={idx}
+                                            src={url}
+                                            alt="Anexo"
+                                            style={{
+                                              maxWidth: '150px',
+                                              maxHeight: '150px',
+                                              borderRadius: '8px',
+                                              objectFit: 'cover',
+                                            }}
+                                          />
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  <div
+                                    style={{
+                                      fontSize: '11px',
+                                      marginTop: '4px',
+                                      opacity: 0.7,
+                                      textAlign: 'right',
+                                    }}
+                                  >
+                                    {msg.createdAt &&
+                                      new Date(msg.createdAt).toLocaleTimeString('pt-PT', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }}
+                      style={{
+                        borderTop: '1px solid #e5e7eb',
+                        paddingTop: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                      }}
+                    >
+                      <div>
+                        <input
+                          type="file"
+                          className="form-control form-control-sm"
+                          accept="image/*,video/*"
+                          multiple
+                          onChange={handleFileChange}
+                          disabled={uploading}
+                          style={{ fontSize: '14px' }}
+                        />
+                        {uploading && (
+                          <div className="small text-muted mt-2" style={{ fontSize: '12px' }}>
+                            A carregar anexos...
+                          </div>
+                        )}
+                        {pendingAttachments.length > 0 && (
+                          <div className="d-flex flex-wrap gap-2 mt-2">
+                            {pendingAttachments.map((item) =>
+                              item.type === 'video' ? (
+                                <div key={item.url} className="position-relative">
+                                  <video
+                                    src={item.url}
+                                    controls
+                                    style={{ maxWidth: '150px', maxHeight: '150px', borderRadius: '8px' }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger position-absolute"
+                                    onClick={() => handleRemoveAttachment(item.url)}
+                                    style={{
+                                      top: '4px',
+                                      right: '4px',
+                                      padding: '2px 6px',
+                                      fontSize: '12px',
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                <div key={item.url} className="position-relative">
+                                  <img
+                                    src={item.url}
+                                    alt="Pré-visualização"
+                                    style={{
+                                      maxWidth: '120px',
+                                      maxHeight: '120px',
+                                      borderRadius: '8px',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger position-absolute"
+                                    onClick={() => handleRemoveAttachment(item.url)}
+                                    style={{
+                                      top: '4px',
+                                      right: '4px',
+                                      padding: '2px 6px',
+                                      fontSize: '12px',
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={chatContent}
+                          onChange={(e) => setChatContent(e.target.value)}
+                          placeholder="Digite a sua mensagem de suporte..."
+                          style={{
+                            flex: 1,
+                            padding: '10px 14px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            outline: 'none',
+                          }}
+                        />
+                        <button
+                          className="btn"
+                          type="submit"
+                          disabled={!selectedRequestId || uploading || !chatContent.trim()}
+                          style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#ff7a00',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: (!selectedRequestId || uploading || !chatContent.trim()) ? 'not-allowed' : 'pointer',
+                            fontWeight: 600,
+                            fontSize: '14px',
+                            opacity: (!selectedRequestId || uploading || !chatContent.trim()) ? 0.5 : 1,
+                            transition: 'opacity 0.2s',
+                          }}
+                        >
+                          Enviar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </>
