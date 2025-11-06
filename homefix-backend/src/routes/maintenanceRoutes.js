@@ -66,8 +66,7 @@ router.get('/', protect, async (req, res) => {
       console.log('[REQUESTS] Technician categories:', technicianCategories);
       console.log('[REQUESTS] Has specific categories:', hasSpecificCategories);
 
-      // For technicians with specific categories, we'll fetch all pending requests
-      // and filter by normalized category match in code to handle accent variations
+
       const baseFilter = {
         OR: [
           { technicianId: req.user.id },
