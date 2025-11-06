@@ -63,7 +63,7 @@ const Dashboard = () => {
     if (role === 'technician') {
       return requests.filter((request) => {
         const technicianId = request.technicianId || request.technician?.id || null;
-        return technicianId === userId;
+        return String(technicianId) === String(userId);
       });
     }
     return requests;
@@ -260,12 +260,13 @@ const Dashboard = () => {
   };
 
   const renderRequestCard = (request, { showAcceptDecline = false } = {}) => {
-    const normalizedStatus = (request.status || '').toLowerCase();
+    const normalizedStatus = (request.status || '').toLowerCase().replace(/_/g, '');
     const isConcluded = normalizedStatus === 'concluido';
     const ownerId = request.ownerId || request.owner?.id || null;
     const technicianId = request.technicianId || request.technician?.id || null;
-    const isOwner = ownerId === userId;
-    const isAssignedTech = technicianId === userId;
+    // Garantir comparação de strings para IDs
+    const isOwner = String(ownerId) === String(userId);
+    const isAssignedTech = String(technicianId) === String(userId);
     const canComplete = !isConcluded && ((role === 'technician' && isAssignedTech) || role === 'admin');
     const canDelete = isOwner && role !== 'technician';
     const canDownloadInvoice = isConcluded && (isOwner || isAssignedTech || role === 'admin');
