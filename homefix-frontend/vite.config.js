@@ -18,6 +18,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'esbuild',
+    chunkSizeWarningLimit: 1000, // Aumentar limite para 1000kb
     rollupOptions: {
       output: {
         manualChunks: undefined,
