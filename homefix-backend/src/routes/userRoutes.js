@@ -23,7 +23,7 @@ router.use((req, res, next) => {
     return res.status(204).end();
   }
   
-  console.log(`[userRoutes] ${req.method} ${req.path}`);
+  console.log(`[userRoutes] ${req.method} ${req.path} - Body keys:`, req.body ? Object.keys(req.body) : 'no body');
   next();
 });
 

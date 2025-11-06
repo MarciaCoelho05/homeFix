@@ -103,7 +103,17 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
+    // Log para debug
+    console.log('[LOGIN] Request recebido:', {
+      method: req.method,
+      path: req.path,
+      bodyKeys: req.body ? Object.keys(req.body) : 'no body',
+      contentType: req.headers['content-type'],
+      origin: req.headers.origin
+    });
+    
     if (!prisma) {
+      console.error('[LOGIN] Prisma não inicializado');
       return res.status(503).json({ message: 'Serviço temporariamente indisponível - Prisma não inicializado' });
     }
     
@@ -114,7 +124,7 @@ async function login(req, res) {
     console.log('[LOGIN] Password recebido:', password ? 'sim (' + password.length + ' chars)' : 'não fornecido');
     
     if (!email || !password) {
-      console.log('[LOGIN] Email ou senha não fornecidos');
+      console.log('[LOGIN] Email ou senha não fornecidos - retornando 400');
       return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
     
