@@ -9,32 +9,24 @@ const App = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const getTimeString = () => {
+    // Initialize time immediately with a safe function
+    const updateTime = () => {
       try {
-        const date = new Date();
-        return date.toLocaleTimeString();
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        setCurrentTime(timeString);
+        return now.toISOString();
       } catch (e) {
+        setCurrentTime('');
         return '';
       }
     };
 
-    const getISOString = () => {
-      try {
-        const date = new Date();
-        return date.toISOString();
-      } catch (e) {
-        return '';
-      }
-    };
-
-    console.log('[APP] 🚀 App component loaded - Version V2.0:', getISOString());
+    const isoString = updateTime();
+    console.log('[APP] 🚀 App component loaded - Version V2.0:', isoString || 'N/A');
     console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
     
-    setCurrentTime(getTimeString());
-    
-    const interval = setInterval(() => {
-      setCurrentTime(getTimeString());
-    }, 1000);
+    const interval = setInterval(updateTime, 1000);
     
     return () => clearInterval(interval);
   }, []);
@@ -53,7 +45,7 @@ const App = () => {
         zIndex: 1000,
         fontWeight: 'bold'
       }}>
-        🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime}
+        🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime || 'Carregando...'}
       </div>
       <div style={{ marginTop: '50px' }}>
         <AppRoutes />
