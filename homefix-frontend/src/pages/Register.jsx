@@ -10,16 +10,15 @@ const formatDateForInput = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const dateLimits = (() => {
-  const today = new Date();
-  const min = new Date(today);
-  min.setFullYear(today.getFullYear() - 100);
-  const max = new Date(today);
-  max.setFullYear(today.getFullYear() - 18);
-  return { min: formatDateForInput(min), max: formatDateForInput(max) };
-})();
-
 export default function Register() {
+  const dateLimits = useMemo(() => {
+    const today = new Date();
+    const min = new Date(today);
+    min.setFullYear(today.getFullYear() - 100);
+    const max = new Date(today);
+    max.setFullYear(today.getFullYear() - 18);
+    return { min: formatDateForInput(min), max: formatDateForInput(max) };
+  }, []);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",

@@ -4,31 +4,41 @@ import AppRoutes from './routes';
 
 const App = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState('Carregando...');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Initialize time immediately with a safe function
-    const updateTime = () => {
+    // Wait for next tick to ensure everything is initialized
+    let intervalId = null;
+    const initTimer = setTimeout(() => {
       try {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString();
-        setCurrentTime(timeString);
-        return now.toISOString();
-      } catch (e) {
-        setCurrentTime('');
-        return '';
-      }
-    };
+        const updateTime = () => {
+          try {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            setCurrentTime(timeString);
+            return now.toISOString();
+          } catch (e) {
+            setCurrentTime('Erro');
+            return '';
+          }
+        };
 
-    const isoString = updateTime();
-    console.log('[APP] 🚀 App component loaded - Version V2.0:', isoString || 'N/A');
-    console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
+        const isoString = updateTime();
+        console.log('[APP] 🚀 App component loaded - Version V2.0:', isoString || 'N/A');
+        console.log('[APP] ✅ Alterações ativas - Deploy funcionando!');
+        
+        intervalId = setInterval(updateTime, 1000);
+      } catch (e) {
+        console.error('[APP] Erro ao inicializar:', e);
+      }
+    }, 0);
     
-    const interval = setInterval(updateTime, 1000);
-    
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initTimer);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   return (
@@ -45,7 +55,7 @@ const App = () => {
         zIndex: 1000,
         fontWeight: 'bold'
       }}>
-        🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime || 'Carregando...'}
+        🚀 DEPLOY V2.0 FUNCIONANDO - {currentTime}
       </div>
       <div style={{ marginTop: '50px' }}>
         <AppRoutes />
