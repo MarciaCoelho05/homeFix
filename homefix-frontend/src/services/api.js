@@ -26,8 +26,8 @@ const getApiUrl = () => {
     
     console.warn('[API] VITE_API_URL not set, using auto-detection for:', hostname);
     
-    if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('vercel.app')) {
-      if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend')) {
+    if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend') || hostname.includes('vercel.app')) {
+      if (hostname.includes('home-fix-beta') || hostname.includes('homefix-frontend') || hostname.includes('homefixfrontend')) {
         console.warn('[API] Vercel frontend detected. Using Railway backend.');
         return 'https://homefix-production.up.railway.app/api';
       }
